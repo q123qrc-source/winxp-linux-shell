@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=Chess
+Exec=chess
+Categories=Game;BoardGame;

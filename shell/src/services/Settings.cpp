@@ -52,7 +52,19 @@ bool Settings::boolValue(const char *key, bool fallback) const
 
 QStringList Settings::quickLaunch() const
 {
-    const QVariant v = value("Taskbar/quickLaunch", QStringList{});
+    return listValue(QStringLiteral("Taskbar/quickLaunch"));
+}
+
+QString Settings::stringValue(const QString &key, const QString &fallback) const
+{
+    const QVariant v = value(key.toLatin1().constData(), fallback);
+    // QSettings splits unquoted values with commas into a list.
+    return v.typeId() == QMetaType::QStringList ? v.toStringList().join(QLatin1String(", ")) : v.toString();
+}
+
+QStringList Settings::listValue(const QString &key) const
+{
+    const QVariant v = value(key.toLatin1().constData(), QStringList{});
     QStringList list = v.typeId() == QMetaType::QString ? v.toString().split(QLatin1Char(','), Qt::SkipEmptyParts) : v.toStringList();
     for (QString &s : list)
         s = s.trimmed();

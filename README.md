@@ -28,7 +28,12 @@ windows (add `--mocks --sni` for volume/network/battery and a tray icon):
 
 ```sh
 tools/shell-preview.sh build -- --preview-windows 10
+tools/shell-preview.sh build --recent -- --open start    # Start menu
 ```
+
+In the preview, Log Off and Turn Off only log what they would do, and Start
+menu items are recorded instead of started (set `MEADOW_LAUNCH_LOG=` to start
+them).
 
 Try the Welcome screen without SDDM:
 

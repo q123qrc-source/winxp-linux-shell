@@ -505,7 +505,10 @@
       "avatarBorderColor": "#FFFFFF",
       "avatarRadius": 4,
       "nameColor": "#FFFFFF",
-      "nameShadowColor": "#A0222328"
+      "nameShadowColor": "#A0222328",
+      "glossFraction": 0.45,
+      "padding": 8,
+      "spacing": 8
     },
     "headerSeparator": {
       "height": 2,
@@ -537,7 +540,8 @@
       "hoverText": "#FFFFFF",
       "mfuCount": 6,
       "allProgramsArrowColor": "#3A9D23",
-      "allProgramsHeight": 30
+      "allProgramsHeight": 30,
+      "allProgramsArrowSize": 16
     },
     "right": {
       "background": "#EFF0F5",
@@ -549,7 +553,8 @@
       "boldItems": true,
       "separatorColor": "#E4E6EE",
       "hoverBackground": "#6E7B97",
-      "hoverText": "#FFFFFF"
+      "hoverText": "#FFFFFF",
+      "submenuArrowSize": 8
     },
     "footer": {
       "height": 40,
@@ -573,7 +578,39 @@
       ],
       "buttonIconSize": 22,
       "buttonTextColor": "#FFFFFF",
-      "buttonHoverBackground": "#30FFFFFF"
+      "buttonHoverBackground": "#30FFFFFF",
+      "buttonPadding": 4,
+      "buttonSpacing": 10,
+      "iconRadius": 3,
+      "glyphInset": 4,
+      "logOffTileGradient": [
+        {
+          "pos": 0.0,
+          "color": "#FFD36B"
+        },
+        {
+          "pos": 0.5,
+          "color": "#F2A90F"
+        },
+        {
+          "pos": 1.0,
+          "color": "#D88A00"
+        }
+      ],
+      "turnOffTileGradient": [
+        {
+          "pos": 0.0,
+          "color": "#F7957F"
+        },
+        {
+          "pos": 0.5,
+          "color": "#E2482D"
+        },
+        {
+          "pos": 1.0,
+          "color": "#BC2E14"
+        }
+      ]
     },
     "allPrograms": {
       "itemHeight": 22,
@@ -586,7 +623,10 @@
       "hoverDelayMs": 400,
       "newProgramHighlight": "#FFF1A6",
       "newProgramDays": 7
-    }
+    },
+    "dragIconOpacity": 0.7,
+    "dropIndicatorColor": "#6E7B97",
+    "dropIndicatorHeight": 2
   },
   "window": {
     "titlebar": {
@@ -1075,13 +1115,48 @@
     },
     "logOff": {
       "width": 314,
-      "height": 200
+      "height": 200,
+      "buttonRadius": 6,
+      "switchUserGradient": [
+        {
+          "pos": 0.0,
+          "color": "#9CC4FF"
+        },
+        {
+          "pos": 0.5,
+          "color": "#4C8DF0"
+        },
+        {
+          "pos": 1.0,
+          "color": "#2861C8"
+        }
+      ],
+      "logOffGradient": [
+        {
+          "pos": 0.0,
+          "color": "#FFE88A"
+        },
+        {
+          "pos": 0.5,
+          "color": "#F5C125"
+        },
+        {
+          "pos": 1.0,
+          "color": "#D89E00"
+        }
+      ]
     },
     "padding": 11,
     "buttonSpacing": 6,
     "taskbarProperties": {
       "width": 360,
       "optionSpacing": 6
+    },
+    "captureTimeoutMs": 800,
+    "run": {
+      "width": 347,
+      "iconSize": 32,
+      "spacing": 8
     }
   },
   "controls": {

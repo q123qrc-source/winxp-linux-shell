@@ -142,4 +142,65 @@ QtObject {
             onDone: propertiesWindow.visible = false
         }
     }
+
+    property Window systemDialogWindow: Window {
+        id: systemDialogWindow
+        title: "meadow-system-dialogs"
+        color: "transparent"
+        visible: systemDialogs.active
+
+        ShellSurface {
+            window: systemDialogWindow
+            scope: "meadow-system-dialogs"
+            layer: ShellSurface.LayerOverlay
+            edges: ShellSurface.AnchorTop | ShellSurface.AnchorBottom | ShellSurface.AnchorLeft | ShellSurface.AnchorRight
+            exclusiveZone: -1
+            keyboard: ShellSurface.KeyboardExclusive
+        }
+
+        SystemDialogHost {
+            id: systemDialogs
+            anchors.fill: parent
+            outputName: barWindow.screen ? barWindow.screen.name : ""
+            focus: true
+        }
+    }
+
+    property Window runWindow: Window {
+        id: runWindow
+        title: qsTr("Run")
+        width: run.implicitWidth
+        height: run.implicitHeight
+        minimumWidth: run.implicitWidth
+        maximumWidth: run.implicitWidth
+        minimumHeight: run.implicitHeight
+        maximumHeight: run.implicitHeight
+        color: Theme.tokens.dialogs.background
+        visible: false
+
+        function open() {
+            visible = true
+            requestActivate()
+            run.open()
+        }
+
+        RunDialog {
+            id: run
+            anchors.fill: parent
+            onDone: runWindow.visible = false
+        }
+    }
+
+    property Connections actions: Connections {
+        target: ShellActions
+        function onRunRequested() { runWindow.open() }
+        function onLogOffRequested() { systemDialogs.openLogOff() }
+        function onTurnOffRequested() { systemDialogs.openTurnOff() }
+    }
+    property Connections ipc: Connections {
+        target: Shell.ipc
+        function onRunDialogRequested() { ShellActions.runRequested() }
+        function onLogOffDialogRequested() { ShellActions.logOffRequested() }
+        function onTurnOffDialogRequested() { ShellActions.turnOffRequested() }
+    }
 }

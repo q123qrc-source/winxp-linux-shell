@@ -9,8 +9,12 @@ qt_add_library(meadow-shell-core STATIC
     src/models/DesktopEntry.h src/models/DesktopEntry.cpp
     src/models/AppRegistry.h src/models/AppRegistry.cpp
     src/models/IconProvider.h src/models/IconProvider.cpp
+    src/models/MenuParser.h src/models/MenuParser.cpp
+    src/models/UsageStore.h src/models/UsageStore.cpp
     src/models/RecentAppsModel.h src/models/RecentAppsModel.cpp
     src/models/PlacesModel.h src/models/PlacesModel.cpp
+    src/services/Launcher.h src/services/Launcher.cpp
+    src/services/RunService.h src/services/RunService.cpp
     src/services/PowerService.h src/services/PowerService.cpp
     src/services/SessionService.h src/services/SessionService.cpp
     src/services/VolumeService.h src/services/VolumeService.cpp
@@ -30,7 +34,7 @@ qt_add_library(meadow-shell-core STATIC
 qt_add_dbus_adaptor(shell_dbus_sources dbus/org.meadow.Shell.xml ipc/ShellIpc.h ShellIpc shelladaptor ShellAdaptor)
 target_sources(meadow-shell-core PRIVATE ${shell_dbus_sources})
 target_include_directories(meadow-shell-core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(meadow-shell-core PUBLIC meadow-common Qt6::Core Qt6::Gui Qt6::DBus Qt6::Quick Qt6::WaylandClient)
+target_link_libraries(meadow-shell-core PUBLIC meadow-common Qt6::Core Qt6::Gui Qt6::DBus Qt6::Quick Qt6::Xml Qt6::WaylandClient)
 target_compile_definitions(meadow-shell-core PRIVATE MEADOW_DATADIR="${CMAKE_INSTALL_FULL_DATADIR}/meadow")
 
 # Window list: wlr-foreign-toplevel-management client code from the protocol
@@ -49,6 +53,7 @@ qt_add_library(meadow-shell-ui STATIC
     src/ui/ShellContext.h src/ui/ShellContext.cpp
     src/ui/ShellSurface.h src/ui/ShellSurface.cpp
     src/ui/TrayGlyph.h src/ui/TrayGlyph.cpp
+    src/ui/ScreenGrabber.h src/ui/ScreenGrabber.cpp
 )
 target_link_libraries(meadow-shell-ui PUBLIC meadow-shell-core meadow-common Qt6::Quick LayerShellQt::Interface)
 # The generated QML type registrations include the headers by file name.
@@ -59,14 +64,14 @@ set(shell_qml
     Taskbar.qml StartButton.qml Grip.qml QuickLaunch.qml TaskList.qml TaskButton.qml TaskGroupMenu.qml
     NotificationArea.qml TrayButton.qml Clock.qml CalendarPopup.qml VolumePopup.qml LanguageBar.qml
     PopupHost.qml ShellMenu.qml TipHost.qml Tips.qml BalloonHost.qml TaskbarProperties.qml
-    # Later phases (stubs until then).
     StartMenu.qml StartMenuUserHeader.qml StartMenuLeftColumn.qml StartMenuRightColumn.qml
-    AllProgramsCascade.qml StartMenuFooter.qml
+    StartMenuItem.qml AllProgramsCascade.qml StartMenuFooter.qml ShellActions.qml
+    RunDialog.qml LogOffDialog.qml TurnOffComputerDialog.qml SystemDialogHost.qml
+    # Phase 8 (stubs until then).
     Desktop.qml DesktopIcon.qml DesktopContextMenu.qml
-    RunDialog.qml LogOffDialog.qml TurnOffComputerDialog.qml
     AltTabSwitcher.qml LockScreen.qml DisplayProperties.qml ControlPanel.qml)
 list(TRANSFORM shell_qml PREPEND qml/)
-set_source_files_properties(qml/Tips.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+set_source_files_properties(qml/Tips.qml qml/ShellActions.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 qt_add_qml_module(meadow-shell-ui
     URI Meadow.Shell

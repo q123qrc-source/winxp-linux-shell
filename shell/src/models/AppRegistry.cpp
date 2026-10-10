@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "AppRegistry.h"
+#include "services/Launcher.h"
 
 #include <QDir>
 #include <QDirIterator>
+#include <QFileInfo>
+#include <QFileSystemWatcher>
+#include <QTimer>
 #include <QLoggingCategory>
 #include <QProcess>
 #include <QStandardPaths>
@@ -11,8 +15,50 @@ Q_LOGGING_CATEGORY(lcApps, "meadow.shell.apps")
 
 AppRegistry::AppRegistry(QObject *parent)
     : QObject(parent)
+    , m_watcher(new QFileSystemWatcher(this))
+    , m_reloadTimer(new QTimer(this))
 {
+    // Package installs touch many files at once; reload once they settle.
+    m_reloadTimer->setSingleShot(true);
+    m_reloadTimer->setInterval(500);
+    connect(m_reloadTimer, &QTimer::timeout, this, [this] {
+        reload();
+        Q_EMIT changed();
+    });
+    connect(m_watcher, &QFileSystemWatcher::directoryChanged, m_reloadTimer, qOverload<>(&QTimer::start));
     reload();
+}
+
+QStringList AppRegistry::currentDesktops()
+{
+    const QStringList desktops = qEnvironmentVariable("XDG_CURRENT_DESKTOP").split(QLatin1Char(':'), Qt::SkipEmptyParts);
+    return desktops.isEmpty() ? QStringList{QStringLiteral("Meadow")} : desktops;
+}
+
+bool AppRegistry::isShown(const QString &desktopId) const
+{
+    const auto it = m_entries.constFind(desktopId);
+    return it != m_entries.cend() && it->isValid() && it->shownIn(currentDesktops());
+}
+
+void AppRegistry::watchDirs()
+{
+    if (!m_watcher->directories().isEmpty())
+        m_watcher->removePaths(m_watcher->directories());
+    QStringList dirs;
+    for (const QString &dir : applicationDirs()) {
+        if (QFileInfo::exists(dir)) {
+            dirs << dir;
+            QDirIterator it(dir, QDir::Dirs | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+            while (it.hasNext())
+                dirs << it.next();
+        } else if (QFileInfo::exists(QFileInfo(dir).absolutePath())) {
+            // Notice applications/ being created (e.g. the first user-installed app).
+            dirs << QFileInfo(dir).absolutePath();
+        }
+    }
+    if (!dirs.isEmpty())
+        m_watcher->addPaths(dirs);
 }
 
 QStringList AppRegistry::applicationDirs()
@@ -48,6 +94,7 @@ void AppRegistry::reload()
         }
     }
     qCDebug(lcApps) << m_entries.size() << "applications";
+    watchDirs();
 }
 
 QString AppRegistry::desktopIdForApp(const QString &appId) const
@@ -108,9 +155,8 @@ bool AppRegistry::launch(const QString &desktopId, const QStringList &files) con
         argv.prepend(terminal);
     }
     const QString program = argv.takeFirst();
-    qint64 pid = 0;
-    const bool ok = QProcess::startDetached(program, argv, QDir::homePath(), &pid);
-    qCInfo(lcApps) << "launch" << desktopId << (ok ? "pid" : "failed") << pid;
+    const bool ok = Launcher::start(program, argv);
+    qCInfo(lcApps) << "launch" << desktopId << (ok ? "ok" : "failed");
     if (ok)
         Q_EMIT const_cast<AppRegistry *>(this)->launched(desktopId);
     return ok;

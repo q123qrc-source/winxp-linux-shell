@@ -64,11 +64,57 @@ Window {
         }
     }
 
+    LunaWindowFrame {
+        id: runFrame
+        objectName: "runFrame"
+        visible: false
+        anchors.left: parent.left
+        anchors.bottom: taskbar.top
+        anchors.margins: Theme.px(Theme.tokens.dialogs.padding)
+        title: qsTr("Run")
+        showMinimize: false
+        showMaximize: false
+        onCloseClicked: visible = false
+
+        function show() {
+            visible = true
+            runDialog.open()
+        }
+
+        RunDialog {
+            id: runDialog
+            width: implicitWidth
+            height: implicitHeight
+            onDone: runFrame.visible = false
+        }
+    }
+
     PopupHost {
         id: popupHost
         objectName: "popupHost"
         anchors.fill: parent
         bottomInset: taskbar.visibleHeight
+    }
+
+    SystemDialogHost {
+        id: systemDialogs
+        objectName: "systemDialogs"
+        anchors.fill: parent
+        previewWindow: root
+        visible: active
+    }
+
+    Connections {
+        target: ShellActions
+        function onRunRequested() { runFrame.show() }
+        function onLogOffRequested() { systemDialogs.openLogOff() }
+        function onTurnOffRequested() { systemDialogs.openTurnOff() }
+    }
+    Connections {
+        target: Shell.ipc
+        function onRunDialogRequested() { ShellActions.runRequested() }
+        function onLogOffDialogRequested() { ShellActions.logOffRequested() }
+        function onTurnOffDialogRequested() { ShellActions.turnOffRequested() }
     }
 
     // Give the first layout pass (and D-Bus replies) a moment before opening.

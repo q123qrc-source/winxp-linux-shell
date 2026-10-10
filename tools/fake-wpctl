@@ -4,6 +4,9 @@
 # $FAKE_WPCTL_STATE (default /tmp/fake-wpctl-$USER): "<volume> <muted 0|1>".
 # Every call is appended to $FAKE_WPCTL_STATE.log.
 state="${FAKE_WPCTL_STATE:-/tmp/fake-wpctl-$(id -u)}"
+# Calls can overlap (set-volume and set-mute back to back): serialize them.
+exec 9>"$state.lock"
+flock 9
 [ -f "$state" ] || echo "0.40 0" > "$state"
 echo "$*" >> "$state.log"
 read -r vol muted < "$state"

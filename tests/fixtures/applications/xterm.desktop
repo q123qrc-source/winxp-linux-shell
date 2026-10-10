@@ -3,3 +3,4 @@ Type=Application
 Name=Terminal
 Exec=true
 Icon=utilities-terminal
+Categories=System;TerminalEmulator;

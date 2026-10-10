@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Code Editor
+Exec=true
+Icon=applications-development
+Categories=Development;IDE;

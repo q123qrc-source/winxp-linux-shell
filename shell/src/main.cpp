@@ -2,14 +2,22 @@
 #include "ThemeLoader.h"
 #include "ipc/ShellIpc.h"
 #include "models/AppRegistry.h"
+#include "models/AppMenuModel.h"
 #include "models/IconProvider.h"
+#include "models/PlacesModel.h"
+#include "models/RecentAppsModel.h"
+#include "models/UsageStore.h"
 #include "services/BatteryService.h"
 #include "services/KeyboardLayoutService.h"
 #include "services/NetworkService.h"
 #include "services/NotificationServer.h"
+#include "services/PowerService.h"
+#include "services/RunService.h"
+#include "services/SessionService.h"
 #include "services/Settings.h"
 #include "services/TrayModel.h"
 #include "services/VolumeService.h"
+#include "ui/ScreenGrabber.h"
 #include "ui/ShellContext.h"
 #include "wayland/ForeignToplevelModel.h"
 #include "wayland/ToplevelModel.h"
@@ -133,6 +141,20 @@ int main(int argc, char *argv[])
     QObject::connect(&ipc, &ShellIpc::showDesktopRequested, windows.get(), &ToplevelModel::toggleShowDesktop);
     QObject::connect(&ipc, &ShellIpc::nextKeyboardLayoutRequested, &keyboard, &KeyboardLayoutService::next);
 
+    // Start menu. Power and session actions are simulated in --preview so a
+    // preview can never log out or power off the machine it runs on.
+    UsageStore usage;
+    AppMenuModel appMenu(&apps, &usage);
+    appMenu.setNewProgramDays(theme->token(QStringLiteral("startMenu.allPrograms.newProgramDays")).toInt());
+    appMenu.setMenuFile(settings.stringValue(QStringLiteral("StartMenu/menuFile")));
+    RecentAppsModel startApps(&apps, &usage, &settings);
+    startApps.setFrequentCount(theme->token(QStringLiteral("startMenu.left.mfuCount")).toInt());
+    PlacesModel places(&settings);
+    PowerService power(systemServices, preview);
+    SessionService session(systemServices, preview);
+    RunService run(&apps);
+    ScreenGrabber screen;
+
     ShellContext::Services services;
     services.windows = windows.get();
     services.settings = &settings;
@@ -144,6 +166,13 @@ int main(int argc, char *argv[])
     services.battery = &battery;
     services.keyboard = &keyboard;
     services.ipc = &ipc;
+    services.appMenu = &appMenu;
+    services.startApps = &startApps;
+    services.places = &places;
+    services.power = &power;
+    services.session = &session;
+    services.run = &run;
+    services.screen = &screen;
     ShellContext shell(services, preview);
     QObject::connect(&ipc, &ShellIpc::toggleStartMenuRequested, &shell,
                      [&shell] { shell.setStartMenuOpen(!shell.startMenuOpen()); });
@@ -152,6 +181,7 @@ int main(int argc, char *argv[])
     engine.addImageProvider(QStringLiteral("icon"), new IconProvider);
     engine.addImageProvider(QStringLiteral("tray"), new TrayImageProvider(&tray));
     engine.addImageProvider(QStringLiteral("notification"), new NotificationImageProvider(&notifications));
+    engine.addImageProvider(QStringLiteral("screen"), new ScreenImageProvider(&screen));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed, &app,
                      [] { QCoreApplication::exit(1); }, Qt::QueuedConnection);
     if (preview) {

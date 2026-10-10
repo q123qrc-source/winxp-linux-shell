@@ -75,9 +75,19 @@ CASES = [
     ("shell-calendar", SHELL, ["--", "--size", "640x300", "--open", "calendar"]),
     ("shell-balloon", SHELL, ["--", "--size", "640x260", "--delay", "1200", "--open", "balloon"]),
     ("shell-properties", SHELL, ["--", "--size", "640x480", "--open", "properties"]),
+    # Start menu and system dialogs (phase 7).
+    ("shell-start-menu", SHELL, ["--", "--size", "800x600", "--open", "start"]),
+    ("shell-start-menu-olive", SHELL, ["--", "--size", "800x600", "--open", "start"] + theme("luna-olive")),
+    ("shell-start-menu-silver", SHELL, ["--", "--size", "800x600", "--open", "start"] + theme("luna-silver")),
+    ("shell-all-programs", SHELL, ["--", "--size", "800x600", "--open", "all-programs"]),
+    ("shell-recent-documents", SHELL, ["--recent", "--", "--size", "800x600", "--open", "recent"]),
+    ("shell-run", SHELL, ["--", "--size", "640x400", "--open", "run"]),
+    ("shell-log-off", SHELL, ["--", "--size", "800x600", "--delay", "1200", "--open", "logoff"]),
+    ("shell-turn-off", SHELL, ["--", "--size", "800x600", "--delay", "1200", "--open", "turnoff"]),
     # The real shell on layer-shell surfaces in headless labwc, 10 windows.
     ("shell-session-10-windows", SHELL_SESSION, ["--windows", "10"]),
     ("shell-session-calendar", SHELL_SESSION, ["--windows", "3", "--open", "calendar"]),
+    ("shell-session-start-menu", SHELL_SESSION, ["--windows", "2", "--open", "start"]),
     ("greeter-fingerprint-failed", GREETER, ["--fingerprint", "enrolled:alice", "--fp-result", "fail", "--select", "0", "--delay", "1500"]),
 ]
 

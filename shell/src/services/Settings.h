@@ -45,6 +45,10 @@ public:
     QStringList quickLaunch() const;
     void setQuickLaunch(const QStringList &ids) { setValue("Taskbar/quickLaunch", ids); }
 
+    // Any key, e.g. "StartMenu/fileManager" (strings and comma lists).
+    Q_INVOKABLE QString stringValue(const QString &key, const QString &fallback = {}) const;
+    Q_INVOKABLE QStringList listValue(const QString &key) const;
+
     // Forget the user's value for a key (the packaged default applies again).
     Q_INVOKABLE void reset(const QString &key);
 

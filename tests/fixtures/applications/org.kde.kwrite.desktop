@@ -3,3 +3,4 @@ Type=Application
 Name=Text Editor
 Exec=true
 Icon=accessories-text-editor
+Categories=Utility;TextEditor;

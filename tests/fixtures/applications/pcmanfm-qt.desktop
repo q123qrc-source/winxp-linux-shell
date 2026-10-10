@@ -3,3 +3,4 @@ Type=Application
 Name=File Manager
 Exec=true
 Icon=system-file-manager
+Categories=System;FileManager;

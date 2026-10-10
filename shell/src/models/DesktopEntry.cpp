@@ -7,6 +7,8 @@
 #include <QStandardPaths>
 #include <QTextStream>
 
+#include <algorithm>
+
 namespace {
 // Unescape a value: \s \n \t \r \\ (and \; inside lists).
 QString unescape(const QString &value)
@@ -113,6 +115,7 @@ DesktopEntry DesktopEntry::parse(const QString &path, const QString &id, const Q
     e.categories = splitList(values.value(QStringLiteral("Categories")));
     e.onlyShowIn = splitList(values.value(QStringLiteral("OnlyShowIn")));
     e.notShowIn = splitList(values.value(QStringLiteral("NotShowIn")));
+    e.mimeTypes = splitList(values.value(QStringLiteral("MimeType")));
     e.noDisplay = isTrue(values.value(QStringLiteral("NoDisplay")));
     e.hidden = isTrue(values.value(QStringLiteral("Hidden")));
     e.terminal = isTrue(values.value(QStringLiteral("Terminal")));
@@ -121,11 +124,19 @@ DesktopEntry DesktopEntry::parse(const QString &path, const QString &id, const Q
 
 bool DesktopEntry::shownIn(const QString &desktop) const
 {
+    return shownIn(QStringList{desktop});
+}
+
+bool DesktopEntry::shownIn(const QStringList &desktops) const
+{
     if (hidden || noDisplay || type != QLatin1String("Application"))
         return false;
-    if (!onlyShowIn.isEmpty() && !onlyShowIn.contains(desktop))
+    const auto any = [&desktops](const QStringList &list) {
+        return std::any_of(desktops.cbegin(), desktops.cend(), [&list](const QString &d) { return list.contains(d); });
+    };
+    if (!onlyShowIn.isEmpty() && !any(onlyShowIn))
         return false;
-    if (notShowIn.contains(desktop))
+    if (any(notShowIn))
         return false;
     if (!tryExec.isEmpty() && QStandardPaths::findExecutable(tryExec).isEmpty()
         && !(tryExec.startsWith(QLatin1Char('/')) && QFile::exists(tryExec)))

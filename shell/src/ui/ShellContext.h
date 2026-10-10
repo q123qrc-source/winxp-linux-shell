@@ -15,6 +15,21 @@ Q_MOC_INCLUDE("services/Settings.h")
 Q_MOC_INCLUDE("services/TrayModel.h")
 Q_MOC_INCLUDE("services/VolumeService.h")
 Q_MOC_INCLUDE("wayland/ToplevelModel.h")
+Q_MOC_INCLUDE("models/AppMenuModel.h")
+Q_MOC_INCLUDE("models/RecentAppsModel.h")
+Q_MOC_INCLUDE("models/PlacesModel.h")
+Q_MOC_INCLUDE("services/PowerService.h")
+Q_MOC_INCLUDE("services/SessionService.h")
+Q_MOC_INCLUDE("services/RunService.h")
+Q_MOC_INCLUDE("ui/ScreenGrabber.h")
+
+class AppMenuModel;
+class RecentAppsModel;
+class PlacesModel;
+class PowerService;
+class SessionService;
+class RunService;
+class ScreenGrabber;
 
 class AppRegistry;
 class BatteryService;
@@ -51,6 +66,15 @@ class ShellContext : public QObject
     Q_PROPERTY(BatteryService *battery READ battery CONSTANT)
     Q_PROPERTY(KeyboardLayoutService *keyboard READ keyboard CONSTANT)
     Q_PROPERTY(ShellIpc *ipc READ ipc CONSTANT)
+    Q_PROPERTY(AppMenuModel *appMenu READ appMenu CONSTANT)
+    Q_PROPERTY(RecentAppsModel *startApps READ startApps CONSTANT)
+    Q_PROPERTY(PlacesModel *places READ places CONSTANT)
+    Q_PROPERTY(PowerService *power READ power CONSTANT)
+    Q_PROPERTY(SessionService *session READ session CONSTANT)
+    Q_PROPERTY(RunService *run READ run CONSTANT)
+    Q_PROPERTY(ScreenGrabber *screen READ screen CONSTANT)
+    // Login name, for the Start menu header.
+    Q_PROPERTY(QString userName READ userName CONSTANT)
     // Wall clock, updated at each minute boundary; fixed when
     // MEADOW_FAKE_TIME (ISO 8601) is set, for screenshots.
     Q_PROPERTY(QDateTime now READ now NOTIFY nowChanged)
@@ -69,6 +93,13 @@ public:
         BatteryService *battery = nullptr;
         KeyboardLayoutService *keyboard = nullptr;
         ShellIpc *ipc = nullptr;
+        AppMenuModel *appMenu = nullptr;
+        RecentAppsModel *startApps = nullptr;
+        PlacesModel *places = nullptr;
+        PowerService *power = nullptr;
+        SessionService *session = nullptr;
+        RunService *run = nullptr;
+        ScreenGrabber *screen = nullptr;
     };
 
     ShellContext(const Services &services, bool preview, QObject *parent = nullptr);
@@ -88,6 +119,14 @@ public:
     BatteryService *battery() const { return m_s.battery; }
     KeyboardLayoutService *keyboard() const { return m_s.keyboard; }
     ShellIpc *ipc() const { return m_s.ipc; }
+    AppMenuModel *appMenu() const { return m_s.appMenu; }
+    RecentAppsModel *startApps() const { return m_s.startApps; }
+    PlacesModel *places() const { return m_s.places; }
+    PowerService *power() const { return m_s.power; }
+    SessionService *session() const { return m_s.session; }
+    RunService *run() const { return m_s.run; }
+    ScreenGrabber *screen() const { return m_s.screen; }
+    static QString userName();
 
     QDateTime now() const { return m_now; }
     bool startMenuOpen() const { return m_startMenuOpen; }

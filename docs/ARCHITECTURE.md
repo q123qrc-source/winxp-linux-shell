@@ -38,13 +38,16 @@ This document is the high-level design. Exact metrics and colors live in
             └─ keybinds ─▶ meadow-shellctl ──session bus──▶ org.meadow.Shell
 
  meadow-shell (one process, several Wayland surfaces; shell/qml/Session.qml)
+  ├─ layer "overlay", full screen, keyboard exclusive : Log Off / Turn Off over a gray screen capture
+  ├─ xdg toplevel                                  : Run, Taskbar Properties
   ├─ layer "top", bottom edge, exclusive zone 30px : Taskbar (start, quick launch, tasks, language bar, tray, clock)
   ├─ layer "overlay", full screen, while open      : popups (menus, calendar, volume); keyboard exclusive;
   │                                                  a press outside every popup closes them
   ├─ layer "overlay", full screen, input-transparent: tooltips
   ├─ layer "overlay", bottom-right                 : notification balloons
   ├─ layer "background"                            : Desktop (wallpaper, icons; phase 8)
-  ├─ layer "overlay"                               : Start menu, All Programs, Alt+Tab, grayscale fade (phases 7-8)
+  ├─ (in the popups overlay)                       : Start menu, All Programs and its cascades
+  ├─ layer "overlay"                               : Alt+Tab (phase 8)
   ├─ xdg toplevels                        : Run, Display Properties, Control Panel, polkit dialogs
   └─ ext-session-lock surfaces            : LockScreen (PAM service "meadow-lock")
 ```
@@ -70,8 +73,9 @@ bus call it makes is the read-only fprintd query.
 
 | Bus | Name / interface | Used by | Purpose |
 |---|---|---|---|
-| system | `org.freedesktop.login1` | PowerService, SessionService | PowerOff/Reboot/Suspend/Hibernate + CanXxx; Lock/Unlock signals |
-| system | `org.freedesktop.DisplayManager` | SessionService | SwitchToGreeter (Switch User) |
+| system | `org.freedesktop.login1` | PowerService, SessionService | PowerOff/Reboot/Suspend/Hibernate (interactive, so polkit can ask) shown when CanXxx is "yes" or "challenge"; TerminateSession when not under labwc |
+| system | `org.freedesktop.DisplayManager` | SessionService | Seat (`$XDG_SEAT_PATH`) SwitchToGreeter for Switch User, hidden without it |
+| session | `org.freedesktop.portal.FileChooser` | RunService | Run dialog Browse… |
 | system | `org.freedesktop.UPower` | BatteryService | battery icon/percentage |
 | system | `org.freedesktop.NetworkManager` | NetworkService | network icon/menu |
 | system | `org.freedesktop.Accounts` | Start menu header, Control Panel | real name, avatar |
@@ -111,6 +115,23 @@ environment files and rebuilds each keyboard's keymap from `XKB_DEFAULT_*`
 (`seat_reconfigure` → `keyboard_configure` → `set_layout`). Alt+Shift is an
 `onRelease` keybind to `meadow-shellctl next-layout`. A side effect: each
 switch also reloads rc.xml and the theme.
+
+### Start menu and system dialogs (phase 7)
+
+| Piece | Where | Notes |
+|---|---|---|
+| All Programs | `MenuParser`, `AppMenuModel` | XDG Desktop Menu Specification: Include/Exclude with Filename, Category, All, And, Or, Not; OnlyUnallocated, Deleted, MergeFile, MergeDir/DefaultMergeDirs, same-name merging, `.directory` names and icons. Meadow ships `meadow-applications.menu` (Accessories with System Tools and Accessibility, Education, Games, Graphics, Internet, Multimedia, Office, Programming, then unplaced programs); `~/.config/menus/meadow-applications.menu` or shell.conf `menuFile` replace it. NoDisplay, Hidden, OnlyShowIn/NotShowIn (`XDG_CURRENT_DESKTOP`, default Meadow) and TryExec are honored. Rebuilt live (application dirs and the menu file are watched, debounced 500 ms) |
+| Pinned / frequent | `RecentAppsModel`, `UsageStore` | `~/.local/share/meadow/start-menu.json`: launch scores with a 7-day half-life, pins, removed entries, first-seen times. `meadow:internet` / `meadow:email` resolve through mimeapps.list (`x-scheme-handler/http`, `mailto`). Pin by right-click or by dragging from All Programs; reorder by dragging |
+| New programs | `UsageStore::isNew` | first seen within `newProgramDays` and never launched; nothing is "new" on the first run |
+| Places | `PlacesModel` | XDG user dirs; My Computer = `computer:///` in pcmanfm-qt; tools from shell.conf `[StartMenu]` (hidden when not installed); Recent Documents from `recently-used.xbel` (15 newest existing local files, watched) |
+| Launching | `Launcher` | one place that starts processes: detached, in `$HOME`, never through a shell; folders via the configured file manager, documents/URLs via `xdg-open`. `MEADOW_LAUNCH_LOG` records instead of starting (tests) |
+| Run | `RunService`, `RunDialog.qml` | existing paths, then URLs, then PATH programs with shell-style quoting (no expansion, pipes or redirection), then applications by id or name; history in `~/.local/share/meadow/run-history` (26); inline completion; Browse… through the FileChooser portal |
+| Log Off / Turn Off | `SessionService`, `PowerService`, `SystemDialogHost.qml` | the screen is captured with `grim -o <output>` and cross-faded to gray (`dialogs.grayscaleFadeMs`); without grim a dark overlay. Log Off asks labwc to exit (`labwc --exit`); in `--preview` both services only simulate |
+
+Keyboard in the Start menu: arrows within a column, Left/Right between
+columns, Right/Enter on All Programs or My Recent Documents to open them,
+Tab cycles columns and footer, a letter selects the next item starting with
+it (also in every cascade), Escape closes one level at a time.
 
 **Popups.** Menus, the calendar and the volume slider live in one PopupHost
 inside a full-screen overlay surface that maps only while a popup is open.
@@ -218,12 +239,13 @@ Main.qml                     SDDM context → scheme + scale from theme.conf; pr
   A reading is a `sddm.login(user, "")`, with pam_fprintd first in the PAM
   stack. A password typed meanwhile is queued, because SDDM drops overlapping
   logins. Details: [PAM_FINGERPRINT.md](PAM_FINGERPRINT.md).
-- **Power:** the dialog calls `sddm.suspend/hibernate/powerOff/reboot` and logs
-  each request under `meadow.greeter.power`. SDDM's `--test-mode` reports no
+- **Power:** the Turn Off dialog (`TurnOffDialog` in Meadow.Controls, shared
+  with the shell) calls `sddm.suspend/hibernate/powerOff/reboot` and logs
+  each request under `meadow.power`. SDDM's `--test-mode` reports no
   capabilities, so `debugPowerButtons=true` in `theme.conf` shows them all for
   testing.
 - **Logging:** `meadow.greeter`, `meadow.greeter.auth` (user name and outcome
-  only, never the password) and `meadow.greeter.power`.
+  only, never the password) and `meadow.power`.
 - **Preview harness:** `tools/greeter-preview` loads the theme with C++ stand-ins
   for SDDM 0.21's `sddm`, `userModel`, `sessionModel`, `keyboard`,
   `screenModel` and `config`, with the same property, role and signal names.
@@ -331,7 +353,7 @@ first uses them. The Fedora spec already BuildRequires all of them.
 | 4 | Fingerprint login (PAM snippet, greeter UX, meadow-setup fingerprint commands) (done) |
 | 5 | Session script, labwc config, decorations, shell IPC (done) |
 | 6 | Taskbar, tray, notifications, clock, volume/network/battery (done) |
-| 7 | Start menu, All Programs, Run, Log Off / Turn Off dialogs |
+| 7 | Start menu, All Programs, Run, Log Off / Turn Off dialogs (done) |
 | 8 | Desktop, lock screen, Display Properties, Control Panel, Alt+Tab |
 | 9 | GTK/Kvantum themes, icons, cursors, sounds, fontconfig |
 | 10 | Generic installer, Arch/Debian packaging, performance, crash resilience |

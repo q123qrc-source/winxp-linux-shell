@@ -98,8 +98,9 @@ and tests). Real windows cannot request it until labwc exposes urgency.
 
 ## 2. Start menu (`startMenu.*`)
 
-380×480 (`width`, `height`), docked above the Start button, top corners rounded
-(`radiusTop`), with a 1px border (`borderColor`).
+380×480 (`width`, `height`; taller when the program list needs it), docked
+above the Start button, top corners rounded (`radiusTop`), with a 1px border
+(`borderColor`) and the menu shadow.
 
 | Region | Spec | Tokens |
 |---|---|---|
@@ -118,6 +119,25 @@ All Programs (`startMenu.allPrograms.*`):
 
 Animation: a short slide (`animation.startMenuSlide` px) plus a fade over
 `animation.startMenuOpenMs`. It is disabled under reduced motion.
+
+Pinning by drag shows an insertion line (`dropIndicatorColor`,
+`dropIndicatorHeight`) under a translucent icon (`dragIconOpacity`). The
+footer icons are small rounded tiles (`footer.logOffTileGradient`,
+`turnOffTileGradient`) with original LogOff and Power glyphs.
+
+### Run (`dialogs.run.*`)
+A `width` px dialog: an original "run" glyph, the explanation, "Open:" with
+the field, an error line with the Error glyph when needed, and OK / Cancel /
+Browse….
+
+### Log Off and Turn Off Computer (`dialogs.*`)
+Both share one frame (`PowerDialogFrame`): `headerHeight` dark-blue header
+with the title and the logo, the blue body (`turnOff.bodyGradient`), a
+`footerColor` footer with Cancel, `radius` corners. Turn Off has round
+buttons (Stand By / Hibernate with Shift, Turn Off, Restart); Log Off has
+rounded-square ones (`logOff.buttonRadius`, `switchUserGradient`,
+`logOffGradient`) with original SwitchUser and LogOff glyphs. Behind them the
+screen fades from color to gray over `grayscaleFadeMs`.
 
 ## 3. Window decorations (labwc, `window.*`)
 

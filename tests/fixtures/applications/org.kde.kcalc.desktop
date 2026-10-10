@@ -3,3 +3,4 @@ Type=Application
 Name=Calculator
 Exec=true
 Icon=accessories-calculator
+Categories=Utility;Calculator;

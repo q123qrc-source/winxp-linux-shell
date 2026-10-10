@@ -26,7 +26,7 @@ jobs:
           fetch-depth: 0
       - name: Install build dependencies
         run: |
-          dnf -y install dnf-plugins-core rpm-build rpmlint desktop-file-utils google-noto-sans-fonts fontconfig sddm qt6-qtsvg labwc grim wlr-randr xorg-x11-server-Xwayland dbus-daemon python3-dbus python3-gobject-base glib2
+          dnf -y install dnf-plugins-core rpm-build rpmlint desktop-file-utils google-noto-sans-fonts fontconfig sddm qt6-qtsvg labwc grim wlr-randr xorg-x11-server-Xwayland dbus-daemon python3-dbus python3-gobject-base glib2 wtype
           dnf -y builddep packaging/fedora/meadow.spec
       - name: Configure
         run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo

@@ -20,6 +20,7 @@ struct DesktopEntry {
     QStringList categories;
     QStringList onlyShowIn;
     QStringList notShowIn;
+    QStringList mimeTypes;
     bool noDisplay = false;
     bool hidden = false;
     bool terminal = false;
@@ -28,6 +29,8 @@ struct DesktopEntry {
     // Hidden, NoDisplay, OnlyShowIn/NotShowIn for `desktop` (e.g. "Meadow"),
     // and TryExec that is not installed all hide an entry from menus.
     bool shownIn(const QString &desktop) const;
+    // Same for XDG_CURRENT_DESKTOP's list (any match counts).
+    bool shownIn(const QStringList &desktops) const;
 
     static DesktopEntry parse(const QString &path, const QString &id, const QString &locale = QString());
     // Exec split into argv per the spec's quoting rules, with field codes

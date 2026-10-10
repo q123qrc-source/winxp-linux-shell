@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Calculator
+Name[de]=Rechner
+Exec=calc
+Categories=Utility;

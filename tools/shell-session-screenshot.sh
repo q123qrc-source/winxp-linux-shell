@@ -42,6 +42,7 @@ export MEADOW_THEME_DIR="$src/theme" MEADOW_ASSET_DIR="$src/theme/assets" QML_IM
 export MEADOW_FAKE_TIME=2026-03-14T09:41:00 MEADOW_ICONS_GENERIC=1
 export XDG_DATA_DIRS="$src/tests/fixtures" XDG_DATA_HOME="$tmp/data" XDG_CONFIG_HOME="$tmp/config"
 export MEADOW_SHELL_DEFAULTS="$src/shell/data/shell.conf" MEADOW_WPCTL=/bin/false
+export MEADOW_MENU_DIR="$src/session/menus" MEADOW_LAUNCH_LOG="$tmp/launches.log" USER=meadow
 export MEADOW_THEME="$scheme"
 
 "$build/shell/meadow-shell" ${open:+--open "$open"} > "$tmp/shell.log" 2>&1 &

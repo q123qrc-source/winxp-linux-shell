@@ -26,6 +26,7 @@ BuildRequires:  cmake(Qt6Qml)
 BuildRequires:  cmake(Qt6Quick)
 BuildRequires:  cmake(Qt6QuickControls2)
 BuildRequires:  cmake(Qt6DBus)
+BuildRequires:  cmake(Qt6Xml)
 BuildRequires:  cmake(Qt6Test)
 BuildRequires:  cmake(Qt6WaylandClient)
 BuildRequires:  cmake(Qt6Multimedia)
@@ -85,6 +86,13 @@ Requires:       NetworkManager
 Requires:       upower
 # "Open Network Connections" in the network tray menu.
 Recommends:     nm-connection-editor
+# Opening documents and URLs (Start menu, Run).
+Requires:       xdg-utils
+# Screen capture for the Log Off / Turn Off gray fade (dark overlay without it).
+Recommends:     grim
+# Start menu "Printers and Faxes" and "Help and Support".
+Suggests:       system-config-printer
+Suggests:       yelp
 Requires:       pcmanfm-qt
 Requires:       kvantum
 # meadow-setup
@@ -178,6 +186,8 @@ tools/validate-session-desktop.sh %{buildroot}%{_datadir}/wayland-sessions/meado
 %dir %{_datadir}/%{name}
 %{_datadir}/%{name}/labwc/
 %{_datadir}/%{name}/shell.conf
+%{_datadir}/%{name}/menus/
+%{_datadir}/%{name}/desktop-directories/
 %{_datadir}/%{name}/sddm.conf.d/
 %{_datadir}/%{name}/pam.d/
 %{_datadir}/%{name}/polkit/
@@ -206,6 +216,8 @@ tools/validate-session-desktop.sh %{buildroot}%{_datadir}/wayland-sessions/meado
 
 %changelog
 * Sat Oct 10 2026 Meadow contributors <q123qrc@gmail.com> - 0.1.0-1
+- Phase 7: Start menu (XDG menus, pinned and frequent programs, places,
+  recent documents), Run, Log Off and Turn Off Computer dialogs
 - Phase 6: taskbar, window list, notification area, notifications, clock,
   volume, network, battery, language bar and Taskbar Properties
 - Phase 1 skeleton: build system, theme tokens, stubs

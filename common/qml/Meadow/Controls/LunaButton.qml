@@ -55,6 +55,15 @@ T.Button {
         implicitWidth: Theme.px(control.tk.minWidth)
         implicitHeight: Theme.px(control.tk.height)
 
+        // Computed from tokens rather than from the boxes' own properties:
+        // GradientBox notifies all its properties together, so reading one
+        // box's properties in the other's bindings would loop.
+        readonly property var faceStops: !control.enabled ? control.tk.gradient.disabled
+                                       : control.showPressed ? control.tk.gradient.pressed
+                                       : control.showHover ? control.tk.gradient.hover
+                                       : control.tk.gradient.normal
+        readonly property real faceInset: Theme.px(1) + (control.ringColors.length > 0 ? Theme.px(control.tk.ringWidth) : 0)
+
         // Border plus, when a ring is shown, the ring gradient under the face.
         GradientBox {
             id: frame
@@ -62,18 +71,15 @@ T.Button {
             radius: Theme.px(control.tk.radius)
             borderWidth: Theme.px(1)
             borderColor: control.enabled ? control.tk.borderColor : control.tk.disabledBorderColor
-            stops: control.ringColors.length > 0 ? control.ringStops(control.ringColors) : face.stops
+            stops: control.ringColors.length > 0 ? control.ringStops(control.ringColors) : parent.faceStops
         }
 
         GradientBox {
             id: face
             anchors.fill: parent
-            anchors.margins: frame.borderWidth + (control.ringColors.length > 0 ? Theme.px(control.tk.ringWidth) : 0)
-            radius: Math.max(0, frame.radius - anchors.margins)
-            stops: !control.enabled ? control.tk.gradient.disabled
-                 : control.showPressed ? control.tk.gradient.pressed
-                 : control.showHover ? control.tk.gradient.hover
-                 : control.tk.gradient.normal
+            anchors.margins: parent.faceInset
+            radius: Math.max(0, Theme.px(control.tk.radius) - parent.faceInset)
+            stops: parent.faceStops
         }
 
         GradientBox {

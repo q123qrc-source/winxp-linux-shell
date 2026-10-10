@@ -43,7 +43,7 @@ private Q_SLOTS:
             "  property var calls: []\n"
             "  property alias dialog: dialog\n"
             "  TurnOffDialog { id: dialog; width: 800; height: 600\n"
-            "    greeter: ({ canSuspend: false, canHibernate: true, canPowerOff: true, canReboot: false,\n"
+            "    power: ({ canSuspend: false, canHibernate: true, canPowerOff: true, canReboot: false,\n"
             "                powerOff: () => calls.push('powerOff'), reboot: () => calls.push('reboot'),\n"
             "                suspend: () => calls.push('suspend'), hibernate: () => calls.push('hibernate') }) } }"));
         QVERIFY(root);
@@ -72,7 +72,7 @@ private Q_SLOTS:
     void shiftTurnsStandByIntoHibernate()
     {
         QScopedPointer<QObject> dialog(create(
-            "TurnOffDialog { greeter: ({ canSuspend: true, canHibernate: true, canPowerOff: true, canReboot: true }) }"));
+            "TurnOffDialog { power: ({ canSuspend: true, canHibernate: true, canPowerOff: true, canReboot: true }) }"));
         QVERIFY(dialog);
         QVERIFY(!dialog->property("hibernateMode").toBool());
         dialog->setProperty("shiftHeld", true);
@@ -84,17 +84,20 @@ private Q_SLOTS:
         QScopedPointer<QObject> root(create(
             "Item { property alias dialog: dialog\n"
             "  TurnOffDialog { id: dialog; width: 800; height: 600\n"
-            "    greeter: ({ canSuspend: false, canHibernate: false, canPowerOff: false, canReboot: false }) } }"));
+            "    power: ({ canSuspend: false, canHibernate: false, canPowerOff: false, canReboot: false }) } }"));
         QVERIFY(root);
         auto *dialog = root->property("dialog").value<QQuickItem *>();
         QMetaObject::invokeMethod(dialog, "open");
         QVERIFY(dialog->isVisible());
         for (const char *name : {"standByButton", "turnOffButton", "restartButton"})
             QVERIFY2(!dialog->findChild<QQuickItem *>(QLatin1String(name))->isVisible(), name);
+        // Nothing available: an explanation instead of an empty body.
+        QVERIFY(dialog->findChild<QQuickItem *>(QStringLiteral("powerDialogEmpty"))->isVisible());
         // debugPowerButtons (test mode) shows them all.
         dialog->setProperty("showAll", true);
         for (const char *name : {"standByButton", "turnOffButton", "restartButton"})
             QVERIFY2(dialog->findChild<QQuickItem *>(QLatin1String(name))->isVisible(), name);
+        QVERIFY(!dialog->findChild<QQuickItem *>(QStringLiteral("powerDialogEmpty"))->isVisible());
     }
 
     void keyboardLayoutCycles()

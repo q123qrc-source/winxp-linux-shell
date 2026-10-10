@@ -5,13 +5,18 @@
 #include "services/BatteryService.h"
 #include "services/KeyboardLayoutService.h"
 #include "services/NetworkService.h"
+#include "models/AppRegistry.h"
 #include "services/NotificationServer.h"
+#include "services/PowerService.h"
+#include "services/RunService.h"
+#include "services/SessionService.h"
 #include "services/VolumeService.h"
 
 #include <QDBusConnection>
 #include <QDBusInterface>
 #include <QDBusPendingCallWatcher>
 #include <QDBusReply>
+#include <QDir>
 #include <QFile>
 #include <QProcess>
 #include <QSignalSpy>
@@ -169,6 +174,7 @@ private Q_SLOTS:
         qputenv("XKB_DEFAULT_LAYOUT", "us,de");
         qputenv("XKB_DEFAULT_OPTIONS", "grp:alt_shift_toggle,caps:none");
         // Keep `labwc --reconfigure` away from any real compositor.
+        const QByteArray path = qgetenv("PATH");
         qputenv("PATH", m_dir.path().toUtf8());
         {
             KeyboardLayoutService k;
@@ -184,6 +190,7 @@ private Q_SLOTS:
         KeyboardLayoutService again;
         QCOMPARE(again.layouts().value(0).toMap().value(QStringLiteral("shortName")).toString(), QStringLiteral("DE"));
         qunsetenv("MEADOW_LABWC_ENV_FILE");
+        qputenv("PATH", path);
     }
 
     void notificationsMarkup_data()
@@ -259,6 +266,139 @@ private Q_SLOTS:
         QTRY_COMPARE(server.rowCount(), 0);
         QCOMPARE(closed.last().value(1).toUInt(), uint(NotificationServer::ClosedByCall));
         QDBusConnection::disconnectFromBus(QStringLiteral("notify-test"));
+    }
+
+    QStringList readLines(const QString &path)
+    {
+        QFile f(path);
+        if (!f.open(QIODevice::ReadOnly))
+            return {};
+        return QString::fromUtf8(f.readAll()).split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+    }
+
+    void power()
+    {
+        const QString log = m_dir.filePath(QStringLiteral("logind.log"));
+        auto mock = startMock({QStringLiteral("--no-battery"), QStringLiteral("--network"), QStringLiteral("none"), QStringLiteral("--logind"),
+                               QStringLiteral("--can"), QStringLiteral("challenge"), QStringLiteral("--no-hibernate"), QStringLiteral("--log"), log});
+        QVERIFY(mock);
+        PowerService power(QDBusConnection::sessionBus(), false);
+        // "challenge" (polkit will ask) counts as available; "na" does not.
+        QTRY_VERIFY(power.canPowerOff() && power.canReboot() && power.canSuspend());
+        QVERIFY(!power.canHibernate());
+        power.powerOff();
+        power.reboot();
+        power.suspend();
+        QTRY_COMPARE(readLines(log), (QStringList{QStringLiteral("PowerOff true"), QStringLiteral("Reboot true"), QStringLiteral("Suspend true")}));
+    }
+
+    void powerUnavailable()
+    {
+        auto mock = startMock({QStringLiteral("--no-battery"), QStringLiteral("--network"), QStringLiteral("none"), QStringLiteral("--logind"),
+                               QStringLiteral("--can"), QStringLiteral("no")});
+        QVERIFY(mock);
+        PowerService power(QDBusConnection::sessionBus(), false);
+        QTest::qWait(300);
+        QVERIFY(!power.canPowerOff() && !power.canReboot() && !power.canSuspend() && !power.canHibernate());
+    }
+
+    void powerSimulated()
+    {
+        const QString log = m_dir.filePath(QStringLiteral("logind-sim.log"));
+        auto mock = startMock({QStringLiteral("--no-battery"), QStringLiteral("--network"), QStringLiteral("none"), QStringLiteral("--logind"),
+                               QStringLiteral("--log"), log});
+        QVERIFY(mock);
+        PowerService power(QDBusConnection::sessionBus(), true);
+        QSignalSpy simulated(&power, &PowerService::simulated);
+        QVERIFY(power.canHibernate());
+        power.powerOff();
+        QCOMPARE(simulated.count(), 1);
+        QTest::qWait(300);
+        QVERIFY(readLines(log).isEmpty()); // nothing reached logind
+    }
+
+    void switchUserAndLogOff()
+    {
+        const QString log = m_dir.filePath(QStringLiteral("dm.log"));
+        auto mock = startMock({QStringLiteral("--no-battery"), QStringLiteral("--network"), QStringLiteral("none"), QStringLiteral("--logind"),
+                               QStringLiteral("--display-manager"), QStringLiteral("--log"), log});
+        QVERIFY(mock);
+        qputenv("XDG_SEAT_PATH", "/org/freedesktop/DisplayManager/Seat0");
+        qputenv("XDG_SESSION_ID", "c7");
+        qunsetenv("LABWC_PID");
+        SessionService session(QDBusConnection::sessionBus(), false);
+        QTRY_VERIFY(session.canSwitchUser());
+        session.switchUser();
+        session.logOff(); // outside labwc: logind TerminateSession
+        QTRY_COMPARE(readLines(log), (QStringList{QStringLiteral("SwitchToGreeter"), QStringLiteral("TerminateSession c7")}));
+
+        // Inside labwc, log off asks labwc to exit (recorded, not run).
+        const QString launches = m_dir.filePath(QStringLiteral("launch-logoff.log"));
+        qputenv("MEADOW_LAUNCH_LOG", launches.toUtf8());
+        qputenv("LABWC_PID", "12345");
+        session.logOff();
+        QCOMPARE(readLines(launches), QStringList{QStringLiteral("labwc\t--exit")});
+        qunsetenv("LABWC_PID");
+        qunsetenv("MEADOW_LAUNCH_LOG");
+
+        // Without XDG_SEAT_PATH there is no Switch User.
+        qunsetenv("XDG_SEAT_PATH");
+        SessionService noSeat(QDBusConnection::sessionBus(), false);
+        QTest::qWait(200);
+        QVERIFY(!noSeat.canSwitchUser());
+    }
+
+    void runDialog()
+    {
+        const QString launches = m_dir.filePath(QStringLiteral("launch-run.log"));
+        qputenv("MEADOW_LAUNCH_LOG", launches.toUtf8());
+        qputenv("XDG_DATA_DIRS", MEADOW_SOURCE_DIR "/tests/fixtures/menu/data");
+        qputenv("XDG_DATA_HOME", m_dir.filePath(QStringLiteral("run-data")).toUtf8());
+        AppRegistry apps;
+        RunService run(&apps, m_dir.filePath(QStringLiteral("run-history")));
+        QDir().mkpath(m_dir.filePath(QStringLiteral("a folder")));
+
+        QVERIFY(run.run(QStringLiteral("true --flag 'two words'")).isEmpty());            // PATH program + args
+        QVERIFY(run.run(QStringLiteral("https://example.org")).isEmpty());                // URL
+        QVERIFY(run.run(QLatin1Char('"') + m_dir.filePath(QStringLiteral("a folder")) + QLatin1Char('"')).isEmpty()); // folder
+        QVERIFY(run.run(QStringLiteral("Calculator")).isEmpty());                         // application by name
+        QVERIFY(run.run(QStringLiteral("chess")).isEmpty());                              // by desktop id
+        const QString err = run.run(QStringLiteral("meadow-no-such-program"));
+        QVERIFY(err.contains(QStringLiteral("meadow-no-such-program")));
+        QVERIFY(!run.run(QStringLiteral("   ")).isEmpty());
+
+        const QStringList log = readLines(launches);
+        QCOMPARE(log.size(), 5);
+        QCOMPARE(log.at(0), QStringLiteral("true\t--flag\ttwo words"));
+        QCOMPARE(log.at(1), QStringLiteral("xdg-open\thttps://example.org"));
+        QVERIFY(log.at(2).endsWith(QLatin1String("\t") + m_dir.filePath(QStringLiteral("a folder"))));
+        QCOMPARE(log.at(3), QStringLiteral("calc"));
+        QCOMPARE(log.at(4), QStringLiteral("chess"));
+
+        // History: newest first, no duplicates, failures not kept; persisted.
+        QCOMPARE(run.history().first(), QStringLiteral("chess"));
+        QVERIFY(!run.history().contains(QStringLiteral("meadow-no-such-program")));
+        run.run(QStringLiteral("true --flag 'two words'"));
+        QCOMPARE(run.history().first(), QStringLiteral("true --flag 'two words'"));
+        QCOMPARE(run.history().count(QStringLiteral("true --flag 'two words'")), 1);
+        RunService again(&apps, m_dir.filePath(QStringLiteral("run-history")));
+        QCOMPARE(again.history(), run.history());
+
+        // Completion: history, then PATH programs, then paths.
+        QCOMPARE(run.complete(QStringLiteral("tr")).first(), QStringLiteral("true --flag 'two words'"));
+        QVERIFY(run.complete(QStringLiteral("tru")).contains(QStringLiteral("true")));
+        QVERIFY(run.complete(m_dir.filePath(QStringLiteral("a fo"))).contains(m_dir.filePath(QStringLiteral("a folder/"))));
+        qunsetenv("MEADOW_LAUNCH_LOG");
+    }
+
+    void runHistoryBounded()
+    {
+        qputenv("MEADOW_LAUNCH_LOG", m_dir.filePath(QStringLiteral("launch-bound.log")).toUtf8());
+        RunService run(nullptr, m_dir.filePath(QStringLiteral("run-history-bound")));
+        for (int i = 0; i < RunService::kMaxHistory + 4; ++i)
+            run.run(QStringLiteral("true %1").arg(i));
+        QCOMPARE(run.history().size(), RunService::kMaxHistory);
+        qunsetenv("MEADOW_LAUNCH_LOG");
     }
 
     void notificationsQueueBounded()

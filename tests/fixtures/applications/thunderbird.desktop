@@ -3,3 +3,5 @@ Type=Application
 Name=Mail
 Exec=true
 Icon=thunderbird
+Categories=Network;Email;
+MimeType=x-scheme-handler/mailto;

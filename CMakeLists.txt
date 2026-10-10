@@ -62,7 +62,7 @@ set(MEADOW_SDDM_THEME_DIR "${CMAKE_INSTALL_DATADIR}/sddm/themes/meadow" CACHE PA
 add_subdirectory(common)
 if(MEADOW_BUILD_SHELL)
     # The shell needs Wayland and layer-shell (taskbar, popups).
-    find_package(Qt6 ${MEADOW_QT_MIN_VERSION} REQUIRED COMPONENTS WaylandClient)
+    find_package(Qt6 ${MEADOW_QT_MIN_VERSION} REQUIRED COMPONENTS WaylandClient Xml)
     find_package(LayerShellQt 6.0 REQUIRED)
     add_subdirectory(shell)
 endif()
@@ -102,6 +102,9 @@ if(MEADOW_BUILD_SHELL)
     install(FILES session/labwc/rc.xml session/labwc/menu.xml session/labwc/environment DESTINATION ${MEADOW_DATADIR}/labwc)
     install(PROGRAMS session/labwc/autostart DESTINATION ${MEADOW_DATADIR}/labwc)
     install(FILES session/xdg/meadow-portals.conf DESTINATION ${CMAKE_INSTALL_DATADIR}/xdg-desktop-portal)
+    # All Programs layout (shell.conf [StartMenu] menuFile overrides it).
+    install(FILES session/menus/meadow-applications.menu DESTINATION ${MEADOW_DATADIR}/menus)
+    install(DIRECTORY session/desktop-directories/ DESTINATION ${MEADOW_DATADIR}/desktop-directories)
     # System integration files are installed as examples only. meadow-setup
     # copies them into /etc on explicit request; packages never touch /etc.
     install(FILES system/sddm.conf.d/10-meadow.conf.example DESTINATION ${MEADOW_DATADIR}/sddm.conf.d)

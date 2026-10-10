@@ -1,0 +1,28 @@
+<!DOCTYPE Menu PUBLIC "-//freedesktop//DTD Menu 1.0//EN"
+ "http://www.freedesktop.org/standards/menu-spec/menu-1.0.dtd">
+<!-- Exercises rule types, Exclude, Deleted, OnlyUnallocated, MergeFile and
+     same-name menu merging (test_appmenu). -->
+<Menu>
+  <Name>Root</Name>
+  <DirectoryDir>../../data/desktop-directories</DirectoryDir>
+  <Menu>
+    <Name>Tools</Name>
+    <Directory>tools.directory</Directory>
+    <Include>
+      <And><Category>Utility</Category><Not><Filename>calc.desktop</Filename></Not></And>
+    </Include>
+    <Exclude><Category>TextEditor</Category></Exclude>
+  </Menu>
+  <Menu>
+    <Name>Gone</Name>
+    <Include><Category>Game</Category></Include>
+    <Deleted/>
+  </Menu>
+  <Menu>
+    <Name>Tools</Name>
+    <Include><Filename>vendor-tool.desktop</Filename></Include>
+  </Menu>
+  <MergeFile>merged.menu</MergeFile>
+  <OnlyUnallocated/>
+  <Include><All/></Include>
+</Menu>

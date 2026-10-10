@@ -18,7 +18,28 @@ FocusScope {
     // (in a session the overlay surface gets its size only once it is shown).
     property var placers: []
 
+    // Drag and drop between popups (All Programs -> pinned list): the entry
+    // being dragged, and whether a drag is in progress.
+    property var dragData: null
+    readonly property bool dragging: dragData !== null
+
     signal closed()
+
+    function beginDrag(entry, scenePos) {
+        dragData = entry
+        moveDrag(scenePos)
+    }
+    function moveDrag(scenePos) {
+        const p = host.mapFromItem(null, scenePos.x, scenePos.y)
+        dragProxy.x = p.x
+        dragProxy.y = p.y
+    }
+    function endDrag() {
+        if (!dragging)
+            return
+        dragProxy.Drag.drop()
+        dragData = null
+    }
 
     onWidthChanged: relayout()
     onHeightChanged: relayout()
@@ -90,6 +111,8 @@ FocusScope {
             popups[i].destroy()
         if (from === 0)
             closed()
+        else
+            popups[from - 1].forceActiveFocus() // back to the menu below
     }
 
     Keys.onEscapePressed: closeAll()
@@ -104,5 +127,24 @@ FocusScope {
     Item {
         id: layer
         anchors.fill: parent
+    }
+
+    // Follows the pointer during a drag; drop areas accept "meadow/app".
+    Item {
+        id: dragProxy
+        width: Theme.px(Theme.tokens.startMenu.allPrograms.iconSize)
+        height: width
+        visible: host.dragging
+        Drag.active: host.dragging
+        Drag.keys: ["meadow/app"]
+        Drag.hotSpot.x: 0
+        Drag.hotSpot.y: 0
+
+        Image {
+            anchors.fill: parent
+            sourceSize: Qt.size(width, height)
+            source: host.dragData && host.dragData.iconName ? "image://icon/" + host.dragData.iconName : ""
+            opacity: Theme.tokens.startMenu.dragIconOpacity
+        }
     }
 }

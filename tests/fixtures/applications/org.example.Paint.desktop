@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Paint
+Exec=true
+Icon=applications-graphics
+Categories=Graphics;RasterGraphics;

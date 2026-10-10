@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Mail
+Exec=mail %u
+Categories=Network;Email;
+MimeType=x-scheme-handler/mailto;

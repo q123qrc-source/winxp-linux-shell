@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Word Processor
+Exec=true
+Icon=x-office-document
+Categories=Office;WordProcessor;

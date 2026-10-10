@@ -185,6 +185,50 @@ void LunaGlyph::paint(QPainter *p)
         triangle(at(0.5, 0.06), at(0.5, 0.34), at(0.72, 0.2));
         break;
     }
+    case SwitchUser: {
+        // Two head-and-shoulders outlines, the front one filled.
+        p->setPen(QPen(m_color, std::max(1.0, lw / 2)));
+        p->setBrush(Qt::NoBrush);
+        p->drawEllipse(QRectF(at(0.52, 0.14), at(0.76, 0.38)));
+        QPainterPath back;
+        back.moveTo(at(0.42, 0.66));
+        back.cubicTo(at(0.44, 0.44), at(0.84, 0.44), at(0.88, 0.66));
+        p->drawPath(back);
+        p->setBrush(m_color);
+        p->drawEllipse(QRectF(at(0.2, 0.32), at(0.46, 0.58)));
+        QPainterPath front;
+        front.moveTo(at(0.08, 0.88));
+        front.cubicTo(at(0.1, 0.6), at(0.56, 0.6), at(0.58, 0.88));
+        front.closeSubpath();
+        p->drawPath(front);
+        break;
+    }
+    case LogOff: {
+        // A door frame open on the right, with an arrow leaving through it.
+        pen.setCapStyle(Qt::RoundCap);
+        pen.setJoinStyle(Qt::RoundJoin);
+        p->setPen(pen);
+        p->setBrush(Qt::NoBrush);
+        QPolygonF door;
+        door << at(0.56, 0.3) << at(0.56, 0.12) << at(0.14, 0.12) << at(0.14, 0.88) << at(0.56, 0.88) << at(0.56, 0.7);
+        p->drawPolyline(door);
+        p->drawLine(at(0.36, 0.5), at(0.8, 0.5));
+        triangle(at(0.92, 0.5), at(0.74, 0.34), at(0.74, 0.66));
+        break;
+    }
+    case Run: {
+        // An arrow rising out of an open box.
+        pen.setCapStyle(Qt::RoundCap);
+        pen.setJoinStyle(Qt::RoundJoin);
+        p->setPen(pen);
+        p->setBrush(Qt::NoBrush);
+        QPolygonF box;
+        box << at(0.3, 0.46) << at(0.14, 0.46) << at(0.14, 0.88) << at(0.86, 0.88) << at(0.86, 0.46) << at(0.7, 0.46);
+        p->drawPolyline(box);
+        p->drawLine(at(0.5, 0.74), at(0.5, 0.26));
+        triangle(at(0.5, 0.08), at(0.32, 0.3), at(0.68, 0.3));
+        break;
+    }
     case Keyboard: {
         p->setPen(QPen(m_color, std::max(1.0, lw / 2)));
         p->setBrush(Qt::NoBrush);

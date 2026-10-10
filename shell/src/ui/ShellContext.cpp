@@ -11,6 +11,13 @@
 #include "services/TrayModel.h"
 #include "services/VolumeService.h"
 #include "wayland/ToplevelModel.h"
+#include "models/AppMenuModel.h"
+#include "models/PlacesModel.h"
+#include "models/RecentAppsModel.h"
+#include "services/PowerService.h"
+#include "services/RunService.h"
+#include "services/SessionService.h"
+#include "ui/ScreenGrabber.h"
 
 #include <QJSEngine>
 #include <QLoggingCategory>
@@ -66,4 +73,10 @@ void ShellContext::setStartMenuOpen(bool open)
         return;
     m_startMenuOpen = open;
     Q_EMIT startMenuOpenChanged();
+}
+
+QString ShellContext::userName()
+{
+    const QString user = qEnvironmentVariable("USER");
+    return user.isEmpty() ? qEnvironmentVariable("LOGNAME") : user;
 }

@@ -507,7 +507,7 @@ FocusScope {
     TurnOffDialog {
         id: turnOffDialog
         anchors.fill: parent
-        greeter: layout.greeter
+        power: layout.greeter
         showAll: layout.showAllPowerActions
         highContrast: layout.highContrast
         onClosed: turnOffButton.forceActiveFocus()

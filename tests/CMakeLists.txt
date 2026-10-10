@@ -18,6 +18,7 @@ target_compile_definitions(test_themeloader PRIVATE MEADOW_BUILD_QML_DIR="${CMAK
 target_compile_definitions(test_controls PRIVATE MEADOW_BUILD_QML_DIR="${CMAKE_BINARY_DIR}/qml")
 if(MEADOW_BUILD_SHELL)
     meadow_add_test(test_appmenu meadow-shell-core)
+    target_compile_definitions(test_appmenu PRIVATE MEADOW_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
     meadow_add_test(test_settings meadow-shell-core)
     target_compile_definitions(test_settings PRIVATE MEADOW_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
     meadow_add_test(test_apps meadow-shell-core)
@@ -43,6 +44,13 @@ if(MEADOW_BUILD_SHELL)
         add_test(NAME test_toplevel_labwc
                  COMMAND ${PROJECT_SOURCE_DIR}/tools/with-headless-labwc.sh -- $<TARGET_FILE:test_toplevel_labwc>)
         set_tests_properties(test_toplevel_labwc PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 120)
+    endif()
+
+    # Start menu, Run and power dialogs in a real labwc, driven by keyboard.
+    if(MEADOW_BUILD_GALLERY)
+        add_test(NAME start_menu_session
+                 COMMAND ${PROJECT_SOURCE_DIR}/tools/start-menu-session-test.sh ${CMAKE_BINARY_DIR})
+        set_tests_properties(start_menu_session PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 180)
     endif()
 
     # Taskbar QML in preview mode, driven by mouse clicks.

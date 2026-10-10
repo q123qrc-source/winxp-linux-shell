@@ -78,12 +78,57 @@ Item {
         case "taskbar-menu": openTaskbarMenu(taskbar.width / 2); break
         case "properties": propertiesRequested(); break
         case "start": Shell.startMenuOpen = true; break
+        case "all-programs":
+            Shell.startMenuOpen = true
+            if (startMenu)
+                startMenu.openAllPrograms(true)
+            break
+        case "recent":
+            Shell.startMenuOpen = true
+            if (startMenu) {
+                startMenu.focusArea("right")
+                startMenu.openRecentFromKeyboard()
+            }
+            break
+        case "run": ShellActions.runRequested(); break
+        case "logoff": ShellActions.logOffRequested(); break
+        case "turnoff": ShellActions.turnOffRequested(); break
         case "balloon":
             Shell.notifications.post(qsTr("Updates are ready"),
                                      qsTr("Updates are ready to install"),
                                      qsTr("Click here to review <b>3</b> updates for your computer."))
             break
         default: console.warn("unknown popup", name)
+        }
+    }
+
+    // The Start menu popup follows Shell.startMenuOpen (Start button, Win
+    // key, Ctrl+Esc); closing it any other way clears the flag.
+    property var startMenu: null
+    property bool openingStartMenu: false
+    Component {
+        id: startMenuComponent
+        StartMenu {}
+    }
+    Connections {
+        target: Shell
+        function onStartMenuOpenChanged() {
+            if (Shell.startMenuOpen && !taskbar.startMenu && taskbar.popups) {
+                taskbar.openingStartMenu = true
+                taskbar.startMenu = taskbar.popups.open(startMenuComponent, {}, 0, false)
+                taskbar.openingStartMenu = false
+            } else if (!Shell.startMenuOpen && taskbar.startMenu) {
+                taskbar.popups.closeAll()
+            }
+        }
+    }
+    Connections {
+        target: taskbar.popups
+        function onClosed() {
+            if (taskbar.openingStartMenu)
+                return
+            taskbar.startMenu = null
+            Shell.startMenuOpen = false
         }
     }
 

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Not Installed
+Exec=nothing
+TryExec=meadow-definitely-not-installed
+Categories=Utility;

@@ -1,0 +1,89 @@
+<!DOCTYPE Menu PUBLIC "-//freedesktop//DTD Menu 1.0//EN"
+ "http://www.freedesktop.org/standards/menu-spec/menu-1.0.dtd">
+<!-- SPDX-License-Identifier: GPL-3.0-or-later
+     Meadow's All Programs layout (XDG Desktop Menu Specification).
+     Installed to /usr/share/meadow/menus/. To customize, copy it to
+     ~/.config/menus/meadow-applications.menu, or set shell.conf
+     [StartMenu] menuFile to another menu (e.g. /etc/xdg/menus/applications.menu).
+     Applications in no folder are listed directly under All Programs. -->
+<Menu>
+  <Name>Applications</Name>
+  <DirectoryDir>../desktop-directories</DirectoryDir>
+  <DefaultAppDirs/>
+  <DefaultMergeDirs/>
+
+  <Menu>
+    <Name>Accessories</Name>
+    <Directory>meadow-accessories.directory</Directory>
+    <Include>
+      <And>
+        <Category>Utility</Category>
+        <Not><Category>System</Category></Not>
+        <Not><Category>Accessibility</Category></Not>
+      </And>
+      <Category>TextEditor</Category>
+    </Include>
+    <Menu>
+      <Name>Accessibility</Name>
+      <Directory>meadow-accessibility.directory</Directory>
+      <Include><Category>Accessibility</Category></Include>
+    </Menu>
+    <Menu>
+      <Name>System Tools</Name>
+      <Directory>meadow-system-tools.directory</Directory>
+      <Include>
+        <Category>System</Category>
+        <Category>Settings</Category>
+        <Category>Monitor</Category>
+        <Category>FileManager</Category>
+        <Category>TerminalEmulator</Category>
+      </Include>
+    </Menu>
+  </Menu>
+
+  <Menu>
+    <Name>Education</Name>
+    <Directory>meadow-education.directory</Directory>
+    <Include><Category>Education</Category><Category>Science</Category></Include>
+  </Menu>
+
+  <Menu>
+    <Name>Games</Name>
+    <Directory>meadow-games.directory</Directory>
+    <Include><Category>Game</Category></Include>
+  </Menu>
+
+  <Menu>
+    <Name>Graphics</Name>
+    <Directory>meadow-graphics.directory</Directory>
+    <Include><Category>Graphics</Category></Include>
+  </Menu>
+
+  <Menu>
+    <Name>Internet</Name>
+    <Directory>meadow-internet.directory</Directory>
+    <Include><Category>Network</Category></Include>
+  </Menu>
+
+  <Menu>
+    <Name>Multimedia</Name>
+    <Directory>meadow-multimedia.directory</Directory>
+    <Include><Category>AudioVideo</Category><Category>Audio</Category><Category>Video</Category></Include>
+  </Menu>
+
+  <Menu>
+    <Name>Office</Name>
+    <Directory>meadow-office.directory</Directory>
+    <Include><Category>Office</Category></Include>
+  </Menu>
+
+  <Menu>
+    <Name>Programming</Name>
+    <Directory>meadow-programming.directory</Directory>
+    <Include><Category>Development</Category></Include>
+  </Menu>
+
+  <!-- Everything not placed above. -->
+  <OnlyUnallocated/>
+  <Include><All/></Include>
+</Menu>

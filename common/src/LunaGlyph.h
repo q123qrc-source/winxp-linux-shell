@@ -42,6 +42,9 @@ public:
         Keyboard,
         Contrast,
         Fingerprint,
+        SwitchUser,   // two people
+        LogOff,       // an arrow leaving through a door
+        Run,          // an arrow out of a box
     };
     Q_ENUM(Glyph)
 
