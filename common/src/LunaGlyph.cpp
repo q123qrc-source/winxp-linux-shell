@@ -90,28 +90,30 @@ void LunaGlyph::paint(QPainter *p)
         }
         break;
     }
+    // Caption glyphs fill most of the box, like classic Luna buttons. The
+    // labwc button SVGs (tools/gen-labwc-theme.py) use the same fractions.
     case Close:
-        pen.setWidthF(lw * 1.15);
+        pen.setWidthF(lw * 1.2);
         p->setPen(pen);
-        p->drawLine(at(0.27, 0.27), at(0.73, 0.73));
-        p->drawLine(at(0.73, 0.27), at(0.27, 0.73));
+        p->drawLine(at(0.18, 0.18), at(0.82, 0.82));
+        p->drawLine(at(0.82, 0.18), at(0.18, 0.82));
         break;
     case Minimize:
-        p->fillRect(QRectF(at(0.25, 0.66), at(0.6, 0.66 + lw * 1.4 / r.height())), m_color);
+        p->fillRect(QRectF(at(0.12, 0.72), at(0.6, 0.72 + lw * 1.4 / r.height())), m_color);
         break;
     case Maximize:
         p->setRenderHint(QPainter::Antialiasing, false);
         p->setPen(QPen(m_color, std::max(1.0, std::round(lw / 2))));
         p->setBrush(Qt::NoBrush);
-        p->fillRect(QRectF(at(0.24, 0.24), at(0.76, 0.24 + lw * 1.6 / r.height())), m_color);
-        p->drawRect(QRectF(at(0.24, 0.24), at(0.76, 0.76)));
+        p->fillRect(QRectF(at(0.1, 0.1), at(0.9, 0.1 + lw * 1.4 / r.height())), m_color);
+        p->drawRect(QRectF(at(0.1, 0.1), at(0.9, 0.9)));
         break;
     case Restore:
         p->setRenderHint(QPainter::Antialiasing, false);
         p->setPen(QPen(m_color, std::max(1.0, std::round(lw / 2))));
         p->setBrush(Qt::NoBrush);
-        for (const auto &[x, y] : {std::pair{0.38, 0.2}, std::pair{0.22, 0.38}}) {
-            const QRectF box(at(x, y), at(x + 0.4, y + 0.4));
+        for (const auto &[x, y] : {std::pair{0.3, 0.06}, std::pair{0.06, 0.3}}) {
+            const QRectF box(at(x, y), at(x + 0.62, y + 0.62));
             p->fillRect(QRectF(box.topLeft(), QPointF(box.right(), box.top() + lw * 1.2)), m_color);
             p->drawRect(box);
         }

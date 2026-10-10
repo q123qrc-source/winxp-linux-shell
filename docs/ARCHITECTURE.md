@@ -13,7 +13,7 @@ This document is the high-level design. Exact metrics and colors live in
 | Session (`meadow-session`, `meadow.desktop`) | shell script + session entry | the logged-in user | `meadow-shell` |
 | labwc config + `Meadow-Luna` decoration theme | config/data | read by labwc | `meadow-shell`, `meadow-themes` |
 | `meadow-shell` | Qt 6 / QML / C++ app | the logged-in user | `meadow-shell` |
-| `meadow-shellctl` (phase 5) | CLI that calls `org.meadow.Shell` | run by labwc keybinds | `meadow-shell` |
+| `meadow-shellctl` | sh + `busctl`, calls `org.meadow.Shell` | run by labwc keybinds | `meadow-shell` |
 | `meadow-setup` | root-only Python tool (stdlib), opt-in | root, interactive | `meadow-shell` |
 | GTK, Kvantum, icon, cursor and sound themes | data | read by apps | `meadow-themes` |
 
@@ -76,7 +76,7 @@ bus call it makes is the read-only fprintd query.
 | system | `net.reactivated.Fprint` | FingerprintQuery (greeter), LockScreen | reader and enrolled-finger check (read-only) |
 | session | `org.kde.StatusNotifierWatcher` / `…Item`, `com.canonical.dbusmenu` | TrayHost | tray icons and menus |
 | session | `org.freedesktop.Notifications` | NotificationServer | balloon tips |
-| session | `org.meadow.Shell` (ours) | ShellIpc | ToggleStartMenu, ShowRun, ShowDesktop, Lock, ShowLogOff, AltTab |
+| session | `org.meadow.Shell` (ours, `shell/dbus/org.meadow.Shell.xml`) | ShellIpc | ToggleStartMenu, ShowRunDialog, ShowDesktop, Lock, ShowLogOffDialog, ShowTurnOffDialog, Version |
 
 Audio uses PipeWire/WirePlumber. Phase 6 starts with `wpctl` plus change
 monitoring, and moves to libpipewire only if profiling shows a need.
@@ -94,7 +94,8 @@ loginSucceeded), `userModel` (+ `lastIndex`), `sessionModel` (+ `lastIndex`),
 theme/<scheme>/theme.json ──▶ ThemeLoader (C++) ──▶ QML singleton `Theme` (import Meadow.Controls)
          │                       ├─ search: $MEADOW_THEME_DIR, ~/.local/share/meadow/themes, /usr/share/meadow/themes
          │                       └─ resolveAsset(): ~/.local/share/meadow/assets-override → /usr/share/meadow/assets-override → bundled
-         └──▶ generators (phase 5/9): labwc themerc, GTK CSS variables, Kvantum colors
+         └──▶ generators: labwc themerc + button SVGs + rc.xml (tools/gen-labwc-theme.py, committed, sync-tested);
+              GTK CSS variables and Kvantum colors (phase 9)
 ```
 
 - `theme/schema.json` lists every token path and its type. It is generated from
@@ -193,6 +194,38 @@ Main.qml                     SDDM context → scheme + scale from theme.conf; pr
   `tools/greeter-real-screenshot.sh` check the theme in the real
   `sddm-greeter-qt6`.
 
+### Session (labwc)
+
+```
+/usr/share/wayland-sessions/meadow.desktop   Exec=meadow-session, DesktopNames=Meadow
+meadow-session        exports XDG_CURRENT_DESKTOP=Meadow and the toolkit theme variables; keyboard layout from
+                      localectl's X11 keymap; exec labwc --config-dir ~/.config/meadow/labwc | /usr/share/meadow/labwc
+  rc.xml              generated from rc.xml.in (fonts and corner radius from tokens): server-side decorations,
+                      click-to-focus with raise, automatic placement, icon:iconify,max,close, classic Alt+Tab OSD
+  menu.xml            window menu (title-bar right-click, window icon, Alt+Space); no root menu, the shell owns the desktop
+  autostart           exports the environment to D-Bus/systemd; meadow-shell in a crash loop with back-off
+                      (stops after 5 crashes in 60 s); MEADOW_NO_SHELL=1 for a bare compositor
+  environment         optional XKB overrides
+/usr/share/themes/Meadow-Luna{,-Olive,-Silver}/labwc/   generated decorations (see VISUAL_SPEC §3)
+```
+
+| Key | Action |
+|---|---|
+| Win (alone) / Ctrl+Esc | `meadow-shellctl toggle-start-menu` |
+| Win+D / Win+R / Win+L | `meadow-shellctl show-desktop` / `run` / `lock` |
+| Win+E | `pcmanfm-qt` |
+| Win+M | minimize all windows (labwc `ForEach` → `Iconify`) |
+| Win+Up / Down / Left / Right | maximize / restore / snap left / snap right |
+| Alt+Tab, Alt+Shift+Tab | labwc window switcher (interim, phase 8 replaces it) |
+| Alt+F4 / Alt+Space | close / window menu |
+| Ctrl+Alt+Delete | `meadow-shellctl log-off` |
+| Volume keys | `wpctl` |
+
+labwc has no show-desktop action, so Win+D needs the shell (phase 6,
+foreign-toplevel). `meadow-shellctl` exits 1 with "meadow-shell is not
+running" when no shell owns `org.meadow.Shell`. `lock` then falls back to
+`loginctl lock-session`.
+
 ## 5. Source layout and build
 
 | Path | Target | Notes |
@@ -203,6 +236,8 @@ Main.qml                     SDDM context → scheme + scale from theme.conf; pr
 | `greeter/` | installed as-is to `/usr/share/sddm/themes/meadow` | `helper/` built from phase 4 |
 | `tools/gallery/` | `meadow-gallery` + `meadow-imgdiff` (not installed) | control gallery and screenshot comparison |
 | `tools/greeter-preview/` | `meadow-greeter-preview` (not installed) | Welcome screen with mock SDDM objects |
+| `tools/decor-test/` | `meadow-decor-test` (not installed) | plain titled windows for decoration screenshots |
+| `decorations/labwc/` | installed to `/usr/share/themes/<name>/labwc` | generated; see `tools/gen-labwc-theme.py` |
 | `theme/assets/` | installed to `/usr/share/meadow/assets` | original logo and avatar SVGs (CC-BY-SA-4.0) |
 | `tests/` | Qt Test executables + Python checks | `MEADOW_THEME_DIR` points at the source tree |
 
@@ -254,7 +289,7 @@ first uses them. The Fedora spec already BuildRequires all of them.
 | 2 | ThemeLoader complete, SoundPlayer, all Luna controls, gallery, golden screenshots (done) |
 | 3 | SDDM Welcome screen (done) |
 | 4 | Fingerprint login (PAM snippet, greeter UX, meadow-setup fingerprint commands) (done) |
-| 5 | Session script, labwc config, decorations |
+| 5 | Session script, labwc config, decorations, shell IPC (done) |
 | 6 | Taskbar, tray, notifications, clock, volume/network/battery |
 | 7 | Start menu, All Programs, Run, Log Off / Turn Off dialogs |
 | 8 | Desktop, lock screen, Display Properties, Control Panel, Alt+Tab |

@@ -1,14 +1,37 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Run by labwc at startup. meadow-shell is restarted if it crashes; phase 10
-# adds back-off and a systemd user unit alternative.
-dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null &
+# Run by labwc when the Meadow session starts.
 
-/usr/libexec/xdg-desktop-portal >/dev/null 2>&1 &
+# Let D-Bus-activated services (portals, polkit, notifications) and systemd
+# user units see this session's display and theming.
+dbus-update-activation-environment --systemd \
+    WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE XDG_SESSION_DESKTOP \
+    XCURSOR_THEME XCURSOR_SIZE QT_QPA_PLATFORM QT_STYLE_OVERRIDE GTK_THEME >/dev/null 2>&1 &
 
+# MEADOW_NO_SHELL=1 starts a bare compositor (decoration tests, debugging).
+[ "${MEADOW_NO_SHELL:-0}" = 1 ] && exit 0
+
+# meadow-shell, restarted if it crashes; a clean exit (status 0) ends the
+# loop. More than 5 crashes within 60 s stops the restarts so a broken shell
+# cannot spin forever.
 (
+    restarts=0
+    window_start=$(date +%s)
     while :; do
-        meadow-shell && break
+        meadow-shell
+        status=$?
+        [ "$status" -eq 0 ] && break
+        now=$(date +%s)
+        if [ $((now - window_start)) -gt 60 ]; then
+            restarts=0
+            window_start=$now
+        fi
+        restarts=$((restarts + 1))
+        if [ "$restarts" -gt 5 ]; then
+            logger -t meadow-session "meadow-shell crashed $restarts times within a minute (last status $status); not restarting" 2>/dev/null \
+                || echo "meadow-session: meadow-shell keeps crashing; not restarting" >&2
+            break
+        fi
         sleep 1
     done
 ) &

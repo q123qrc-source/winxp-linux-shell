@@ -19,7 +19,10 @@ qt_add_library(meadow-shell-core STATIC
     src/services/Settings.h src/services/Settings.cpp
     src/ipc/ShellIpc.h src/ipc/ShellIpc.cpp
 )
-target_include_directories(meadow-shell-core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+# D-Bus adaptor for org.meadow.Shell (the object it wraps is ShellIpc).
+qt_add_dbus_adaptor(shell_dbus_sources dbus/org.meadow.Shell.xml ipc/ShellIpc.h ShellIpc shelladaptor ShellAdaptor)
+target_sources(meadow-shell-core PRIVATE ${shell_dbus_sources})
+target_include_directories(meadow-shell-core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(meadow-shell-core PUBLIC meadow-common Qt6::Core Qt6::Gui Qt6::DBus)
 
 qt_add_executable(meadow-shell src/main.cpp)
@@ -44,3 +47,5 @@ qt_add_qml_module(meadow-shell
 )
 
 install(TARGETS meadow-shell RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(PROGRAMS meadow-shellctl DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(FILES dbus/org.meadow.Shell.xml DESTINATION ${CMAKE_INSTALL_DATADIR}/dbus-1/interfaces)

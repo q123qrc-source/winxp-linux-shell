@@ -1221,7 +1221,12 @@
       "itemHeight": 18,
       "separatorColor": "#ACA899",
       "hoverBackground": "#7D924E",
-      "hoverText": "#FFFFFF"
+      "hoverText": "#FFFFFF",
+      "paddingX": 10,
+      "paddingY": 3,
+      "separatorPadding": 3,
+      "widthMin": 150,
+      "widthMax": 400
     }
   },
   "desktop": {
@@ -1287,5 +1292,13 @@
     "gapRatio": 0.07,
     "radiusRatio": 0.3,
     "glossAlpha": 0.45
+  },
+  "windowSwitcher": {
+    "width": 480,
+    "padding": 6,
+    "itemPaddingX": 6,
+    "itemPaddingY": 4,
+    "iconSize": 24,
+    "borderWidth": 1
   }
 }

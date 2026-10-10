@@ -69,7 +69,9 @@ Summary:        Meadow desktop shell, session files and setup tool
 License:        GPL-3.0-or-later
 Requires:       %{name}-common%{?_isa} = %{version}-%{release}
 Requires:       %{name}-themes = %{version}-%{release}
-Requires:       labwc
+Requires:       labwc >= 0.9
+# busctl (meadow-shellctl)
+Requires:       systemd
 Requires:       xorg-x11-server-Xwayland
 Requires:       xdg-desktop-portal-wlr
 Requires:       xdg-desktop-portal-gtk
@@ -159,11 +161,14 @@ tools/validate-session-desktop.sh %{buildroot}%{_datadir}/wayland-sessions/meado
 %doc README.md docs/ARCHITECTURE.md docs/PAM_FINGERPRINT.md docs/ALTERNATIVES.md
 %doc packaging/fedora/README-fedora.md
 %{_bindir}/meadow-shell
+%{_bindir}/meadow-shellctl
 %{_bindir}/meadow-session
 %{_bindir}/meadow-setup
 %dir %{_datadir}/wayland-sessions
 %{_datadir}/wayland-sessions/meadow.desktop
 %{_datadir}/xdg-desktop-portal/meadow-portals.conf
+%dir %{_datadir}/dbus-1/interfaces
+%{_datadir}/dbus-1/interfaces/org.meadow.Shell.xml
 %dir %{_datadir}/%{name}
 %{_datadir}/%{name}/labwc/
 %{_datadir}/%{name}/sddm.conf.d/
@@ -182,6 +187,8 @@ tools/validate-session-desktop.sh %{buildroot}%{_datadir}/wayland-sessions/meado
 %{_datadir}/%{name}/themes/
 %{_datadir}/%{name}/assets/
 %{_datadir}/themes/Meadow-Luna/
+%{_datadir}/themes/Meadow-Luna-Olive/
+%{_datadir}/themes/Meadow-Luna-Silver/
 %dir %{_datadir}/Kvantum
 %{_datadir}/Kvantum/MeadowLuna/
 %{_datadir}/icons/meadow-icons/

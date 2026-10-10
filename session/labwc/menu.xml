@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later
+     labwc menus for Meadow (labwc-menu(5)). The window menu opens from the
+     title bar (right-click or the window icon) and Alt+Space. The desktop
+     menu belongs to meadow-shell, so there is no root-menu here. -->
+<openbox_menu>
+  <menu id="client-menu">
+    <item label="Minimize"><action name="Iconify" /></item>
+    <item label="Maximize / Restore"><action name="ToggleMaximize" /></item>
+    <item label="Move"><action name="Move" /></item>
+    <item label="Size"><action name="Resize" /></item>
+    <item label="Always on Top"><action name="ToggleAlwaysOnTop" /></item>
+    <separator />
+    <item label="Close    Alt+F4"><action name="Close" /></item>
+  </menu>
+</openbox_menu>

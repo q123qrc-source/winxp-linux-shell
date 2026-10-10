@@ -1,0 +1,46 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+# meadow-shellctl: ask the running meadow-shell to do something.
+# Used by the Meadow labwc keybinds; talks to org.meadow.Shell on the session bus.
+set -u
+
+usage() {
+    cat <<'USAGE'
+Usage: meadow-shellctl COMMAND
+
+Commands:
+  toggle-start-menu   Open or close the Start menu        (Windows key)
+  run                 Show the Run dialog                  (Win+R)
+  show-desktop        Minimize or restore all windows      (Win+D)
+  lock                Lock the session                     (Win+L)
+  log-off             Show the Log Off dialog              (Ctrl+Alt+Delete)
+  turn-off            Show the Turn Off Computer dialog
+  version             Print the running shell's version
+USAGE
+}
+
+case "${1:-}" in
+    toggle-start-menu) method=ToggleStartMenu ;;
+    run)               method=ShowRunDialog ;;
+    show-desktop)      method=ShowDesktop ;;
+    lock)              method=Lock ;;
+    log-off)           method=ShowLogOffDialog ;;
+    turn-off)          method=ShowTurnOffDialog ;;
+    version)           method=Version ;;
+    -h|--help|help)    usage; exit 0 ;;
+    *)                 usage >&2; exit 2 ;;
+esac
+
+if out=$(busctl --user call org.meadow.Shell /org/meadow/Shell org.meadow.Shell "$method" 2>&1); then
+    # busctl prints e.g. 's "0.1.0"' for a string result.
+    [ "$method" = Version ] && printf '%s\n' "$out" | sed -n 's/^s "\(.*\)"$/\1/p'
+    exit 0
+fi
+
+# The shell is not running (or not answering).
+if [ "$method" = Lock ] && command -v loginctl >/dev/null 2>&1; then
+    # logind asks the session's screen locker; without meadow-shell there may be none.
+    exec loginctl lock-session
+fi
+echo "meadow-shellctl: meadow-shell is not running ($out)" >&2
+exit 1

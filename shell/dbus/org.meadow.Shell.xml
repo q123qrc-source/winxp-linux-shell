@@ -1,0 +1,26 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+ "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<!-- SPDX-License-Identifier: GPL-3.0-or-later
+     org.meadow.Shell: actions labwc keybinds (via meadow-shellctl) and other
+     session components ask meadow-shell to perform. Session bus, object
+     /org/meadow/Shell. -->
+<node>
+  <interface name="org.meadow.Shell">
+    <!-- Open the Start menu, or close it if it is open (Windows key). -->
+    <method name="ToggleStartMenu"/>
+    <!-- Show the Run dialog (Win+R). -->
+    <method name="ShowRunDialog"/>
+    <!-- Minimize every window, or restore them if the desktop is shown (Win+D). -->
+    <method name="ShowDesktop"/>
+    <!-- Lock the session (Win+L). -->
+    <method name="Lock"/>
+    <!-- Log Off dialog: Switch User / Log Off (Ctrl+Alt+Delete). -->
+    <method name="ShowLogOffDialog"/>
+    <!-- Turn Off Computer dialog. -->
+    <method name="ShowTurnOffDialog"/>
+    <!-- meadow-shell version; also a cheap liveness check. -->
+    <method name="Version">
+      <arg name="version" type="s" direction="out"/>
+    </method>
+  </interface>
+</node>

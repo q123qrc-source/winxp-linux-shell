@@ -67,6 +67,7 @@ option(MEADOW_BUILD_GALLERY "Build the control gallery and screenshot tools" ON)
 if(MEADOW_BUILD_GALLERY)
     add_subdirectory(tools/gallery)
     add_subdirectory(tools/greeter-preview)
+    add_subdirectory(tools/decor-test)
 endif()
 
 # --- Data-only components -------------------------------------------------
@@ -78,8 +79,11 @@ if(MEADOW_BUILD_THEMES)
     install(FILES theme/assets/meadow-logo.svg DESTINATION ${MEADOW_DATADIR}/assets)
     install(DIRECTORY theme/assets/ DESTINATION ${MEADOW_DATADIR}/assets FILES_MATCHING PATTERN "avatar-*.svg")
     add_subdirectory(toolkit-themes)
-    install(FILES decorations/labwc/themerc
-            DESTINATION ${CMAKE_INSTALL_DATADIR}/themes/Meadow-Luna/openbox-3)
+    # labwc decorations generated from theme.json (tools/gen-labwc-theme.py).
+    foreach(theme Meadow-Luna Meadow-Luna-Olive Meadow-Luna-Silver)
+        install(DIRECTORY decorations/labwc/${theme}/labwc
+                DESTINATION ${CMAKE_INSTALL_DATADIR}/themes/${theme})
+    endforeach()
     install(FILES system/fontconfig/50-meadow.conf
             DESTINATION ${CMAKE_INSTALL_DATADIR}/fontconfig/conf.avail)
 endif()
@@ -92,7 +96,7 @@ endif()
 if(MEADOW_BUILD_SHELL)
     install(FILES session/meadow.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/wayland-sessions)
     install(PROGRAMS session/meadow-session setup/meadow-setup DESTINATION ${CMAKE_INSTALL_BINDIR})
-    install(FILES session/labwc/rc.xml session/labwc/environment DESTINATION ${MEADOW_DATADIR}/labwc)
+    install(FILES session/labwc/rc.xml session/labwc/menu.xml session/labwc/environment DESTINATION ${MEADOW_DATADIR}/labwc)
     install(PROGRAMS session/labwc/autostart DESTINATION ${MEADOW_DATADIR}/labwc)
     install(FILES session/xdg/meadow-portals.conf DESTINATION ${CMAKE_INSTALL_DATADIR}/xdg-desktop-portal)
     # System integration files are installed as examples only. meadow-setup

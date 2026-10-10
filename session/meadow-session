@@ -24,6 +24,22 @@ export XCURSOR_THEME=meadow-cursors
 export XCURSOR_SIZE="${XCURSOR_SIZE:-24}"
 export MOZ_ENABLE_WAYLAND=1
 
+# Keyboard layout: labwc reads XKB_DEFAULT_*, not the system setting, so take
+# the X11 layout `localectl set-x11-keymap` stored, unless one is already set
+# (e.g. in ~/.config/meadow/labwc/environment).
+if [ -z "${XKB_DEFAULT_LAYOUT:-}" ] && [ -r /etc/X11/xorg.conf.d/00-keyboard.conf ]; then
+    xkb_option() {
+        sed -n "s/^[[:space:]]*Option[[:space:]]*\"$1\"[[:space:]]*\"\([^\"]*\)\".*/\1/p" \
+            /etc/X11/xorg.conf.d/00-keyboard.conf | head -n1
+    }
+    layout=$(xkb_option XkbLayout)
+    if [ -n "$layout" ]; then
+        export XKB_DEFAULT_LAYOUT="$layout"
+        variant=$(xkb_option XkbVariant); [ -n "$variant" ] && export XKB_DEFAULT_VARIANT="$variant"
+        options=$(xkb_option XkbOptions); [ -n "$options" ] && export XKB_DEFAULT_OPTIONS="$options"
+    fi
+fi
+
 config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/meadow/labwc"
 [ -d "$config_dir" ] || config_dir="$MEADOW_DATADIR/labwc"
 

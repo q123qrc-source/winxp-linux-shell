@@ -15,8 +15,12 @@ ctest --test-dir build --output-on-failure
 | `greeter_flows` | nineteen end-to-end Welcome screen scenarios, including fingerprint: auto-start for enrolled users, no auto-start when unknown/not enrolled/off, `always`, Enter on an empty field, a failed reading leaving password login available, and a password typed during a reading being queued rather than dropped (the mock drops overlapping logins like SDDM's daemon). Also through the mock SDDM (wrong/right password, password-less user, selection without login, Turn Off without action, secondary screen, RTL, high contrast, silver at 2×, scrolling list). Fails on QML warnings and if the typed password appears in any output |
 | `greeter_sddm_smoke` | loads `greeter/` in the real `sddm-greeter-qt6 --test-mode` (offscreen) and fails on QML errors; skipped when SDDM is not installed |
 | `meadow_setup` | 20 tests of `meadow-setup` on sandbox PAM trees (Fedora, Debian with and without the fprintd profile, Arch): PAM parsing, reachability through include/substack/@include (with cycles), the marked sddm block before the password stack, the generated lock service, idempotent enable, byte-exact disable, admin edits surviving disable, dry runs changing nothing, foreign files backed up and restored, refusal without root, and the shipped `system/` files matching the tool's output |
+| `test_shellipc` | `org.meadow.Shell` on a private session bus (`dbus-run-session`): every `meadow-shellctl` command reaches the service, `version` answers, a second shell cannot take the name, and the "not running" message and exit code |
+| `labwc_theme_sync` | the committed labwc themes and rc.xml equal what `tools/gen-labwc-theme.py` makes from theme.json |
+| `labwc_config` | rc.xml has every required keybind, uses only real labwc 0.9 actions and known `Execute` commands/`meadow-shellctl` subcommands, no duplicate keys; menu.xml actions; every generated themerc key is one labwc knows (labwc silently ignores unknown ones); 30 px title bar; all 16 button SVGs present |
+| `labwc_config_smoke` | real headless labwc loads the session config with each theme without errors (skipped without labwc) |
 | `qml_literals` | no color or numeric literals in product QML (`tools/check-qml-literals.py`); opt out per line with `// theme-ok: reason` |
-| `screenshot_gallery` (label `screenshot`) | 16 goldens: the control gallery (blue at 1×/1.25×/1.5×/2×, olive, silver) and the Welcome screen (1024×768, 1920×1080 selected, 2× selected, wrong password, Caps Lock, Turn Off dialog, high contrast, RTL, silver, secondary screen) |
+| `screenshot_gallery` (label `screenshot`) | 25 goldens: the labwc session (`tools/session-screenshot.sh`: blue, olive, silver and a maximized window, headless labwc + test windows), the button sheets of each scheme (all 16 states, including hover, which a headless session cannot show), plus the earlier 18: the control gallery (blue at 1×/1.25×/1.5×/2×, olive, silver) and the Welcome screen (1024×768, 1920×1080 selected, 2× selected, wrong password, Caps Lock, Turn Off dialog, high contrast, RTL, silver, secondary screen) |
 | `theme_schema` | every scheme has exactly the tokens/types in `theme/schema.json`; valid colors and gradients |
 | `asset_policy` | no Microsoft-style assets or font/audio binaries in the tree; nothing in `assets-override/` |
 | `shell_version`, `shell_preview_smoke` | the binary starts, and the full QML module loads offscreen with no QML errors |
@@ -53,6 +57,24 @@ fingers; an untouched reader timing out after 15 s. Then it runs
 byte-identical to the snapshot. It creates users and changes PAM, so it refuses
 to run without the environment variable. Phase 4 passed it in a Fedora 44
 container. Real hardware and a full SDDM login remain VM checks (below).
+
+### Session
+
+```sh
+tools/session-screenshot.sh --grab out.png [--scheme luna-olive] [--maximized] [--xterm]
+```
+
+This runs labwc headless with `session/labwc` and the generated theme, opens
+test windows (and, with `--xterm`, an XWayland window), and captures them with
+`grim`. To try the session nested inside your own Wayland desktop:
+
+```sh
+tools/run-session.sh [--scheme luna-olive] [--no-shell]
+```
+
+This uses the source tree's config, themes and built shell, with nothing
+installed. After installing the RPMs, `WLR_BACKENDS=wayland meadow-session` is
+enough.
 
 ### Real SDDM
 

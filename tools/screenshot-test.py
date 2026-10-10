@@ -24,8 +24,11 @@ SKIP = 77
 ROOT = Path(__file__).resolve().parent.parent
 GOLDEN = ROOT / "tests" / "golden"
 
-GALLERY = ("tools/gallery/meadow-gallery",)
-GREETER = ("tools/greeter-preview/meadow-greeter-preview",)
+# (path, relative to) — built programs live in the build dir, scripts in the source tree.
+GALLERY = ("tools/gallery/meadow-gallery", "build")
+GREETER = ("tools/greeter-preview/meadow-greeter-preview", "build")
+SESSION = ("tools/session-screenshot.sh", "source")
+BUTTONS = ("tools/gen-labwc-theme.py", "source")
 
 # (name, tool, arguments)
 CASES = [
@@ -46,6 +49,13 @@ CASES = [
     ("greeter-silver", GREETER, ["--config", "scheme=luna-silver", "--select", "0"]),
     ("greeter-secondary", GREETER, ["--secondary", "--size", "800x600"]),
     ("greeter-fingerprint-reading", GREETER, ["--fingerprint", "enrolled:alice", "--fp-result", "pending", "--select", "0"]),
+    ("session-luna-blue", SESSION, ["--scheme", "luna-blue"]),
+    ("session-luna-olive", SESSION, ["--scheme", "luna-olive"]),
+    ("session-luna-silver", SESSION, ["--scheme", "luna-silver"]),
+    ("session-maximized", SESSION, ["--maximized"]),
+    ("labwc-buttons-luna-blue", BUTTONS, ["--scheme", "luna-blue"]),
+    ("labwc-buttons-luna-olive", BUTTONS, ["--scheme", "luna-olive"]),
+    ("labwc-buttons-luna-silver", BUTTONS, ["--scheme", "luna-silver"]),
     ("greeter-fingerprint-failed", GREETER, ["--fingerprint", "enrolled:alice", "--fp-result", "fail", "--select", "0", "--delay", "1500"]),
 ]
 
@@ -107,8 +117,12 @@ def main():
         if args.only and args.only not in name:
             continue
         actual = out_dir / f"{name}.png"
-        proc = subprocess.run([str(build / tool[0]), *tool_args, "--grab", str(actual)],
-                              env=env, capture_output=True, text=True, timeout=120)
+        exe = (build if tool[1] == "build" else ROOT) / tool[0]
+        proc = subprocess.run([str(exe), *tool_args, "--grab", str(actual)],
+                              env=dict(env, MEADOW_BUILD_DIR=str(build)), capture_output=True, text=True, timeout=120)
+        if proc.returncode == SKIP:
+            print(f"SKIP {name}: {proc.stdout.strip()}")
+            continue
         problems = [l for l in proc.stderr.splitlines() if any(p in l for p in QML_PROBLEMS)]
         if proc.returncode != 0 or problems or not actual.exists():
             failures.append(f"{name}: render failed (exit {proc.returncode})\n  " + "\n  ".join(problems or proc.stderr.splitlines()[-5:]))

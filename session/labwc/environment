@@ -1,4 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# labwc environment file (KEY=value). Toolkit variables are set by
-# meadow-session; only keyboard defaults live here.
-XKB_DEFAULT_LAYOUT=us
+# Extra environment for the Meadow labwc session (KEY=value lines).
+# meadow-session already sets the toolkit theme variables and takes the
+# keyboard layout from `localectl set-x11-keymap`. To force one here:
+#XKB_DEFAULT_LAYOUT=us,ar
+#XKB_DEFAULT_OPTIONS=grp:alt_shift_toggle

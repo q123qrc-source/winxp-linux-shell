@@ -19,6 +19,18 @@ target_compile_definitions(test_controls PRIVATE MEADOW_BUILD_QML_DIR="${CMAKE_B
 if(MEADOW_BUILD_SHELL)
     meadow_add_test(test_appmenu meadow-shell-core)
     meadow_add_test(test_settings meadow-shell-core)
+
+    # org.meadow.Shell + meadow-shellctl on a private session bus.
+    find_program(DBUS_RUN_SESSION dbus-run-session)
+    qt_add_executable(test_shellipc test_shellipc.cpp)
+    target_link_libraries(test_shellipc PRIVATE Qt6::Test Qt6::DBus meadow-shell-core)
+    target_compile_definitions(test_shellipc PRIVATE MEADOW_SHELLCTL="${PROJECT_SOURCE_DIR}/shell/meadow-shellctl")
+    if(DBUS_RUN_SESSION)
+        add_test(NAME test_shellipc COMMAND ${DBUS_RUN_SESSION} -- $<TARGET_FILE:test_shellipc>)
+    else()
+        add_test(NAME test_shellipc COMMAND test_shellipc)
+    endif()
+    set_tests_properties(test_shellipc PROPERTIES ENVIRONMENT "${test_env}")
 endif()
 
 add_test(NAME theme_schema
@@ -43,6 +55,14 @@ set_tests_properties(greeter_sddm_smoke PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 6
 
 # meadow-setup against sandbox PAM trees (never the real /etc).
 add_test(NAME meadow_setup COMMAND Python3::Interpreter ${CMAKE_CURRENT_SOURCE_DIR}/test_meadow_setup.py)
+
+# labwc session: generated theme/rc.xml up to date, config statically valid,
+# and accepted by a real (headless) labwc.
+add_test(NAME labwc_theme_sync
+         COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/tools/gen-labwc-theme.py --check --root ${PROJECT_SOURCE_DIR})
+add_test(NAME labwc_config COMMAND Python3::Interpreter ${CMAKE_CURRENT_SOURCE_DIR}/test_labwc_config.py)
+add_test(NAME labwc_config_smoke COMMAND ${PROJECT_SOURCE_DIR}/tools/labwc-config-smoke.sh)
+set_tests_properties(labwc_config_smoke PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 60)
 
 add_test(NAME qml_literals
          COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/tools/check-qml-literals.py ${PROJECT_SOURCE_DIR})

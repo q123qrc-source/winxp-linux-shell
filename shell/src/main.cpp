@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "ThemeLoader.h"
+#include "ipc/ShellIpc.h"
 
 #include <QCommandLineParser>
 #include <QGuiApplication>
@@ -39,6 +40,11 @@ int main(int argc, char *argv[])
 
     if (!parser.isSet(previewOpt))
         qCWarning(lcShell) << "layer-shell surfaces arrive in phase 6; running the preview window";
+
+    // Keybind actions arrive over D-Bus (meadow-shellctl). The preview window
+    // may run next to a real shell, so failing to claim the name is not fatal.
+    ShellIpc ipc;
+    ipc.registerOnSessionBus();
 
     QQmlApplicationEngine engine;
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed, &app,

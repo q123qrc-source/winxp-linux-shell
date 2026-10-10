@@ -11,7 +11,7 @@ classic early-2000s "Luna" desktop with entirely original artwork. It includes:
 - **meadow-themes**: the Luna Blue, Olive Green and Silver color schemes, plus
   matching GTK 3/4, Kvantum, labwc, icon, cursor and sound themes.
 
-Fedora is the primary target. Status: **phase 4 of 12 (fingerprint login)**. See
+Fedora is the primary target. Status: **phase 5 of 12 (session and window decorations)**. See
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design and the roadmap.
 
 ## Building
@@ -39,6 +39,14 @@ MEADOW_THEME_DIR=$PWD/theme MEADOW_ASSET_DIR=$PWD/theme/assets QML_IMPORT_PATH=$
 (The mock accepts the password `meadow`.) With SDDM installed, run it in the real
 greeter with `sddm-greeter-qt6 --test-mode --theme greeter` and the same
 variables.
+
+Try the session nested in your current Wayland desktop, straight from the
+build tree, or headless with a screenshot:
+
+```sh
+tools/run-session.sh                      # installed: WLR_BACKENDS=wayland meadow-session
+tools/session-screenshot.sh --grab session.png --xterm
+```
 
 Browse every control in every state: [tools/gallery](tools/gallery/README.md).
 

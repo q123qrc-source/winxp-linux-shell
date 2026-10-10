@@ -92,7 +92,12 @@
     "controls.menu.hoverBackground": "color",
     "controls.menu.hoverText": "color",
     "controls.menu.itemHeight": "number",
+    "controls.menu.paddingX": "number",
+    "controls.menu.paddingY": "number",
     "controls.menu.separatorColor": "color",
+    "controls.menu.separatorPadding": "number",
+    "controls.menu.widthMax": "number",
+    "controls.menu.widthMin": "number",
     "controls.progressBar": "object",
     "controls.progressBar.blockGradient": "gradient",
     "controls.progressBar.blockSpacing": "number",
@@ -493,6 +498,13 @@
     "window.titlebar.textColor": "color",
     "window.titlebar.textShadowColor": "color",
     "window.titlebar.textShadowOffset": "number",
-    "window.titlebar.textSpacing": "number"
+    "window.titlebar.textSpacing": "number",
+    "windowSwitcher": "object",
+    "windowSwitcher.borderWidth": "number",
+    "windowSwitcher.iconSize": "number",
+    "windowSwitcher.itemPaddingX": "number",
+    "windowSwitcher.itemPaddingY": "number",
+    "windowSwitcher.padding": "number",
+    "windowSwitcher.width": "number"
   }
 }

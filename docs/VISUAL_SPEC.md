@@ -113,9 +113,22 @@ Animation: a short slide (`animation.startMenuSlide` px) plus a fade over
 | Close | red-orange square with a white X | `buttons.close.{normal,hover,pressed}` |
 | Inactive window | desaturated lighter blue title, border and buttons | `titlebar.gradient.inactive`, `border.inactive*`, `buttons.inactive` |
 
-labwc's `themerc` only supports two-color gradients, so the full stop list is
-used by our own SVG button art. The two-stop title approximation is generated
-from these tokens (phase 5).
+**How labwc renders this** (`tools/gen-labwc-theme.py` → `decorations/labwc/<theme>/labwc/`):
+
+| Token | labwc | Limitation |
+|---|---|---|
+| `titlebar.gradient.*` | `Gradient SplitVertical`: top edge = the stop at 0, middle = the gradient at 0.5, bottom = the stop at 1 | Only four colors, so intermediate stops are approximated |
+| `titlebar.height`, `buttons.size` | `window.button.height` = height − 2×padding, `window.titlebar.padding.height` = (height − size) / 2 | Exactly 30 px (button cell 21×22, art centered) |
+| `titlebar.radiusTop` | rc.xml `<cornerRadius>` | Square when maximized (labwc) |
+| `border.width`, `border.activeColor`/`inactiveColor` | `border.width`, `window.*.border.color` | One color: no highlight/shadow bevel |
+| `buttons.*` gradients, `glyphColor`, `closeGlyphColor`, `glyphInset` | 16 SVGs per theme: iconify, max, max_toggled (restore) and close; active/inactive; normal/hover | **No pressed image** in labwc; inactive windows show the hover set on hover |
+| `titlebar.textColor` / `inactiveTextColor`, `fonts.title` | label colors; rc.xml fonts (family fallback list, size in points = px × 0.75, bold) | No title text shadow |
+| `controls.menu.*` | `menu.*` (window menu, Alt+Space) | — |
+| `windowSwitcher.*`, `colors.selection` | `osd.*` classic window switcher | Interim Alt+Tab until the shell's switcher (phase 8) |
+
+The caption glyphs (minimize bar, maximize box with a thick top, two
+overlapping boxes for restore, a bold X) share one geometry. It is used by
+`LunaGlyph` in the shell's own window frames and by the generated SVGs.
 
 ## 4. Welcome screen (greeter, `welcome.*`)
 
