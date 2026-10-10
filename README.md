@@ -11,7 +11,7 @@ classic early-2000s "Luna" desktop with entirely original artwork. It includes:
 - **meadow-themes**: the Luna Blue, Olive Green and Silver color schemes, plus
   matching GTK 3/4, Kvantum, labwc, icon, cursor and sound themes.
 
-Fedora is the primary target. Status: **phase 3 of 12 (SDDM Welcome screen)**. See
+Fedora is the primary target. Status: **phase 4 of 12 (fingerprint login)**. See
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design and the roadmap.
 
 ## Building

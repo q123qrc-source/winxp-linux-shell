@@ -86,8 +86,7 @@ endif()
 
 if(MEADOW_BUILD_GREETER)
     install(DIRECTORY greeter/
-            DESTINATION ${MEADOW_SDDM_THEME_DIR}
-            PATTERN "helper" EXCLUDE)
+            DESTINATION ${MEADOW_SDDM_THEME_DIR})
 endif()
 
 if(MEADOW_BUILD_SHELL)

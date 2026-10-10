@@ -1,74 +1,573 @@
-#!/bin/bash
+#!/usr/bin/python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-# meadow-setup — opt-in system integration for Meadow (greeter, fingerprint, lock PAM).
-#
-# Packages never change login behavior; this tool is the only thing that does,
-# and only when a user asks. Every change is backed up (*.meadow-bak), marked,
-# and reversible with the matching disable-* command.
-#
-# Phase 1 skeleton: prints the plan for each command. Phase 11 implements them.
-set -euo pipefail
+"""meadow-setup: opt-in system integration for Meadow.
 
-usage() {
-    cat <<'USAGE'
-Usage: meadow-setup [--dry-run] COMMAND
+Packages never change how the system logs in; this tool is the only thing
+that does, and only when an administrator asks. Every change is marked,
+backed up (*.meadow-bak) and recorded, and the matching disable-* command
+reverts exactly what was done.
 
 Commands:
-  enable-greeter       Install /etc/sddm.conf.d/10-meadow.conf, pick the SDDM
-                       display server, optionally make SDDM the active DM.
-  disable-greeter      Remove the drop-in and restore the previous DM.
-  enable-fingerprint   authselect with-fingerprint, patch /etc/pam.d/sddm only
-                       if needed, install /etc/pam.d/meadow-lock, verify.
-  disable-fingerprint  Revert every fingerprint change from backups/markers.
+  enable-fingerprint   Fingerprint login for the Welcome screen and lock screen.
+  disable-fingerprint  Revert every change enable-fingerprint made.
   status               Show what Meadow has changed on this system.
+  enable-greeter       Make SDDM + the Meadow theme the login screen (phase 11).
+  disable-greeter      Revert enable-greeter (phase 11).
 
-Options:
-  --dry-run            Print every action without changing anything.
-  -h, --help           Show this help.
+Recovery if login breaks: docs/PAM_FINGERPRINT.md, section "Recovery".
+"""
+import argparse
+import difflib
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
 
-Recovery and details: /usr/share/doc/meadow*/PAM_FINGERPRINT.md
-USAGE
+VERSION = "0.1.0"
+
+FPRINT_BEGIN = "# >>> meadow fingerprint >>>"
+FPRINT_END = "# <<< meadow fingerprint <<<"
+FPRINT_LINE = "auth  [success=done default=ignore]  pam_fprintd.so max-tries=3 timeout=15"
+FPRINT_BLOCK = [
+    FPRINT_BEGIN,
+    "# Added by `meadow-setup enable-fingerprint`; removed by `meadow-setup disable-fingerprint`.",
+    "# Fingerprint first; if it fails or times out, the password stack below runs.",
+    FPRINT_LINE,
+    FPRINT_END,
+]
+
+LOCK_MARKER = "# meadow-lock: managed by meadow-setup"
+POLKIT_MARKER = "// meadow-fingerprint-query: managed by meadow-setup"
+POLKIT_RULE = """\
+// Installed by `meadow-setup enable-fingerprint --allow-greeter-query`.
+// meadow-fingerprint-query: managed by meadow-setup
+//
+// Lets the local, active display-manager greeter (user "sddm") ask fprintd
+// which fingers a user has enrolled, so the Welcome screen offers the reader
+// only to users who can use it. fprintd needs the setusername permission for
+// that (and verify, which active sessions already have). It does NOT allow
+// enrolling or deleting fingerprints. Remove with
+// `meadow-setup disable-fingerprint`.
+polkit.addRule(function(action, subject) {
+    if ((action.id == "net.reactivated.fprint.device.setusername" ||
+         action.id == "net.reactivated.fprint.device.verify") &&
+        subject.user == "sddm" && subject.local && subject.active) {
+        return polkit.Result.YES;
+    }
+});
+"""
+
+# Modules from the greeter's PAM service that make no sense for unlocking an
+# already running session.
+LOCK_SKIP_MODULES = {
+    "pam_selinux_permit.so", "pam_gnome_keyring.so", "pam_kwallet.so", "pam_kwallet5.so",
 }
+# Debian-style includes worth carrying over to the lock service.
+LOCK_DEBIAN_INCLUDES = {"common-auth", "common-account"}
 
-dry_run=0
-cmd=""
-while [ $# -gt 0 ]; do
-    case "$1" in
-        --dry-run) dry_run=1 ;;
-        -h|--help) usage; exit 0 ;;
-        -*) echo "meadow-setup: unknown option $1" >&2; usage >&2; exit 2 ;;
-        *) [ -z "$cmd" ] && cmd="$1" || { echo "meadow-setup: unexpected argument $1" >&2; exit 2; } ;;
-    esac
-    shift
-done
+STATE_PATH = "var/lib/meadow/setup-state.json"
+SDDM_PAM = "etc/pam.d/sddm"
+LOCK_PAM = "etc/pam.d/meadow-lock"
+POLKIT_PATH = "etc/polkit-1/rules.d/50-meadow.rules"
 
-plan() {
-    case "$1" in
-        enable-greeter)
-            echo "would: back up and write /etc/sddm.conf.d/10-meadow.conf from /usr/share/meadow/sddm.conf.d/10-meadow.conf.example"
-            echo "would: detect sddm-wayland-generic / sddm-wayland-plasma / sddm-x11 and set [General] DisplayServer"
-            echo "would: after confirmation, record the current display-manager.service and run systemctl enable --force sddm.service" ;;
-        disable-greeter)
-            echo "would: remove /etc/sddm.conf.d/10-meadow.conf (restore *.meadow-bak if present)"
-            echo "would: re-enable the recorded previous display-manager.service" ;;
-        enable-fingerprint)
-            echo "would: show 'authselect current' and run 'authselect enable-feature with-fingerprint'"
-            echo "would: insert the marked pam_fprintd line into /etc/pam.d/sddm only if no substack reaches pam_fprintd"
-            echo "would: install /etc/pam.d/meadow-lock using the substack /etc/pam.d/sddm uses"
-            echo "would: verify with pamtester and print TTY recovery steps" ;;
-        disable-fingerprint)
-            echo "would: remove the marked block from /etc/pam.d/sddm (or restore its *.meadow-bak)"
-            echo "would: remove /etc/pam.d/meadow-lock and run 'authselect disable-feature with-fingerprint' if Meadow enabled it" ;;
-        status)
-            echo "would: list Meadow drop-ins, PAM markers and backups" ;;
-        *)
-            echo "meadow-setup: unknown command '$1'" >&2; usage >&2; exit 2 ;;
-    esac
-}
+PAM_LINE = re.compile(r"^\s*(-?)(auth|account|password|session)\s+(\[[^\]]*\]|\S+)\s+(\S+)(.*)$")
+PAM_INCLUDE = re.compile(r"^\s*@include\s+(\S+)")
 
-[ -n "$cmd" ] || { usage >&2; exit 2; }
-plan "$cmd"
-if [ "$dry_run" -eq 0 ]; then
-    echo "meadow-setup: '$cmd' is not implemented yet (phase 11); nothing was changed." >&2
-    exit 3
-fi
+
+class SetupError(Exception):
+    pass
+
+
+# --- PAM parsing ------------------------------------------------------------
+
+def parse_pam_line(line):
+    """Return (type, control, module, args) for a rule line, ("@include", target)
+    for a Debian include, or None for comments and blank lines."""
+    stripped = line.strip()
+    if not stripped or stripped.startswith("#"):
+        return None
+    m = PAM_INCLUDE.match(line)
+    if m:
+        return ("@include", m.group(1))
+    m = PAM_LINE.match(line)
+    if not m:
+        return None
+    rest = m.group(5).split("#", 1)[0].strip()
+    return (m.group(2), m.group(3), m.group(4), rest)
+
+
+def read_lines(path):
+    return path.read_text(encoding="utf-8").splitlines() if path.exists() else []
+
+
+def auth_reaches(pam_dir, service, module="pam_fprintd.so", _seen=None):
+    """True if the auth stack of `service` reaches `module`, following include,
+    substack and @include into other services in pam_dir."""
+    seen = _seen if _seen is not None else set()
+    if service in seen:
+        return False
+    seen.add(service)
+    for line in read_lines(pam_dir / service):
+        parsed = parse_pam_line(line)
+        if not parsed:
+            continue
+        if parsed[0] == "@include":
+            if auth_reaches(pam_dir, parsed[1], module, seen):
+                return True
+            continue
+        kind, control, target, _ = parsed
+        if kind != "auth":
+            continue
+        if control in ("include", "substack"):
+            if auth_reaches(pam_dir, target, module, seen):
+                return True
+        elif os.path.basename(target) == module:
+            return True
+    return False
+
+
+def strip_block(lines, begin=FPRINT_BEGIN, end=FPRINT_END):
+    """Remove a marked block; returns (lines, removed)."""
+    out, inside, removed = [], False, False
+    for line in lines:
+        if line.strip() == begin:
+            inside, removed = True, True
+            continue
+        if inside:
+            if line.strip() == end:
+                inside = False
+            continue
+        out.append(line)
+    if inside:
+        raise SetupError(f"unterminated '{begin}' block; fix the file by hand (see docs/PAM_FINGERPRINT.md)")
+    return out, removed
+
+
+def insertion_index(lines):
+    """Index of the line the fingerprint block goes before: the first auth
+    include/substack, Debian @include common-auth, or pam_unix auth line."""
+    for i, line in enumerate(lines):
+        parsed = parse_pam_line(line)
+        if not parsed:
+            continue
+        if parsed[0] == "@include" and parsed[1] == "common-auth":
+            return i
+        if parsed[0] == "auth":
+            _, control, target, _ = parsed
+            if control in ("include", "substack") or os.path.basename(target) == "pam_unix.so":
+                return i
+    return None
+
+
+def with_fingerprint_block(lines):
+    idx = insertion_index(lines)
+    if idx is None:
+        raise SetupError("could not find the password auth line (an auth include/substack or pam_unix.so) to put the fingerprint line before")
+    return lines[:idx] + FPRINT_BLOCK + lines[idx:]
+
+
+def generate_lock_service(pam_dir, sddm_lines):
+    """meadow-lock: the greeter's auth and account stack without greeter-only
+    modules, with the fingerprint line first unless the stack already has it."""
+    base, _ = strip_block(sddm_lines)
+    body = []
+    for line in base:
+        parsed = parse_pam_line(line)
+        if not parsed:
+            continue
+        if parsed[0] == "@include":
+            if parsed[1] in LOCK_DEBIAN_INCLUDES:
+                body.append(line.strip())
+            continue
+        kind, control, target, _ = parsed
+        if kind not in ("auth", "account") or os.path.basename(target) in LOCK_SKIP_MODULES:
+            continue
+        body.append(line.strip())
+
+    # Would the copied auth lines reach pam_fprintd on their own?
+    with tempfile.TemporaryDirectory() as tmp:
+        probe = Path(tmp)
+        for f in pam_dir.iterdir() if pam_dir.exists() else []:
+            if f.is_file():
+                shutil.copyfile(f, probe / f.name)
+        (probe / "meadow-lock-probe").write_text("\n".join(body) + "\n", encoding="utf-8")
+        reachable = auth_reaches(probe, "meadow-lock-probe")
+
+    header = [
+        "#%PAM-1.0",
+        LOCK_MARKER,
+        "# PAM service for the Meadow lock screen, generated from /etc/pam.d/sddm",
+        "# by `meadow-setup enable-fingerprint`. Removed by disable-fingerprint.",
+    ]
+    return header + ([] if reachable else [FPRINT_LINE]) + body
+
+
+# --- System facts -------------------------------------------------------------
+
+def os_release(root):
+    info = {}
+    for line in read_lines(root / "etc/os-release"):
+        if "=" in line:
+            k, v = line.split("=", 1)
+            info[k.strip()] = v.strip().strip('"')
+    return info
+
+
+def distro_family(root):
+    info = os_release(root)
+    ids = {info.get("ID", "")} | set(info.get("ID_LIKE", "").split())
+    if ids & {"fedora", "rhel", "centos"}:
+        return "fedora"
+    if ids & {"debian", "ubuntu"}:
+        return "debian"
+    if ids & {"arch"}:
+        return "arch"
+    return "other"
+
+
+# --- Change plan & execution --------------------------------------------------
+
+class Plan:
+    """Collects file writes and commands so --dry-run can show them and a real
+    run can apply them in order."""
+
+    def __init__(self, root, dry_run, out):
+        self.root = root
+        self.dry_run = dry_run
+        self.out = out
+        self.changed = []
+
+    def say(self, msg=""):
+        print(msg, file=self.out)
+
+    def write(self, rel, lines, mode=0o644):
+        path = self.root / rel
+        new = "\n".join(lines) + "\n"
+        old = path.read_text(encoding="utf-8") if path.exists() else None
+        if old == new:
+            return False
+        diff = difflib.unified_diff((old or "").splitlines(True), new.splitlines(True),
+                                    f"a/{rel}" if old is not None else "/dev/null", f"b/{rel}")
+        self.say("".join(diff).rstrip("\n"))
+        if not self.dry_run:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.")
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                f.write(new)
+            os.chmod(tmp, path.stat().st_mode & 0o7777 if path.exists() else mode)
+            os.replace(tmp, path)
+            self.changed.append(path)
+        return True
+
+    def remove(self, rel):
+        path = self.root / rel
+        if not path.exists():
+            return False
+        self.say(f"remove {rel}")
+        if not self.dry_run:
+            path.unlink()
+            self.changed.append(path.parent)
+        return True
+
+    def backup(self, rel):
+        """Copy rel to rel.meadow-bak unless a backup already exists (the
+        oldest backup is the pristine one). Returns the backup's rel path."""
+        src = self.root / rel
+        bak = Path(str(src) + ".meadow-bak")
+        bak_rel = rel + ".meadow-bak"
+        if bak.exists():
+            self.say(f"keep existing backup {bak_rel}")
+            return bak_rel
+        self.say(f"back up {rel} -> {bak_rel}")
+        if not self.dry_run:
+            shutil.copy2(src, bak)
+        return bak_rel
+
+    def run(self, cmd, check=True):
+        self.say("run: " + " ".join(cmd))
+        if self.dry_run:
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+        return subprocess.run(cmd, check=check, text=True, capture_output=True)
+
+
+def load_state(root):
+    path = root / STATE_PATH
+    if not path.exists():
+        return {"version": 1}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def save_state(plan, state):
+    if plan.dry_run:
+        return
+    path = plan.root / STATE_PATH
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def live_system(root):
+    return root.resolve() == Path("/")
+
+
+def authselect_features():
+    res = subprocess.run(["authselect", "current", "--raw"], text=True, capture_output=True)
+    if res.returncode != 0:
+        return None, res.stderr.strip()
+    parts = res.stdout.split()
+    return parts[1:], parts[0] if parts else ""
+
+
+def relabel(plan):
+    if plan.dry_run or not live_system(plan.root) or not plan.changed or not shutil.which("restorecon"):
+        return
+    subprocess.run(["restorecon", "-R", *[str(p) for p in plan.changed]], check=False)
+
+
+RECOVERY = """\
+If you cannot log in afterwards:
+  1. Press Ctrl+Alt+F3 and log in on the text console with your password
+     (console login uses /etc/pam.d/login, which Meadow never changes).
+  2. Run:  sudo meadow-setup disable-fingerprint
+  Manual steps and more: /usr/share/doc/meadow-shell/PAM_FINGERPRINT.md ("Recovery")."""
+
+
+# --- Commands -------------------------------------------------------------------
+
+def enable_fingerprint(args, plan):
+    state = load_state(plan.root)
+    try:
+        return _enable_fingerprint(args, plan, state)
+    finally:
+        # Saved even when a later step fails, so disable-fingerprint knows
+        # everything that was already done (e.g. the authselect feature).
+        if state.get("fingerprint"):
+            save_state(plan, state)
+
+
+def _enable_fingerprint(args, plan, state):
+    root = plan.root
+    family = distro_family(root)
+    pam_dir = root / "etc/pam.d"
+    fp = state.setdefault("fingerprint", {})
+    live = live_system(root)
+
+    if not (root / SDDM_PAM).exists():
+        state.pop("fingerprint", None)
+        raise SetupError(f"{SDDM_PAM} not found; install SDDM first (dnf install sddm)")
+
+    plan.say(f"Meadow fingerprint setup ({family}{'' if live else ', sandbox root ' + str(root)})")
+
+    # 1. Distribution-managed PAM profiles: let their own tools do it.
+    if family == "fedora" and live and shutil.which("authselect"):
+        features, profile = authselect_features()
+        if features is None:
+            raise SetupError(f"authselect is not managing PAM ({profile}); configure pam_fprintd by hand, see docs/PAM_FINGERPRINT.md")
+        plan.say(f"authselect profile: {profile}; features: {', '.join(features) or 'none'}")
+        if "with-fingerprint" not in features:
+            plan.run(["authselect", "enable-feature", "with-fingerprint"])
+            fp["authselect_feature_added"] = True
+        else:
+            plan.say("authselect: with-fingerprint already enabled")
+    elif family == "debian" and live and shutil.which("pam-auth-update"):
+        plan.run(["pam-auth-update", "--enable", "fprintd"])
+        fp["pam_auth_update_enabled"] = True
+    elif not live:
+        plan.say("sandbox root: skipping authselect / pam-auth-update")
+
+    # 2. The greeter's PAM service, only if fingerprint is not reachable yet.
+    sddm_lines = read_lines(root / SDDM_PAM)
+    if auth_reaches(pam_dir, "sddm"):
+        plan.say(f"{SDDM_PAM}: pam_fprintd already reachable; not changed")
+    else:
+        new_lines = with_fingerprint_block(sddm_lines)
+        if not plan.dry_run:
+            fp["sddm_backup"] = plan.backup(SDDM_PAM)
+        else:
+            plan.backup(SDDM_PAM)
+        plan.write(SDDM_PAM, new_lines)
+        fp["sddm_patched"] = True
+        if not plan.dry_run and not auth_reaches(pam_dir, "sddm"):
+            raise SetupError(f"{SDDM_PAM} was patched but pam_fprintd is still not reachable; run disable-fingerprint")
+        sddm_lines = new_lines
+
+    # 3. Lock screen service.
+    lock_path = root / LOCK_PAM
+    existing = read_lines(lock_path)
+    if existing and LOCK_MARKER not in existing:
+        fp["lock_backup"] = plan.backup(LOCK_PAM)
+    plan.write(LOCK_PAM, generate_lock_service(pam_dir, sddm_lines))
+    fp["lock_managed"] = True
+
+    # 4. Optional: let the greeter see who has enrolled fingers.
+    if args.allow_greeter_query:
+        plan.write(POLKIT_PATH, POLKIT_RULE.rstrip("\n").split("\n"))
+        fp["polkit_rule"] = True
+
+    relabel(plan)
+
+    plan.say()
+    if plan.dry_run:
+        plan.say("Dry run: nothing was changed.")
+        return 0
+    plan.say("Fingerprint login is set up. Enroll a finger as the user:  fprintd-enroll")
+    if live and shutil.which("pamtester") and not args.yes and sys.stdin.isatty():
+        user = input("Test the lock-screen PAM service now? Enter a user name (empty to skip): ").strip()
+        if user:
+            res = subprocess.run(["pamtester", "meadow-lock", user, "authenticate"])
+            plan.say("pamtester: " + ("success" if res.returncode == 0 else "FAILED - run disable-fingerprint if login does not work"))
+    else:
+        plan.say("Check it with:  pamtester meadow-lock $USER authenticate")
+    plan.say(RECOVERY)
+    return 0
+
+
+def disable_fingerprint(args, plan):
+    root = plan.root
+    state = load_state(root)
+    fp = state.get("fingerprint", {})
+    live = live_system(root)
+
+    # Polkit rule: only ours (marker).
+    rule = root / POLKIT_PATH
+    if rule.exists() and POLKIT_MARKER in rule.read_text(encoding="utf-8"):
+        plan.remove(POLKIT_PATH)
+
+    # Lock service: restore a foreign file we backed up, else remove ours.
+    lock = root / LOCK_PAM
+    if lock.exists() and LOCK_MARKER in read_lines(lock):
+        bak = root / (LOCK_PAM + ".meadow-bak")
+        if bak.exists():
+            plan.say(f"restore {LOCK_PAM} from backup")
+            plan.write(LOCK_PAM, read_lines(bak))
+            plan.remove(LOCK_PAM + ".meadow-bak")
+        else:
+            plan.remove(LOCK_PAM)
+
+    # Greeter service: remove the marked block (keeps any later admin edits).
+    sddm = root / SDDM_PAM
+    if sddm.exists():
+        lines, removed = strip_block(read_lines(sddm))
+        if removed:
+            plan.write(SDDM_PAM, lines)
+            bak = root / (SDDM_PAM + ".meadow-bak")
+            if bak.exists():
+                if read_lines(bak) == lines:
+                    plan.remove(SDDM_PAM + ".meadow-bak")
+                else:
+                    plan.say(f"note: {SDDM_PAM} differs from {SDDM_PAM}.meadow-bak (edited since); backup kept")
+
+    # Distribution tools: only undo what Meadow did.
+    if fp.get("authselect_feature_added") and live and shutil.which("authselect"):
+        plan.run(["authselect", "disable-feature", "with-fingerprint"])
+    if fp.get("pam_auth_update_enabled") and live and shutil.which("pam-auth-update"):
+        plan.run(["pam-auth-update", "--disable", "fprintd"])
+
+    relabel(plan)
+    state.pop("fingerprint", None)
+    if not plan.dry_run:
+        if len(state) <= 1:
+            plan.remove(STATE_PATH)
+            state_dir = plan.root / Path(STATE_PATH).parent
+            if state_dir.is_dir() and not any(state_dir.iterdir()):
+                state_dir.rmdir()
+        else:
+            save_state(plan, state)
+    plan.say("Dry run: nothing was changed." if plan.dry_run else "Fingerprint login changes reverted.")
+    return 0
+
+
+def status(args, plan):
+    root = plan.root
+    pam_dir = root / "etc/pam.d"
+    state = load_state(root)
+    plan.say(f"meadow-setup {VERSION}; distribution family: {distro_family(root)}")
+    if (root / SDDM_PAM).exists():
+        lines = read_lines(root / SDDM_PAM)
+        _, ours = strip_block(lines)
+        plan.say(f"{SDDM_PAM}: fingerprint {'reachable' if auth_reaches(pam_dir, 'sddm') else 'not reachable'}"
+                 f"{' (Meadow block present)' if ours else ''}")
+    else:
+        plan.say(f"{SDDM_PAM}: missing (SDDM not installed)")
+    lock = root / LOCK_PAM
+    plan.say(f"{LOCK_PAM}: {'managed by Meadow' if lock.exists() and LOCK_MARKER in read_lines(lock) else 'present (not Meadow)' if lock.exists() else 'absent'}")
+    rule = root / POLKIT_PATH
+    plan.say(f"{POLKIT_PATH}: {'present' if rule.exists() else 'absent'}")
+    for rel in (SDDM_PAM, LOCK_PAM):
+        if (root / (rel + ".meadow-bak")).exists():
+            plan.say(f"backup: {rel}.meadow-bak")
+    if live_system(root) and shutil.which("authselect"):
+        features, profile = authselect_features()
+        if features is not None:
+            plan.say(f"authselect: {profile} ({', '.join(features) or 'no features'})")
+    plan.say(f"recorded changes: {json.dumps({k: v for k, v in state.items() if k != 'version'}, sort_keys=True)}")
+    return 0
+
+
+def greeter_not_yet(args, plan):
+    plan.say("enable-greeter / disable-greeter arrive in phase 11. They will:")
+    plan.say("  - back up and write /etc/sddm.conf.d/10-meadow.conf from /usr/share/meadow/sddm.conf.d/10-meadow.conf.example")
+    plan.say("  - pick [General] DisplayServer from the installed sddm-wayland-* / sddm-x11 package")
+    plan.say("  - after confirmation, record the current display-manager.service and enable sddm.service")
+    plan.say("Nothing was changed.")
+    return 3
+
+
+def main(argv=None, out=sys.stdout):
+    parser = argparse.ArgumentParser(prog="meadow-setup", description=__doc__.split("\n\n")[0],
+                                     formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     epilog=__doc__.split("\n\n", 1)[1])
+    parser.add_argument("--dry-run", action="store_true", help="show every change as a diff; change nothing")
+    parser.add_argument("--yes", action="store_true", help="do not ask for confirmation")
+    parser.add_argument("--root", default="/", help="operate on another root directory (for tests and image builds)")
+    parser.add_argument("--version", action="version", version=VERSION)
+    sub = parser.add_subparsers(dest="command", required=True)
+    en = sub.add_parser("enable-fingerprint", help="set up fingerprint login")
+    en.add_argument("--allow-greeter-query", action="store_true",
+                    help="also install a polkit rule letting the greeter see who has enrolled fingers")
+    sub.add_parser("disable-fingerprint", help="revert fingerprint login changes")
+    sub.add_parser("status", help="show Meadow's changes")
+    sub.add_parser("enable-greeter", help="(phase 11)")
+    sub.add_parser("disable-greeter", help="(phase 11)")
+    args = parser.parse_args(argv)
+
+    root = Path(args.root)
+    plan = Plan(root, args.dry_run, out)
+    read_only = args.command == "status" or args.dry_run
+    if live_system(root) and not read_only and os.geteuid() != 0:
+        print("meadow-setup: this command changes system files; run it as root (or use --dry-run)", file=sys.stderr)
+        return 1
+    if args.command in ("enable-fingerprint", "disable-fingerprint") and not read_only and not args.yes:
+        if not sys.stdin.isatty():
+            print("meadow-setup: refusing to change PAM without confirmation; pass --yes", file=sys.stderr)
+            return 1
+        print("This changes how users log in (PAM). A dry run shows the exact changes: meadow-setup --dry-run "
+              + args.command)
+        if input("Continue? [y/N] ").strip().lower() not in ("y", "yes"):
+            print("Nothing was changed.")
+            return 1
+
+    handlers = {
+        "enable-fingerprint": enable_fingerprint,
+        "disable-fingerprint": disable_fingerprint,
+        "status": status,
+        "enable-greeter": greeter_not_yet,
+        "disable-greeter": greeter_not_yet,
+    }
+    try:
+        return handlers[args.command](args, plan)
+    except SetupError as e:
+        print(f"meadow-setup: {e}", file=sys.stderr)
+        print("Nothing further was changed." if not plan.changed else
+              "Some files were already changed; run `meadow-setup disable-fingerprint` to revert.", file=sys.stderr)
+        return 2
+    except subprocess.CalledProcessError as e:
+        print(f"meadow-setup: command failed: {' '.join(e.cmd)}\n{e.stderr}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

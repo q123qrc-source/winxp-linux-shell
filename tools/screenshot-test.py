@@ -45,6 +45,8 @@ CASES = [
     ("greeter-rtl", GREETER, ["--rtl", "--select", "0"]),
     ("greeter-silver", GREETER, ["--config", "scheme=luna-silver", "--select", "0"]),
     ("greeter-secondary", GREETER, ["--secondary", "--size", "800x600"]),
+    ("greeter-fingerprint-reading", GREETER, ["--fingerprint", "enrolled:alice", "--fp-result", "pending", "--select", "0"]),
+    ("greeter-fingerprint-failed", GREETER, ["--fingerprint", "enrolled:alice", "--fp-result", "fail", "--select", "0", "--delay", "1500"]),
 ]
 
 QML_PROBLEMS = ("ReferenceError", "TypeError", "is not a type", "is not installed", "Binding loop", "Unable to assign", "polish() loop")

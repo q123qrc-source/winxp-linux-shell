@@ -41,6 +41,7 @@ public:
         Restart,
         Keyboard,
         Contrast,
+        Fingerprint,
     };
     Q_ENUM(Glyph)
 

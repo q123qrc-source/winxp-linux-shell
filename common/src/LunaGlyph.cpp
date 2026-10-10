@@ -207,6 +207,22 @@ void LunaGlyph::paint(QPainter *p)
         p->fillPath(half, m_color);
         break;
     }
+    case Fingerprint: {
+        // Concentric open arcs suggesting ridges, slightly offset like a print.
+        pen.setCapStyle(Qt::RoundCap);
+        pen.setWidthF(std::max(1.0, lw * 0.7));
+        p->setPen(pen);
+        p->setBrush(Qt::NoBrush);
+        const QPointF c = at(0.5, 0.56);
+        for (int i = 0; i < 4; ++i) {
+            const qreal rr = side * (0.1 + i * 0.11);
+            const QRectF ring(c.x() - rr, c.y() - rr * 1.15, 2 * rr, 2 * rr * 1.25);
+            const int start = 200 - i * 10;
+            p->drawArc(ring, start * 16, -(220 - i * 15) * 16);
+        }
+        p->drawLine(at(0.5, 0.5), at(0.5, 0.72));
+        break;
+    }
     case None:
         break;
     }

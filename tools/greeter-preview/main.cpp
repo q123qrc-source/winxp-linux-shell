@@ -4,6 +4,7 @@
 //   meadow-greeter-preview [--size 1920x1080] [--select 0] [--password wrong]
 //                          [--caps] [--turnoff] [--secondary] [--rtl]
 //                          [--config key=value ...] [--grab out.png]
+//                          [--fingerprint enrolled:alice --fp-result success]
 //
 // Mock users: alice (picture, password), bart (long name, password),
 // guest (no password). The mock accepts the password "meadow"; actions are
@@ -46,9 +47,15 @@ int main(int argc, char *argv[])
     const QCommandLineOption usersOpt(QStringLiteral("extra-users"), QStringLiteral("Add <n> more users (scrolling)."), QStringLiteral("n"), QStringLiteral("0"));
     const QCommandLineOption grabOpt(QStringLiteral("grab"), QStringLiteral("Save a screenshot to <file> and exit."), QStringLiteral("file"));
     const QCommandLineOption delayOpt(QStringLiteral("delay"), QStringLiteral("Milliseconds before grabbing (default 800)."), QStringLiteral("ms"), QStringLiteral("800"));
+    const QCommandLineOption fingerprintOpt(QStringLiteral("fingerprint"),
+        QStringLiteral("Simulated fprintd: no-reader | unknown | enrolled:user,user."), QStringLiteral("spec"));
+    const QCommandLineOption fpResultOpt(QStringLiteral("fp-result"),
+        QStringLiteral("Outcome of a fingerprint reading: success | fail | pending (default fail)."), QStringLiteral("result"), QStringLiteral("fail"));
+    const QCommandLineOption passwordDelayOpt(QStringLiteral("password-delay"),
+        QStringLiteral("Milliseconds after selecting before --password is submitted (default 100)."), QStringLiteral("ms"), QStringLiteral("100"));
     const QCommandLineOption exitOpt(QStringLiteral("exit-after-ms"), QStringLiteral("Quit after <ms>."), QStringLiteral("ms"));
     parser.addOptions({themeOpt, sizeOpt, configOpt, selectOpt, passwordOpt, capsOpt, turnOffOpt, secondaryOpt, rtlOpt,
-                       noPowerOpt, usersOpt, grabOpt, delayOpt, exitOpt});
+                       noPowerOpt, usersOpt, grabOpt, delayOpt, fingerprintOpt, fpResultOpt, passwordDelayOpt, exitOpt});
     parser.process(app);
 
     if (parser.isSet(rtlOpt))
@@ -75,7 +82,15 @@ int main(int argc, char *argv[])
     for (int i = 0; i < parser.value(usersOpt).toInt(); ++i)
         users.append({QStringLiteral("user%1").arg(i + 1), QStringLiteral("Test User %1").arg(i + 1), QString(), true});
 
+    // Must be set before QML creates its FingerprintQuery.
+    if (parser.isSet(fingerprintOpt))
+        qputenv("MEADOW_FINGERPRINT_SIMULATE", parser.value(fingerprintOpt).toUtf8());
+    else if (!qEnvironmentVariableIsSet("MEADOW_FINGERPRINT_SIMULATE"))
+        qputenv("MEADOW_FINGERPRINT_SIMULATE", "no-reader"); // never touch the host's fprintd
+
     MockGreeterProxy proxy(!parser.isSet(noPowerOpt));
+    if (parser.isSet(fingerprintOpt) && parser.value(fingerprintOpt) != QLatin1String("no-reader"))
+        proxy.setFingerprintResult(parser.value(fpResultOpt));
     MockUserModel userModel(users);
     MockSessionModel sessionModel;
     MockKeyboardModel keyboard;
@@ -113,7 +128,7 @@ int main(int argc, char *argv[])
         if (parser.isSet(turnOffOpt))
             QMetaObject::invokeMethod(root, "openTurnOffDialog");
         if (parser.isSet(passwordOpt)) {
-            QTimer::singleShot(100, &app, [&] {
+            QTimer::singleShot(parser.value(passwordDelayOpt).toInt(), &app, [&] {
                 QMetaObject::invokeMethod(root, "submitPassword", Q_ARG(QVariant, parser.value(passwordOpt)));
             });
         }

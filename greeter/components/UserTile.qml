@@ -17,6 +17,10 @@ FocusScope {
     property bool dimmed: false      // another tile is selected
     property bool busy: false
     property bool highContrast: false
+    // A fingerprint attempt for this user is running; fingerprintText is
+    // the reader's current message.
+    property bool fingerprintActive: false
+    property string fingerprintText
     // "", "hover" or "focus" (preview/screenshot only).
     property string previewState: ""
     readonly property alias passwordPanel: panel
@@ -92,6 +96,12 @@ FocusScope {
                 onSubmitted: (password) => tile.submitted(password)
                 onHintRequested: tile.hintRequested()
                 onCancelled: tile.cancelled()
+            }
+
+            FingerprintIndicator {
+                active: tile.fingerprintActive
+                text: tile.fingerprintText
+                highContrast: tile.highContrast
             }
         }
     }

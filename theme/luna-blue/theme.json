@@ -899,6 +899,14 @@
     "successText": {
       "color": "#FFFFFF",
       "shadowColor": "#80000000"
+    },
+    "fingerprint": {
+      "iconSize": 20,
+      "spacing": 6,
+      "pulseMs": 900,
+      "minOpacity": 0.45,
+      "textColor": "#FFFFFF",
+      "maxWidth": 250
     }
   },
   "dialogs": {

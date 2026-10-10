@@ -22,6 +22,10 @@ class MockGreeterProxy : public QObject
 
 public:
     explicit MockGreeterProxy(bool powerActions, QObject *parent = nullptr);
+    // Fingerprint simulation for logins with an empty password:
+    // "" (off: treated like any password), "success", "fail" or "pending"
+    // (the reading never finishes; for screenshots).
+    void setFingerprintResult(const QString &result) { m_fingerprint = result; }
     QString hostName() const { return QStringLiteral("meadow-preview"); }
     bool canPower() const { return m_power; }
 
@@ -42,7 +46,13 @@ Q_SIGNALS:
     void loginSucceeded();
 
 private:
+    void finishAuth(bool success);
+
     bool m_power;
+    QString m_fingerprint;
+    // Like SDDM's daemon: one authentication at a time; further login()
+    // calls while one runs are dropped without any reply.
+    bool m_authActive = false;
 };
 
 struct MockUser {

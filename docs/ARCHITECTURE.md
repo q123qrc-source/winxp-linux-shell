@@ -9,12 +9,12 @@ This document is the high-level design. Exact metrics and colors live in
 |---|---|---|---|
 | `libmeadow-common` + QML module `Meadow.Controls` | shared library + QML plugin | in-process for the greeter and the shell | `meadow-common` |
 | Welcome screen (`greeter/`) | SDDM QML theme | `sddm-greeter-qt6`, user `sddm` | `sddm-theme-meadow` |
-| `meadow-fprint-query` (phase 4) | tiny CLI, read-only | user `sddm`, run by the greeter | `sddm-theme-meadow` |
+| `FingerprintQuery` (in libmeadow-common) | read-only fprintd query | in the greeter (user `sddm`) | `meadow-common` |
 | Session (`meadow-session`, `meadow.desktop`) | shell script + session entry | the logged-in user | `meadow-shell` |
 | labwc config + `Meadow-Luna` decoration theme | config/data | read by labwc | `meadow-shell`, `meadow-themes` |
 | `meadow-shell` | Qt 6 / QML / C++ app | the logged-in user | `meadow-shell` |
 | `meadow-shellctl` (phase 5) | CLI that calls `org.meadow.Shell` | run by labwc keybinds | `meadow-shell` |
-| `meadow-setup` | root-only bash tool, opt-in | root, interactive | `meadow-shell` |
+| `meadow-setup` | root-only Python tool (stdlib), opt-in | root, interactive | `meadow-shell` |
 | GTK, Kvantum, icon, cursor and sound themes | data | read by apps | `meadow-themes` |
 
 ## 2. Process model
@@ -26,7 +26,7 @@ This document is the high-level design. Exact metrics and colors live in
        └─ sddm-greeter-qt6 (user sddm)
             ├─ greeter/Main.qml
             │    imports Meadow.Controls (libmeadow-common, /usr/lib64/qt6/qml/Meadow/Controls)
-            └─ meadow-fprint-query  ──system bus──▶ net.reactivated.Fprint (ListEnrolledFingers only)
+            └─ FingerprintQuery ──system bus──▶ net.reactivated.Fprint (GetDefaultDevice, ListEnrolledFingers)
 
  user session "Meadow"  (/usr/share/wayland-sessions/meadow.desktop)
   └─ meadow-session  (exports XDG_CURRENT_DESKTOP=Meadow, toolkit theme vars)
@@ -73,7 +73,7 @@ bus call it makes is the read-only fprintd query.
 | system | `org.freedesktop.NetworkManager` | NetworkService | network icon/menu |
 | system | `org.freedesktop.Accounts` | Start menu header, Control Panel | real name, avatar |
 | system | `org.freedesktop.PolicyKit1` | PolkitAgent (polkit-qt6) | authentication dialogs |
-| system | `net.reactivated.Fprint` | meadow-fprint-query (greeter), LockScreen | enrolled-finger check (read-only) |
+| system | `net.reactivated.Fprint` | FingerprintQuery (greeter), LockScreen | reader and enrolled-finger check (read-only) |
 | session | `org.kde.StatusNotifierWatcher` / `…Item`, `com.canonical.dbusmenu` | TrayHost | tray icons and menus |
 | session | `org.freedesktop.Notifications` | NotificationServer | balloon tips |
 | session | `org.meadow.Shell` (ours) | ShellIpc | ToggleStartMenu, ShowRun, ShowDesktop, Lock, ShowLogOff, AltTab |
@@ -137,6 +137,7 @@ painted items carry the drawing that QML can't express from data on Qt 6.5:
 | `BalloonShape` | balloon body with a slanted tail (top or bottom) |
 | `MeadowLogo` | the original logo: four glossy rounded panes in a diamond (sun, sky, grass, leaves); a monochrome variant for high contrast |
 | `UserAccount` | read-only AccountsService lookup (real name, password hint, icon); unprivileged, async, empty when the service is absent |
+| `FingerprintQuery` | read-only fprintd lookup: reader present, enrollment Enrolled/NotEnrolled/Unknown; `MEADOW_FINGERPRINT_SIMULATE` replaces D-Bus in tests |
 
 The QML controls are LunaButton, LunaTextField, LunaCheckBox, LunaComboBox,
 LunaScrollBar, LunaTooltip, BalloonTip, LunaWindowFrame, LunaDialog,
@@ -173,6 +174,12 @@ Main.qml                     SDDM context → scheme + scale from theme.conf; pr
   SDDM's `userModel`). SDDM's generic `…/faces/.face.icon` and unreadable
   pictures fall back to one of four original avatars, chosen stably from the
   user name.
+- **Fingerprint:** `FingerprintQuery` asks fprintd read-only whether a
+  reader exists and whether the selected user has enrolled fingers. Without the
+  optional polkit grant the answer is "unknown" for the unprivileged greeter.
+  A reading is a `sddm.login(user, "")`, with pam_fprintd first in the PAM
+  stack. A password typed meanwhile is queued, because SDDM drops overlapping
+  logins. Details: [PAM_FINGERPRINT.md](PAM_FINGERPRINT.md).
 - **Power:** the dialog calls `sddm.suspend/hibernate/powerOff/reboot` and logs
   each request under `meadow.greeter.power`. SDDM's `--test-mode` reports no
   capabilities, so `debugPowerButtons=true` in `theme.conf` shows them all for
@@ -223,8 +230,9 @@ first uses them. The Fedora spec already BuildRequires all of them.
 - Everything targets SELinux enforcing on Fedora. Files go to standard FHS
   paths so the default policy labels them, and no custom policy module is
   planned.
-- `system/polkit/50-meadow.rules` is an example only and is never installed
-  into `/etc`.
+- `system/polkit/50-meadow.rules` (let the greeter see who has enrolled
+  fingers) reaches `/etc` only through `meadow-setup enable-fingerprint
+  --allow-greeter-query`. It never grants enrolling or deleting.
 
 ## 8. Risks
 
@@ -245,7 +253,7 @@ first uses them. The Fedora spec already BuildRequires all of them.
 | 1 | Scaffold, docs, theme tokens, CMake, spec draft (done) |
 | 2 | ThemeLoader complete, SoundPlayer, all Luna controls, gallery, golden screenshots (done) |
 | 3 | SDDM Welcome screen (done) |
-| 4 | Fingerprint login (PAM snippet, greeter UX, helper) |
+| 4 | Fingerprint login (PAM snippet, greeter UX, meadow-setup fingerprint commands) (done) |
 | 5 | Session script, labwc config, decorations |
 | 6 | Taskbar, tray, notifications, clock, volume/network/battery |
 | 7 | Start menu, All Programs, Run, Log Off / Turn Off dialogs |

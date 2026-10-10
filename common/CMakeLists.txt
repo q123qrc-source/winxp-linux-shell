@@ -12,6 +12,7 @@ qt_add_library(meadow-common SHARED
     src/BalloonShape.h src/BalloonShape.cpp
     src/MeadowLogo.h src/MeadowLogo.cpp
     src/UserAccount.h src/UserAccount.cpp
+    src/FingerprintQuery.h src/FingerprintQuery.cpp
 )
 
 set_target_properties(meadow-common PROPERTIES

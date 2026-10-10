@@ -6,6 +6,12 @@
 //
 // Keyboard: Up/Down move between users, Enter selects (or logs on), Esc goes
 // back, Alt+Shift switches keyboard layout, Tab reaches the bottom controls.
+//
+// Fingerprint (docs/PAM_FINGERPRINT.md): SDDM runs PAM only inside
+// sddm.login(), so a reading is started by logging in with an empty password;
+// pam_fprintd goes first in the PAM stack and pam_unix follows if it fails.
+// SDDM silently drops a second login() while one is running, so a password
+// typed during a reading is queued and submitted when that run ends.
 import QtQuick
 import Meadow.Controls
 
@@ -26,10 +32,28 @@ FocusScope {
     property bool showKeyboardLayout: true
     property bool highContrast: false
     property bool showAllPowerActions: false
+    // "auto", "always" or "off" (theme.conf `fingerprint`).
+    property string fingerprintMode: "auto"
 
     property int selectedIndex: -1
     property bool busy: false
     property bool loggedIn: false
+
+    // Fingerprint attempt state.
+    property bool fingerprintPending: false
+    property string fingerprintUser
+    property string fingerprintStatus
+    // Password login waiting for the fingerprint run to end: { user, password }.
+    property var queuedLogin: null
+    // Auto-start at most once per selection.
+    property bool fingerprintTried: false
+
+    // Read the query directly: called from the query's own change signal, when
+    // bindings derived from it may not have been re-evaluated yet.
+    function fingerprintAutoStartAllowed() {
+        return fingerprintMode !== "off" && fingerprint.finished && fingerprint.readerPresent
+            && (fingerprintMode === "always" || fingerprint.enrolled === FingerprintQuery.Enrolled)
+    }
 
     readonly property var tk: Theme.tokens.welcome
     readonly property var colors: Theme.tokens.colors
@@ -57,6 +81,12 @@ FocusScope {
 
     SoundPlayer { id: sounds }
 
+    FingerprintQuery {
+        id: fingerprint
+        userName: layout.selectedTile ? layout.selectedTile.userName : ""
+        onChanged: Qt.callLater(layout.maybeStartFingerprint)
+    }
+
     // --- Actions ----------------------------------------------------------
 
     function selectUser(index) {
@@ -65,6 +95,8 @@ FocusScope {
         balloon.close()
         userList.currentIndex = index
         userList.positionViewAtIndex(index, ListView.Contain)
+        if (selectedIndex !== index)
+            fingerprintTried = false
         selectedIndex = index
         const tile = userList.itemAtIndex(index)
         if (!tile)
@@ -74,6 +106,29 @@ FocusScope {
             return
         }
         Qt.callLater(() => { if (layout.selectedTile) layout.selectedTile.passwordPanel.focusField() })
+        maybeStartFingerprint()
+    }
+
+    function maybeStartFingerprint() {
+        const tile = selectedTile
+        if (!tile || !tile.needsPassword || busy || fingerprintPending || fingerprintTried)
+            return
+        if (!fingerprintAutoStartAllowed() || fingerprint.userName !== tile.userName)
+            return
+        fingerprintTried = true
+        startFingerprint()
+    }
+
+    function startFingerprint() {
+        const tile = selectedTile
+        if (!tile || busy || fingerprintPending)
+            return
+        balloon.close()
+        fingerprintPending = true
+        fingerprintUser = tile.userName
+        fingerprintStatus = qsTr("Touch the fingerprint reader, or type your password")
+        console.info(lcAuth, "fingerprint attempt for", tile.userName)
+        greeter.login(tile.userName, "", sessionIndex)
     }
 
     function deselect() {
@@ -95,6 +150,20 @@ FocusScope {
         const tile = selectedTile
         if (!tile || busy)
             return
+        // Enter on an empty field asks for the fingerprint reader instead.
+        if (password === "" && tile.needsPassword && fingerprintMode !== "off"
+                && (fingerprint.readerPresent || fingerprintMode === "always")) {
+            if (!fingerprintPending)
+                startFingerprint()
+            return
+        }
+        if (fingerprintPending) {
+            // SDDM would drop this login; send it once the reading ends.
+            queuedLogin = { user: tile.userName, password: password }
+            fingerprintStatus = qsTr("Your password will be checked when the fingerprint reader finishes.")
+            console.info(lcAuth, "password login for", tile.userName, "queued behind the fingerprint attempt")
+            return
+        }
         busy = true
         balloon.close()
         // Never log the password or anything derived from it.
@@ -119,6 +188,21 @@ FocusScope {
         target: layout.greeter
         ignoreUnknownSignals: true
         function onLoginFailed() {
+            if (layout.fingerprintPending) {
+                layout.fingerprintPending = false
+                layout.fingerprintStatus = ""
+                const queued = layout.queuedLogin
+                layout.queuedLogin = null
+                console.info(lcAuth, "fingerprint attempt ended without login")
+                if (queued) {
+                    layout.busy = true
+                    console.info(lcAuth, "login requested for", queued.user, "session", layout.sessionIndex)
+                    layout.greeter.login(queued.user, queued.password, layout.sessionIndex)
+                } else {
+                    balloon.showFingerprintFailed()
+                }
+                return
+            }
             console.info(lcAuth, "login failed")
             layout.busy = false
             const tile = layout.selectedTile
@@ -131,11 +215,18 @@ FocusScope {
         }
         function onLoginSucceeded() {
             console.info(lcAuth, "login succeeded")
+            layout.fingerprintPending = false
+            layout.queuedLogin = null
             layout.loggedIn = true
             sounds.play("logon")
         }
         function onInformationMessage(message) {
-            balloon.showMessage(message)
+            // PAM text (never logged): during a reading it is the reader's
+            // prompt, so it goes to the tile instead of a balloon.
+            if (layout.fingerprintPending)
+                layout.fingerprintStatus = message
+            else
+                balloon.showMessage(message)
         }
     }
 
@@ -307,6 +398,8 @@ FocusScope {
                 dimmed: layout.selectedIndex >= 0 && layout.selectedIndex !== index
                 busy: layout.busy && selected
                 highContrast: layout.highContrast
+                fingerprintActive: layout.fingerprintPending && layout.fingerprintUser === userName
+                fingerprintText: layout.fingerprintStatus
                 onActivated: layout.selectUser(index)
                 onSubmitted: (password) => layout.login(password)
                 onHintRequested: balloon.showHint(account.passwordHint)
@@ -360,9 +453,6 @@ FocusScope {
                 visible: layout.showKeyboardLayout && implicitWidth > 0 && keyboardModel && keyboardModel.enabled && layouts.length > 0
                 keyboardModel: layout.keyboardModel
                 highContrast: layout.highContrast
-            }
-            FingerprintIndicator {
-                id: fingerprint
             }
             PillButton {
                 id: oskButton

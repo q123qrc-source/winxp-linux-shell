@@ -1,10 +1,16 @@
-// Optional, NOT installed by default. Documented in docs/ARCHITECTURE.md.
-// Example: allow active local Meadow sessions to suspend without a prompt.
-// Copy to /etc/polkit-1/rules.d/ only if your site policy allows it.
+// Installed by `meadow-setup enable-fingerprint --allow-greeter-query`.
+// meadow-fingerprint-query: managed by meadow-setup
 //
-// polkit.addRule(function(action, subject) {
-//     if (action.id == "org.freedesktop.login1.suspend" &&
-//         subject.local && subject.active) {
-//         return polkit.Result.YES;
-//     }
-// });
+// Lets the local, active display-manager greeter (user "sddm") ask fprintd
+// which fingers a user has enrolled, so the Welcome screen offers the reader
+// only to users who can use it. fprintd needs the setusername permission for
+// that (and verify, which active sessions already have). It does NOT allow
+// enrolling or deleting fingerprints. Remove with
+// `meadow-setup disable-fingerprint`.
+polkit.addRule(function(action, subject) {
+    if ((action.id == "net.reactivated.fprint.device.setusername" ||
+         action.id == "net.reactivated.fprint.device.verify") &&
+        subject.user == "sddm" && subject.local && subject.active) {
+        return polkit.Result.YES;
+    }
+});

@@ -77,5 +77,6 @@ Item {
         showKeyboardLayout: root.configBool("showKeyboardLayout", true)
         highContrast: root.configBool("highContrast", false)
         showAllPowerActions: root.configBool("debugPowerButtons", false)
+        fingerprintMode: root.configString("fingerprint", "auto")
     }
 }

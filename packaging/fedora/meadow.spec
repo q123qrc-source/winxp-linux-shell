@@ -79,6 +79,9 @@ Requires:       NetworkManager
 Requires:       upower
 Requires:       pcmanfm-qt
 Requires:       kvantum
+# meadow-setup
+Requires:       python3
+Suggests:       pamtester
 
 %description    shell
 meadow-shell draws the taskbar, Start menu, notification area, desktop and

@@ -21,6 +21,12 @@ BalloonTip {
         icon = LunaGlyph.Question
         show()
     }
+    function showFingerprintFailed() {
+        title = qsTr("Fingerprint not recognized")
+        text = qsTr("Type your password, or press Enter with the password box empty to use the fingerprint reader again.")
+        icon = LunaGlyph.Info
+        show()
+    }
     function showMessage(message) {
         title = qsTr("Message")
         text = message

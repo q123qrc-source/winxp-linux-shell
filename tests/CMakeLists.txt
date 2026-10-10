@@ -41,6 +41,9 @@ add_test(NAME greeter_sddm_smoke
          COMMAND ${PROJECT_SOURCE_DIR}/tools/greeter-sddm-smoke.sh ${PROJECT_SOURCE_DIR} ${CMAKE_BINARY_DIR})
 set_tests_properties(greeter_sddm_smoke PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 60)
 
+# meadow-setup against sandbox PAM trees (never the real /etc).
+add_test(NAME meadow_setup COMMAND Python3::Interpreter ${CMAKE_CURRENT_SOURCE_DIR}/test_meadow_setup.py)
+
 add_test(NAME qml_literals
          COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/tools/check-qml-literals.py ${PROJECT_SOURCE_DIR})
 

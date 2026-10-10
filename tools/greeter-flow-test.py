@@ -41,6 +41,33 @@ def main():
         ("high contrast", ["--config", "highContrast=true"], [], []),
         ("silver at 2x", ["--config", "scheme=luna-silver", "--config", "scale=2", "--size", "2048x1536"], [], []),
         ("many users scroll", ["--extra-users", "12", "--select", "9"], [], []),
+        # Fingerprint (MEADOW_FINGERPRINT_SIMULATE via --fingerprint; the mock
+        # drops a second login during a running one, like SDDM's daemon).
+        ("fingerprint starts for an enrolled user and logs on",
+         ["--fingerprint", "enrolled:alice", "--fp-result", "success", "--select", "0"],
+         ["login user=alice session=0 fingerprint=success"], ["result=", "dropped"]),
+        ("failed fingerprint leaves password login available",
+         ["--fingerprint", "enrolled:alice", "--fp-result", "fail", "--select", "0"],
+         ["fingerprint=fail"], ["result=", "dropped"]),
+        ("password typed during a reading is queued, not dropped",
+         ["--fingerprint", "enrolled:alice", "--fp-result", "fail", "--select", "0",
+          "--password", SECRET, "--password-delay", "250"],
+         ["fingerprint=fail", "login user=alice session=0 result=failure"], ["dropped"]),
+        ("no automatic reading for a user without fingers (auto)",
+         ["--fingerprint", "enrolled:bart", "--select", "0"], [], ["login user="]),
+        ("no automatic reading when enrollment is unknown (auto)",
+         ["--fingerprint", "unknown", "--select", "0"], [], ["login user="]),
+        ("fingerprint=always reads even when enrollment is unknown",
+         ["--fingerprint", "unknown", "--config", "fingerprint=always", "--fp-result", "success", "--select", "0"],
+         ["fingerprint=success"], []),
+        ("fingerprint=off never reads automatically",
+         ["--fingerprint", "enrolled:alice", "--config", "fingerprint=off", "--select", "0"], [], ["login user="]),
+        ("Enter on an empty field starts a reading",
+         ["--fingerprint", "unknown", "--fp-result", "fail", "--select", "0", "--password", ""],
+         ["fingerprint=fail"], ["result="]),
+        ("Enter on an empty field without a reader is a normal login",
+         ["--fingerprint", "no-reader", "--select", "0", "--password", ""],
+         ["login user=alice session=0 result=failure"], ["fingerprint="]),
     ]
     failures = 0
     for name, args, expect, forbid in scenarios:

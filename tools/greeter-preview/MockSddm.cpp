@@ -29,15 +29,39 @@ void MockGreeterProxy::hybridSleep() { report(QStringLiteral("hybridSleep")); }
 
 void MockGreeterProxy::login(const QString &user, const QString &password, int sessionIndex)
 {
+    if (m_authActive) {
+        report(QStringLiteral("login dropped: authentication ongoing (user=%1)").arg(user));
+        return;
+    }
+    m_authActive = true;
+
+    if (password.isEmpty() && !m_fingerprint.isEmpty()) {
+        // pam_fprintd first: prompt, then match or fail; pam_unix then fails
+        // on the empty password, which SDDM reports as loginFailed.
+        report(QStringLiteral("login user=%1 session=%2 fingerprint=%3").arg(user).arg(sessionIndex).arg(m_fingerprint));
+        QTimer::singleShot(100, this, [this] { Q_EMIT informationMessage(QStringLiteral("Place your finger on the fingerprint reader")); });
+        if (m_fingerprint == QLatin1String("pending"))
+            return;
+        const bool ok = m_fingerprint == QLatin1String("success");
+        if (!ok)
+            QTimer::singleShot(450, this, [this] { Q_EMIT informationMessage(QStringLiteral("Failed to match fingerprint")); });
+        QTimer::singleShot(600, this, [this, ok] { finishAuth(ok); });
+        return;
+    }
+
     const bool ok = password == QLatin1String(kPassword);
     // Never echo the password, not even in the mock.
     report(QStringLiteral("login user=%1 session=%2 result=%3").arg(user).arg(sessionIndex).arg(ok ? QStringLiteral("success") : QStringLiteral("failure")));
-    QTimer::singleShot(150, this, [this, ok] {
-        if (ok)
-            Q_EMIT loginSucceeded();
-        else
-            Q_EMIT loginFailed();
-    });
+    QTimer::singleShot(150, this, [this, ok] { finishAuth(ok); });
+}
+
+void MockGreeterProxy::finishAuth(bool success)
+{
+    m_authActive = false;
+    if (success)
+        Q_EMIT loginSucceeded();
+    else
+        Q_EMIT loginFailed();
 }
 
 MockUserModel::MockUserModel(const QList<MockUser> &users, QObject *parent)
