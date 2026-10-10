@@ -81,26 +81,36 @@ Item {
         width: root.width - root.pad * 2
         height: root.height - root.pad * 2 - root.tail
 
-        Row {
+        Item {
             id: header
-            spacing: Theme.px(root.tk.spacing)
-            width: parent.width - (closeButton.visible ? closeButton.width : 0)
+            readonly property real iconWidth: headerIcon.visible ? headerIcon.width + Theme.px(root.tk.spacing) : 0
+            width: parent.width
+            implicitWidth: iconWidth + titleText.implicitWidth + (closeButton.visible ? closeButton.width + Theme.px(root.tk.spacing) : 0)
+            implicitHeight: Math.max(headerIcon.visible ? headerIcon.height : 0, titleText.height)
+            height: implicitHeight
 
             LunaGlyph {
+                id: headerIcon
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
                 width: Theme.px(root.tk.iconSize)
                 height: width
                 visible: root.icon !== LunaGlyph.None
                 glyph: root.icon
             }
             Text {
-                width: parent.width - x
+                id: titleText
+                anchors.left: parent.left
+                anchors.leftMargin: header.iconWidth
+                anchors.right: parent.right
+                anchors.rightMargin: closeButton.visible ? closeButton.width + Theme.px(root.tk.spacing) : 0
+                anchors.verticalCenter: parent.verticalCenter
                 text: root.title
                 font.family: Theme.fonts.ui.family
                 font.pixelSize: Theme.fonts.ui.pixelSize
                 font.bold: root.tk.titleBold
                 color: root.tk.textColor
                 wrapMode: Text.Wrap
-                anchors.verticalCenter: parent.verticalCenter
             }
         }
 

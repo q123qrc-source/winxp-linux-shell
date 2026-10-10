@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// FingerprintIndicator — stub; implemented in phase 3 (fingerprint pieces in phase 4).
+// Fingerprint prompt for the selected user. Wired up in phase 4; hidden until
+// then (active stays false).
 import QtQuick
+import Meadow.Controls
 
 Item {
+    id: root
+    property bool active: false
+    visible: active
+    implicitWidth: 0
+    implicitHeight: 0
 }

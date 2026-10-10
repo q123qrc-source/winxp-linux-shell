@@ -24,17 +24,30 @@ SKIP = 77
 ROOT = Path(__file__).resolve().parent.parent
 GOLDEN = ROOT / "tests" / "golden"
 
-# (name, scheme, scale)
+GALLERY = ("tools/gallery/meadow-gallery",)
+GREETER = ("tools/greeter-preview/meadow-greeter-preview",)
+
+# (name, tool, arguments)
 CASES = [
-    ("gallery-luna-blue-1.0", "luna-blue", "1"),
-    ("gallery-luna-blue-1.25", "luna-blue", "1.25"),
-    ("gallery-luna-blue-1.5", "luna-blue", "1.5"),
-    ("gallery-luna-blue-2.0", "luna-blue", "2"),
-    ("gallery-luna-olive-1.0", "luna-olive", "1"),
-    ("gallery-luna-silver-1.0", "luna-silver", "1"),
+    ("gallery-luna-blue-1.0", GALLERY, ["--scheme", "luna-blue", "--scale", "1"]),
+    ("gallery-luna-blue-1.25", GALLERY, ["--scheme", "luna-blue", "--scale", "1.25"]),
+    ("gallery-luna-blue-1.5", GALLERY, ["--scheme", "luna-blue", "--scale", "1.5"]),
+    ("gallery-luna-blue-2.0", GALLERY, ["--scheme", "luna-blue", "--scale", "2"]),
+    ("gallery-luna-olive-1.0", GALLERY, ["--scheme", "luna-olive", "--scale", "1"]),
+    ("gallery-luna-silver-1.0", GALLERY, ["--scheme", "luna-silver", "--scale", "1"]),
+    ("greeter-1024x768", GREETER, ["--size", "1024x768"]),
+    ("greeter-1920x1080-selected", GREETER, ["--size", "1920x1080", "--select", "0"]),
+    ("greeter-2x-selected", GREETER, ["--size", "2048x1536", "--config", "scale=2", "--select", "1"]),
+    ("greeter-wrong-password", GREETER, ["--select", "0", "--password", "wrong"]),
+    ("greeter-capslock", GREETER, ["--select", "0", "--caps"]),
+    ("greeter-turnoff", GREETER, ["--turnoff"]),
+    ("greeter-high-contrast", GREETER, ["--config", "highContrast=true", "--select", "0"]),
+    ("greeter-rtl", GREETER, ["--rtl", "--select", "0"]),
+    ("greeter-silver", GREETER, ["--config", "scheme=luna-silver", "--select", "0"]),
+    ("greeter-secondary", GREETER, ["--secondary", "--size", "800x600"]),
 ]
 
-QML_PROBLEMS = ("ReferenceError", "TypeError", "is not a type", "is not installed", "Binding loop", "Unable to assign")
+QML_PROBLEMS = ("ReferenceError", "TypeError", "is not a type", "is not installed", "Binding loop", "Unable to assign", "polish() loop")
 
 
 def fonts_ok():
@@ -59,9 +72,8 @@ def main():
     args = ap.parse_args()
 
     build = Path(args.build_dir).resolve()
-    gallery = build / "tools" / "gallery" / "meadow-gallery"
     imgdiff = build / "tools" / "gallery" / "meadow-imgdiff"
-    for tool in (gallery, imgdiff):
+    for tool in (build / GALLERY[0], build / GREETER[0], imgdiff):
         if not tool.exists():
             print(f"missing {tool}; build with -DMEADOW_BUILD_GALLERY=ON", file=sys.stderr)
             return 1
@@ -79,6 +91,8 @@ def main():
                QT_FORCE_STDERR_LOGGING="1",
                QT_ENABLE_HIGHDPI_SCALING="0",
                MEADOW_THEME_DIR=str(ROOT / "theme"),
+               MEADOW_ASSET_DIR=str(ROOT / "theme" / "assets"),
+               MEADOW_MUTE="1",
                MEADOW_REDUCED_MOTION="1",
                QML_IMPORT_PATH=str(build / "qml"),
                LANG="C.UTF-8", LC_ALL="C.UTF-8")
@@ -87,11 +101,11 @@ def main():
 
     failures = []
     missing = []
-    for name, scheme, scale in CASES:
+    for name, tool, tool_args in CASES:
         if args.only and args.only not in name:
             continue
         actual = out_dir / f"{name}.png"
-        proc = subprocess.run([str(gallery), "--scheme", scheme, "--scale", scale, "--grab", str(actual)],
+        proc = subprocess.run([str(build / tool[0]), *tool_args, "--grab", str(actual)],
                               env=env, capture_output=True, text=True, timeout=120)
         problems = [l for l in proc.stderr.splitlines() if any(p in l for p in QML_PROBLEMS)]
         if proc.returncode != 0 or problems or not actual.exists():

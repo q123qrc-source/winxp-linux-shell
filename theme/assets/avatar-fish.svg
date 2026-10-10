@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 — original Meadow avatar: an orange fish with bubbles. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5FD3E8"/><stop offset="1" stop-color="#127FA8"/></linearGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFB25A"/><stop offset="1" stop-color="#E5641A"/></linearGradient>
+  </defs>
+  <rect width="96" height="96" fill="url(#bg)"/>
+  <path d="M8 96 C14 80 20 72 16 60 M86 96 C82 84 88 76 84 66" stroke="#2EA35A" stroke-width="4" fill="none"/>
+  <path d="M66 48 L86 34 L84 62 Z" fill="#E5641A" stroke="#9E3C08" stroke-width="1.5"/>
+  <ellipse cx="44" cy="48" rx="28" ry="18" fill="url(#body)" stroke="#9E3C08" stroke-width="1.5"/>
+  <path d="M40 32 C44 40 44 56 40 64" stroke="#FFFFFF" stroke-width="3" fill="none" opacity="0.8"/>
+  <circle cx="28" cy="44" r="5" fill="#FFFFFF"/>
+  <circle cx="27" cy="44" r="2.5" fill="#1B1B1B"/>
+  <circle cx="22" cy="20" r="4" fill="none" stroke="#FFFFFF" stroke-width="1.5" opacity="0.85"/>
+  <circle cx="14" cy="10" r="2.5" fill="none" stroke="#FFFFFF" stroke-width="1.2" opacity="0.85"/>
+</svg>

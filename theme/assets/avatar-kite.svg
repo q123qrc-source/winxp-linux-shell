@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 — original Meadow avatar: a kite in a blue sky. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2E7FE0"/><stop offset="1" stop-color="#A9D4FF"/></linearGradient>
+  </defs>
+  <rect width="96" height="96" fill="url(#bg)"/>
+  <ellipse cx="72" cy="78" rx="18" ry="6" fill="#FFFFFF" opacity="0.8"/>
+  <ellipse cx="84" cy="74" rx="10" ry="5" fill="#FFFFFF" opacity="0.8"/>
+  <path d="M46 56 C40 66 50 72 42 82 C38 88 44 92 40 96" stroke="#F4F4F4" stroke-width="2" fill="none"/>
+  <path d="M46 10 L70 32 L46 56 L24 32 Z" fill="#F5C22B" stroke="#8A5A00" stroke-width="1.5"/>
+  <path d="M46 10 L70 32 L46 32 Z" fill="#E8432A"/>
+  <path d="M46 32 L46 56 L24 32 Z" fill="#E8432A"/>
+  <path d="M46 10 L46 56 M24 32 L70 32" stroke="#8A5A00" stroke-width="1.2"/>
+  <path d="M42 66 l6 -2 l-2 6 z M44 78 l6 -1 l-3 5 z" fill="#E8432A"/>
+</svg>

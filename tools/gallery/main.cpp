@@ -9,6 +9,7 @@
 
 #include <QCommandLineParser>
 #include <QGuiApplication>
+#include <QStyleHints>
 #include <QImage>
 #include <QQmlApplicationEngine>
 #include <QQuickWindow>
@@ -40,6 +41,8 @@ int main(int argc, char *argv[])
         theme->setScale(parser.value(scaleOpt).toDouble());
     if (parser.isSet(grabOpt))
         theme->setReducedMotion(true); // Screenshots must not catch an animation mid-way.
+    if (parser.isSet(grabOpt))
+        QGuiApplication::styleHints()->setCursorFlashTime(0); // steady text cursor in screenshots
 
     QQmlApplicationEngine engine;
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed, &app,

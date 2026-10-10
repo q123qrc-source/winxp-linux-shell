@@ -27,6 +27,20 @@ add_test(NAME theme_schema
 add_test(NAME session_desktop COMMAND ${PROJECT_SOURCE_DIR}/tools/validate-session-desktop.sh ${PROJECT_SOURCE_DIR}/session/meadow.desktop)
 set_tests_properties(session_desktop PROPERTIES SKIP_RETURN_CODE 77)
 
+meadow_add_test(test_greeter Qt6::Qml Qt6::Quick)
+target_compile_definitions(test_greeter PRIVATE MEADOW_BUILD_QML_DIR="${CMAKE_BINARY_DIR}/qml"
+                                                MEADOW_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+set_property(TEST test_greeter APPEND PROPERTY ENVIRONMENT "MEADOW_ASSET_DIR=${PROJECT_SOURCE_DIR}/theme/assets")
+
+if(MEADOW_BUILD_GALLERY)
+    add_test(NAME greeter_flows
+             COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/tools/greeter-flow-test.py ${CMAKE_BINARY_DIR})
+    set_tests_properties(greeter_flows PROPERTIES TIMEOUT 300)
+endif()
+add_test(NAME greeter_sddm_smoke
+         COMMAND ${PROJECT_SOURCE_DIR}/tools/greeter-sddm-smoke.sh ${PROJECT_SOURCE_DIR} ${CMAKE_BINARY_DIR})
+set_tests_properties(greeter_sddm_smoke PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 60)
+
 add_test(NAME qml_literals
          COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/tools/check-qml-literals.py ${PROJECT_SOURCE_DIR})
 

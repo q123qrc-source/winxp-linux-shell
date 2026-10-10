@@ -238,6 +238,24 @@ private Q_SLOTS:
         QCOMPARE(obj->property("scaled").toInt(), 30);
     }
 
+    void everyEngineGetsItsOwnTheme()
+    {
+        // SDDM creates one QML engine per screen; tokens are engine-bound JS.
+        const QByteArray qml = "import QtQuick\nimport Meadow.Controls\n"
+                               "QtObject { property int h: Theme.tokens.taskbar.height }";
+        QQmlEngine first;
+        first.addImportPath(QStringLiteral(MEADOW_BUILD_QML_DIR));
+        QQmlEngine second;
+        second.addImportPath(QStringLiteral(MEADOW_BUILD_QML_DIR));
+        QQmlComponent a(&first), b(&second);
+        a.setData(qml, QUrl());
+        b.setData(qml, QUrl());
+        QScopedPointer<QObject> oa(a.create()), ob(b.create());
+        QVERIFY2(oa && ob, qPrintable(a.errorString() + b.errorString()));
+        QCOMPARE(oa->property("h").toInt(), 30);
+        QCOMPARE(ob->property("h").toInt(), 30);
+    }
+
     void overrideAssetWins()
     {
         QTemporaryDir home;

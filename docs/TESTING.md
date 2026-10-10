@@ -11,8 +11,11 @@ ctest --test-dir build --output-on-failure
 | `test_themeloader` | scheme lookup and listing, token paths, bad/malformed schemes, scale + `px()`, font fallback, durations and reduced motion, live reload (including rename-over saves and broken edits), the QML singleton sharing one instance, asset override order, path traversal rejection |
 | `test_controls` | sound event resolution (bundled vs override) and muting, gradient stop parsing, every `Meadow.Controls` type instantiates without QML warnings, dialog accept/reject |
 | `test_appmenu`, `test_settings` | placeholders until phases 7/6 |
+| `test_greeter` | Turn Off dialog: buttons follow `sddm.canX`, Hibernate replaces Stand By (no suspend or Shift held), calls reach SDDM; keyboard layout cycling; avatar fallback for generic faces |
+| `greeter_flows` | ten end-to-end Welcome screen scenarios through the mock SDDM (wrong/right password, password-less user, selection without login, Turn Off without action, secondary screen, RTL, high contrast, silver at 2×, scrolling list). Fails on QML warnings and if the typed password appears in any output |
+| `greeter_sddm_smoke` | loads `greeter/` in the real `sddm-greeter-qt6 --test-mode` (offscreen) and fails on QML errors; skipped when SDDM is not installed |
 | `qml_literals` | no color or numeric literals in product QML (`tools/check-qml-literals.py`); opt out per line with `// theme-ok: reason` |
-| `screenshot_gallery` (label `screenshot`) | the control gallery for blue at 1×/1.25×/1.5×/2× and for olive and silver at 1× matches `tests/golden/` |
+| `screenshot_gallery` (label `screenshot`) | 16 goldens: the control gallery (blue at 1×/1.25×/1.5×/2×, olive, silver) and the Welcome screen (1024×768, 1920×1080 selected, 2× selected, wrong password, Caps Lock, Turn Off dialog, high contrast, RTL, silver, secondary screen) |
 | `theme_schema` | every scheme has exactly the tokens/types in `theme/schema.json`; valid colors and gradients |
 | `asset_policy` | no Microsoft-style assets or font/audio binaries in the tree; nothing in `assets-override/` |
 | `shell_version`, `shell_preview_smoke` | the binary starts, and the full QML module loads offscreen with no QML errors |
@@ -35,6 +38,13 @@ not** (`dnf install google-noto-sans-fonts`). Otherwise the test reports SKIP
 `screenshot` label, and only CI on Fedora `latest` runs it. After an
 intentional visual change, run `tools/screenshot-test.py --update`, look at
 every changed PNG, and commit them with the change.
+
+### Real SDDM
+
+`tools/greeter-real-screenshot.sh OUT.png 1920 1080 [SCALE]` runs the theme in
+the real `sddm-greeter-qt6 --test-mode` inside a headless labwc and captures it
+with `grim`. Use it for a visual check after greeter changes. Phase 3 checked
+1024×768, 1920×1080 and output scale 2 this way.
 
 Shell surfaces inside a headless labwc (`WLR_BACKENDS=headless`) join the
 screenshot set in phase 6.

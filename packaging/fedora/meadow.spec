@@ -40,6 +40,7 @@ BuildRequires:  xcursorgen
 BuildRequires:  python3
 # Needed by %%ctest: the QML smoke test renders offscreen.
 BuildRequires:  qt6-qtbase-gui
+BuildRequires:  qt6-qtsvg
 
 Requires:       %{name}-shell%{?_isa} = %{version}-%{release}
 Requires:       sddm-theme-%{name} = %{version}-%{release}
@@ -57,6 +58,7 @@ active display manager or PAM; run `meadow-setup` for that.
 %package        common
 Summary:        Shared library and Luna QML controls for Meadow
 License:        GPL-3.0-or-later
+Requires:       qt6-qtsvg
 
 %description    common
 The Meadow theme loader, sound player and the Meadow.Controls QML module,
@@ -89,7 +91,11 @@ License:        GPL-3.0-or-later AND CC-BY-SA-4.0
 BuildArch:      noarch
 Requires:       sddm
 Requires:       qt6-qtdeclarative
+# SVG logo override and avatars.
+Requires:       qt6-qtsvg
 Requires:       %{name}-common = %{version}-%{release}
+# Scheme files (theme.json), avatars and logo live in meadow-themes.
+Requires:       %{name}-themes = %{version}-%{release}
 Recommends:     fprintd
 Recommends:     fprintd-pam
 Recommends:     qt6-qtvirtualkeyboard
@@ -106,7 +112,8 @@ BuildArch:      noarch
 Requires:       fontconfig
 
 %description    themes
-Meadow's Luna Blue, Olive Green and Silver scheme definitions plus the
+Meadow's Luna Blue, Olive Green and Silver scheme definitions, the Meadow
+logo and default user pictures, plus the
 Meadow-Luna GTK and labwc themes, the MeadowLuna Kvantum theme, the
 meadow-icons and meadow-cursors themes, the Meadow sound theme and a
 fontconfig snippet mapping classic UI font names to open fonts.
@@ -170,6 +177,7 @@ tools/validate-session-desktop.sh %{buildroot}%{_datadir}/wayland-sessions/meado
 %doc docs/VISUAL_SPEC.md
 %dir %{_datadir}/%{name}
 %{_datadir}/%{name}/themes/
+%{_datadir}/%{name}/assets/
 %{_datadir}/themes/Meadow-Luna/
 %dir %{_datadir}/Kvantum
 %{_datadir}/Kvantum/MeadowLuna/

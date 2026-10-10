@@ -29,6 +29,12 @@ class MEADOW_COMMON_EXPORT GradientBox : public QQuickPaintedItem
     Q_PROPERTY(QColor borderColor READ borderColor WRITE setBorderColor NOTIFY appearanceChanged)
     Q_PROPERTY(qreal borderWidth READ borderWidth WRITE setBorderWidth NOTIFY appearanceChanged)
     Q_PROPERTY(bool borderDotted READ borderDotted WRITE setBorderDotted NOTIFY appearanceChanged)
+    // Radial mode: stops run from (centerX, centerY) — fractions of the item —
+    // out to radiusRatio times the item's larger side.
+    Q_PROPERTY(bool radial MEMBER m_radial NOTIFY appearanceChanged)
+    Q_PROPERTY(qreal centerX MEMBER m_centerX NOTIFY appearanceChanged)
+    Q_PROPERTY(qreal centerY MEMBER m_centerY NOTIFY appearanceChanged)
+    Q_PROPERTY(qreal radiusRatio MEMBER m_radiusRatio NOTIFY appearanceChanged)
 
 public:
     explicit GradientBox(QQuickItem *parent = nullptr);
@@ -81,4 +87,8 @@ private:
     QColor m_borderColor = Qt::transparent;
     qreal m_borderWidth = 0;
     bool m_borderDotted = false;
+    bool m_radial = false;
+    qreal m_centerX = 0.5;
+    qreal m_centerY = 0.5;
+    qreal m_radiusRatio = 0.5;
 };

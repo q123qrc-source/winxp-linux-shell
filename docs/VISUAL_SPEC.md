@@ -146,7 +146,17 @@ from these tokens (phase 5).
 - Bottom controls (`bottomControls.*`): the session switcher, keyboard layout
   indicator and fingerprint indicator are small translucent pills.
 - High contrast: `colors.highContrast*` replaces all gradients with solid colors.
-- Wording is our own: `hintText`, `infoText`, `passwordPanel.labelText`.
+- Wording is our own and lives in the QML as `qsTr()` strings, so it can be
+  translated. theme.json holds no user-visible text except the Start label.
+- Layout (`welcome.layout`): the panels sit `panelGap` either side of the
+  center divider. The hint wraps at `hintMaxWidth` and the info text at
+  `infoMaxWidth`. Bottom controls are `bottomControlsSpacing` apart and
+  `sidePadding` from the edges.
+- Glow and divider fade into `glow.edgeColor` / `verticalDivider.edgeColor`
+  (the same RGB with alpha 0) rather than `transparent`. That avoids a dark
+  fringe, because gradients interpolate unpremultiplied colors.
+- After a successful login, "welcome" appears in `fonts.welcomeTitle` with
+  `successText.*`.
 
 ## 5. Dialogs (`dialogs.*`)
 
@@ -160,6 +170,17 @@ from these tokens (phase 5).
   its action is unavailable.
 - Background: in the shell, a grayscale screenshot fades in over
   `dialogs.grayscaleFadeMs`; in the greeter, a dim overlay (`dimOverlayColor`).
+
+Greeter variant: footer band (`footerHeight`, `dialogs.footerColor`) with the
+Cancel button, the logo (`logoSize`) in the header, buttons `buttonSpacing`
+apart with labels `labelSpacing` below, and `hoverOverlay`/`pressedOverlay` on
+the round buttons.
+
+### Logo (`logo.*`)
+Four rounded panes (`radiusRatio` of a pane) separated by `gapRatio` of the
+grid, turned 45° into a diamond. The colors run top, right, bottom, left (sun,
+sky, grass, leaves), with a glossy highlight of `glossAlpha` on each pane. A
+user's `meadow-logo.svg` in an override folder replaces it.
 
 ### Log Off (`dialogs.logOff.*`)
 Same frame, with Switch User / Log Off buttons plus Cancel.

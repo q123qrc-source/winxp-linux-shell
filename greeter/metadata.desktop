@@ -7,6 +7,7 @@ License=GPL-3.0-or-later
 Type=sddm-theme
 Version=0.1.0
 Website=https://github.com/q123qrc-source/winxp-linux-shell
+Screenshot=preview.png
 MainScript=Main.qml
 ConfigFile=theme.conf
 Theme-Id=meadow

@@ -37,6 +37,10 @@ public:
         Warning,
         Error,
         Question,
+        Power,
+        Restart,
+        Keyboard,
+        Contrast,
     };
     Q_ENUM(Glyph)
 

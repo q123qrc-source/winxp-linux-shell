@@ -5,10 +5,13 @@
 qt_add_library(meadow-common SHARED
     src/Logging.h src/Logging.cpp
     src/ThemeLoader.h src/ThemeLoader.cpp
+    src/ThemeObject.h src/ThemeObject.cpp
     src/SoundPlayer.h src/SoundPlayer.cpp
     src/GradientBox.h src/GradientBox.cpp
     src/LunaGlyph.h src/LunaGlyph.cpp
     src/BalloonShape.h src/BalloonShape.cpp
+    src/MeadowLogo.h src/MeadowLogo.cpp
+    src/UserAccount.h src/UserAccount.cpp
 )
 
 set_target_properties(meadow-common PROPERTIES
@@ -28,7 +31,7 @@ endif()
 
 target_include_directories(meadow-common PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>)
-target_link_libraries(meadow-common PUBLIC Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick)
+target_link_libraries(meadow-common PUBLIC Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick PRIVATE Qt6::DBus)
 if(MEADOW_WITH_MULTIMEDIA)
     target_link_libraries(meadow-common PRIVATE Qt6::Multimedia)
     target_compile_definitions(meadow-common PRIVATE MEADOW_WITH_MULTIMEDIA)
@@ -37,7 +40,7 @@ endif()
 set(controls_qml
     LunaButton.qml LunaTextField.qml LunaWindowFrame.qml LunaDialog.qml
     LunaCheckBox.qml LunaComboBox.qml LunaScrollBar.qml LunaTooltip.qml
-    BalloonTip.qml GlossyGradient.qml ShadowText.qml)
+    BalloonTip.qml GlossyGradient.qml ShadowText.qml Logo.qml Avatar.qml)
 list(TRANSFORM controls_qml PREPEND qml/Meadow/Controls/)
 
 # The qmldir file is generated from this call; no hand-written qmldir is kept.

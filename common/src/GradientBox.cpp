@@ -2,6 +2,7 @@
 #include "GradientBox.h"
 
 #include <QLinearGradient>
+#include <QRadialGradient>
 #include <QPainter>
 #include <QPainterPath>
 
@@ -11,6 +12,7 @@ GradientBox::GradientBox(QQuickItem *parent)
     : QQuickPaintedItem(parent)
 {
     setAntialiasing(true);
+    connect(this, &GradientBox::appearanceChanged, this, [this] { update(); });
 }
 
 QGradientStops GradientBox::gradientStops(const QVariantList &stops)
@@ -70,7 +72,12 @@ void GradientBox::paint(QPainter *painter)
     const QRectF rect = bounds.adjusted(inset, inset, -inset, -inset);
     const QPainterPath path = roundedPath(rect, radii);
 
-    if (!m_parsedStops.isEmpty()) {
+    if (!m_parsedStops.isEmpty() && m_radial) {
+        QRadialGradient gradient(QPointF(bounds.width() * m_centerX, bounds.height() * m_centerY),
+                                 std::max(bounds.width(), bounds.height()) * m_radiusRatio);
+        gradient.setStops(m_parsedStops);
+        painter->fillPath(path, gradient);
+    } else if (!m_parsedStops.isEmpty()) {
         QLinearGradient gradient(bounds.topLeft(), m_orientation == Qt::Vertical ? bounds.bottomLeft() : bounds.topRight());
         gradient.setStops(m_parsedStops);
         painter->fillPath(path, gradient);

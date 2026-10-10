@@ -164,6 +164,49 @@ void LunaGlyph::paint(QPainter *p)
         p->drawPoint(at(0.5, 0.75));
         break;
     }
+    case Power: {
+        pen.setCapStyle(Qt::RoundCap);
+        p->setPen(pen);
+        p->setBrush(Qt::NoBrush);
+        const QRectF ring = r.adjusted(r.width() * 0.2, r.height() * 0.22, -r.width() * 0.2, -r.height() * 0.18);
+        p->drawArc(ring, 120 * 16, -240 * 16);
+        p->drawLine(at(0.5, 0.14), at(0.5, 0.5));
+        break;
+    }
+    case Restart: {
+        pen.setCapStyle(Qt::RoundCap);
+        p->setPen(pen);
+        p->setBrush(Qt::NoBrush);
+        const QRectF ring = r.adjusted(r.width() * 0.2, r.height() * 0.2, -r.width() * 0.2, -r.height() * 0.2);
+        p->drawArc(ring, 70 * 16, -300 * 16);
+        // Arrow head at the arc's end (top, pointing right).
+        triangle(at(0.5, 0.06), at(0.5, 0.34), at(0.72, 0.2));
+        break;
+    }
+    case Keyboard: {
+        p->setPen(QPen(m_color, std::max(1.0, lw / 2)));
+        p->setBrush(Qt::NoBrush);
+        const QRectF body(at(0.08, 0.26), at(0.92, 0.76));
+        p->drawRoundedRect(body, side * 0.06, side * 0.06);
+        const qreal key = side * 0.08;
+        for (int row = 0; row < 2; ++row)
+            for (int col = 0; col < 5; ++col)
+                p->fillRect(QRectF(body.left() + side * 0.08 + col * side * 0.15, body.top() + side * 0.08 + row * side * 0.13, key, key), m_color);
+        p->fillRect(QRectF(at(0.3, 0.62), at(0.7, 0.62 + 0.07)), m_color);
+        break;
+    }
+    case Contrast: {
+        p->setPen(QPen(m_color, std::max(1.0, lw / 2)));
+        p->setBrush(Qt::NoBrush);
+        const QRectF disc = r.adjusted(r.width() * 0.14, r.height() * 0.14, -r.width() * 0.14, -r.height() * 0.14);
+        p->drawEllipse(disc);
+        QPainterPath half;
+        half.moveTo(disc.center());
+        half.arcTo(disc, 90, 180);
+        half.closeSubpath();
+        p->fillPath(half, m_color);
+        break;
+    }
     case None:
         break;
     }

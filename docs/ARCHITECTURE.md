@@ -112,9 +112,17 @@ theme/<scheme>/theme.json ──▶ ThemeLoader (C++) ──▶ QML singleton `T
 - Environment: `MEADOW_THEME` (scheme), `MEADOW_THEME_DIR` (source-tree
   themes), `MEADOW_SCALE`, `MEADOW_THEME_LIVE=1` (watch the file), and
   `MEADOW_MUTE=1` / `MEADOW_SOUND_DIR` for SoundPlayer.
-- **Construction rule:** `ThemeLoader` is deliberately not default-constructible.
-  Qt prefers a default constructor over `create()` for `QML_SINGLETON` types, and
-  that would give QML an empty, separate instance.
+- **One `Theme` per engine, one loader per process.** `ThemeLoader` (C++)
+  holds the scheme, scale and fonts for the whole process. QML's `Theme` is
+  a `ThemeObject` that each engine creates through `create()`, and it
+  forwards to the loader. This split matters because SDDM creates one view,
+  and so one engine, per screen, and the JS token object belongs to exactly
+  one engine. `ThemeObject` has no default constructor on purpose: Qt would
+  prefer one over `create()` and hand QML an unconnected instance.
+- `Theme.asset(name)` resolves bundled artwork (`/usr/share/meadow/assets`, or
+  `MEADOW_ASSET_DIR` in a source tree) after the override folders.
+  `Theme.moduleAvailable(uri)` lets optional features (the on-screen
+  keyboard) appear only when their QML module is installed.
 
 ### Controls
 
@@ -127,12 +135,56 @@ painted items carry the drawing that QML can't express from data on Qt 6.5:
 | `GradientBox` | fill from a token gradient list, per-corner radii, solid or dotted border |
 | `LunaGlyph` | vector glyphs: check, arrows, chevrons, caption buttons, info/warning/error/question badges |
 | `BalloonShape` | balloon body with a slanted tail (top or bottom) |
+| `MeadowLogo` | the original logo: four glossy rounded panes in a diamond (sun, sky, grass, leaves); a monochrome variant for high contrast |
+| `UserAccount` | read-only AccountsService lookup (real name, password hint, icon); unprivileged, async, empty when the service is absent |
 
 The QML controls are LunaButton, LunaTextField, LunaCheckBox, LunaComboBox,
 LunaScrollBar, LunaTooltip, BalloonTip, LunaWindowFrame, LunaDialog,
 GlossyGradient and ShadowText. Each interactive control has a `previewState`
 property ("hover", "pressed", "focus") that forces a visual state for the
 gallery and screenshot tests. It never changes behavior.
+
+### Welcome screen (greeter)
+
+```
+Main.qml                     SDDM context → scheme + scale from theme.conf; primary vs secondary screen
+└─ WelcomeLayout             bands, dividers, radial glow, logo + hint, user list, bottom band, overlays
+   ├─ UserTile ×n            Avatar + name; selected → PasswordPanel (field, green arrow, "?")
+   ├─ TurnOffButton → TurnOffDialog   Stand By / Turn Off / Restart (Shift: Hibernate), hidden when sddm.canX is false
+   ├─ SessionSwitcher, KeyboardLayoutSwitcher, on-screen keyboard and high-contrast pills
+   ├─ CapsLockWarning, MessageBalloon   BalloonTips anchored under the password field
+   └─ FingerprintIndicator   (phase 4)
+```
+
+- **Login flow:** select a tile (click, or Enter on the keyboard-highlighted
+  tile), type the password, then Enter or the arrow calls
+  `sddm.login(user, password, session)`. `loginFailed` shakes the field,
+  clears it and shows "Did you forget your password?" with the
+  AccountsService hint when one is set. `loginSucceeded` plays the logon sound
+  and shows "welcome" until SDDM closes the view. A user without a password
+  logs on when selected. Up/Down move between users and open the next one
+  while one is selected. Esc goes back. Alt+Shift switches keyboard layout.
+- **Scale:** `scale=auto` uses the screen's *logical* DPI snapped to 1, 1.25,
+  1.5 or 2. A device pixel ratio set by the compositor is already applied by
+  Qt, so it is not applied twice: a 2× output renders with scale 1 and DPR 2.
+- **Multi-monitor:** SDDM loads `Main.qml` once per screen. Only the
+  `primaryScreen` instance shows the UI; the others draw the background.
+- **Avatars:** `~/.face.icon` or the AccountsService icon (both resolved by
+  SDDM's `userModel`). SDDM's generic `…/faces/.face.icon` and unreadable
+  pictures fall back to one of four original avatars, chosen stably from the
+  user name.
+- **Power:** the dialog calls `sddm.suspend/hibernate/powerOff/reboot` and logs
+  each request under `meadow.greeter.power`. SDDM's `--test-mode` reports no
+  capabilities, so `debugPowerButtons=true` in `theme.conf` shows them all for
+  testing.
+- **Logging:** `meadow.greeter`, `meadow.greeter.auth` (user name and outcome
+  only, never the password) and `meadow.greeter.power`.
+- **Preview harness:** `tools/greeter-preview` loads the theme with C++ stand-ins
+  for SDDM 0.21's `sddm`, `userModel`, `sessionModel`, `keyboard`,
+  `screenModel` and `config`, with the same property, role and signal names.
+  It drives the screenshot and flow tests. `tools/greeter-sddm-smoke.sh` and
+  `tools/greeter-real-screenshot.sh` check the theme in the real
+  `sddm-greeter-qt6`.
 
 ## 5. Source layout and build
 
@@ -143,6 +195,8 @@ gallery and screenshot tests. It never changes behavior.
 | `shell/src/main.cpp`, `shell/qml/` | `meadow-shell` + QML module `Meadow.Shell` | `--preview`, `--theme`, `--exit-after-ms` |
 | `greeter/` | installed as-is to `/usr/share/sddm/themes/meadow` | `helper/` built from phase 4 |
 | `tools/gallery/` | `meadow-gallery` + `meadow-imgdiff` (not installed) | control gallery and screenshot comparison |
+| `tools/greeter-preview/` | `meadow-greeter-preview` (not installed) | Welcome screen with mock SDDM objects |
+| `theme/assets/` | installed to `/usr/share/meadow/assets` | original logo and avatar SVGs (CC-BY-SA-4.0) |
 | `tests/` | Qt Test executables + Python checks | `MEADOW_THEME_DIR` points at the source tree |
 
 Optional dependencies (`Qt6::WaylandClient`, `LayerShellQt`, `Qt6::Multimedia`,
@@ -177,6 +231,7 @@ first uses them. The Fedora spec already BuildRequires all of them.
 | Risk | Mitigation |
 |---|---|
 | A broken PAM stack locks users out | The package never touches PAM. `meadow-setup` uses markers, `.meadow-bak` backups and `pamtester`, and documents TTY recovery. PAM is tested only in the VM. |
+| SDDM creates one QML engine per screen | `Theme` is a per-engine object over one shared loader; a test covers two engines. |
 | SDDM starts PAM only on `login()` | Auto-start the fingerprint conversation with `login(user, "")` when fingers are enrolled; empty Enter is the fallback (phase 4). |
 | The labwc / LayerShellQt API changes | Wrap it in a small helper and pin minimum versions in the spec. |
 | Headless CI can't show real Wayland | `--preview` + `QT_QPA_PLATFORM=offscreen`; labwc with `WLR_BACKENDS=headless` for screenshot tests. |
@@ -189,7 +244,7 @@ first uses them. The Fedora spec already BuildRequires all of them.
 |---|---|
 | 1 | Scaffold, docs, theme tokens, CMake, spec draft (done) |
 | 2 | ThemeLoader complete, SoundPlayer, all Luna controls, gallery, golden screenshots (done) |
-| 3 | SDDM Welcome screen |
+| 3 | SDDM Welcome screen (done) |
 | 4 | Fingerprint login (PAM snippet, greeter UX, helper) |
 | 5 | Session script, labwc config, decorations |
 | 6 | Taskbar, tray, notifications, clock, volume/network/battery |

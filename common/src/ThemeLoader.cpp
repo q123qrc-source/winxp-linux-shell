@@ -8,7 +8,6 @@
 #include <QFileSystemWatcher>
 #include <QFontDatabase>
 #include <QGuiApplication>
-#include <QJSEngine>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSet>
@@ -62,18 +61,6 @@ ThemeLoader *ThemeLoader::instance()
     return s_instance;
 }
 
-ThemeLoader *ThemeLoader::create(QQmlEngine *, QJSEngine *engine)
-{
-    ThemeLoader *loader = instance();
-    // The singleton is owned by the application, not by the QML engine.
-    QJSEngine::setObjectOwnership(loader, QJSEngine::CppOwnership);
-    if (loader->m_engine && loader->m_engine != engine)
-        qCWarning(lcTheme) << "Theme used from a second QML engine; tokens follow the newest engine";
-    loader->m_engine = engine;
-    loader->m_tokensJsDirty = true;
-    return loader;
-}
-
 QStringList ThemeLoader::themeSearchDirs()
 {
     QStringList dirs;
@@ -91,6 +78,15 @@ QStringList ThemeLoader::overrideDirs()
         QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + QLatin1String("/meadow/assets-override"),
         QStringLiteral(MEADOW_DATADIR "/assets-override"),
     };
+}
+
+QStringList ThemeLoader::assetDirs()
+{
+    QStringList dirs;
+    if (const QString dev = qEnvironmentVariable("MEADOW_ASSET_DIR"); !dev.isEmpty())
+        dirs << dev;
+    dirs << QStringLiteral(MEADOW_DATADIR "/assets");
+    return dirs;
 }
 
 QStringList ThemeLoader::availableSchemes()
@@ -127,7 +123,6 @@ bool ThemeLoader::loadFile(const QString &path)
     m_schemeId = m_tokens.value(QStringLiteral("meta")).toMap().value(QStringLiteral("id")).toString();
     m_filePath = QFileInfo(path).absoluteFilePath();
     m_error.clear();
-    m_tokensJsDirty = true;
     applyScaleDefault();
     rewatch();
     qCInfo(lcTheme).noquote() << "loaded scheme" << m_schemeId << "from" << path;
@@ -151,17 +146,6 @@ bool ThemeLoader::loadScheme(const QString &schemeId)
     m_error = QStringLiteral("scheme %1 not found in %2").arg(schemeId, themeSearchDirs().join(QLatin1String(", ")));
     qCWarning(lcTheme).noquote() << m_error;
     return false;
-}
-
-QJSValue ThemeLoader::tokensJs()
-{
-    // Converting the QVariantMap on every access would copy the whole tree;
-    // build one JS object per load and hand out references to it.
-    if (m_tokensJsDirty && m_engine) {
-        m_tokensJs = m_engine->toScriptValue(m_tokens);
-        m_tokensJsDirty = false;
-    }
-    return m_tokensJs;
 }
 
 QVariant ThemeLoader::token(const QString &path) const
@@ -291,6 +275,16 @@ void ThemeLoader::rewatch()
     if (!m_watcher->files().isEmpty())
         m_watcher->removePaths(m_watcher->files());
     m_watcher->addPath(m_filePath);
+}
+
+QString ThemeLoader::asset(const QString &name) const
+{
+    for (const QString &dir : assetDirs()) {
+        const QString url = resolveAsset(name, dir);
+        if (!url.isEmpty())
+            return url;
+    }
+    return resolveAsset(name);
 }
 
 QString ThemeLoader::resolveAsset(const QString &name, const QString &fallbackDir) const

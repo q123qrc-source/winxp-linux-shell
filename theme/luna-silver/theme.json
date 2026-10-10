@@ -100,6 +100,18 @@
         "sans-serif"
       ],
       "pixelSize": 10
+    },
+    "welcomeTitle": {
+      "families": [
+        "Tahoma",
+        "Noto Sans",
+        "DejaVu Sans",
+        "Liberation Sans",
+        "sans-serif"
+      ],
+      "pixelSize": 44,
+      "bold": true,
+      "italic": true
     }
   },
   "colors": {
@@ -748,19 +760,19 @@
       "color": "#9097989E",
       "centerX": 0.25,
       "centerY": 0.35,
-      "radius": 0.45
+      "radius": 0.45,
+      "edgeColor": "#0097989E"
     },
     "verticalDivider": {
       "width": 1,
       "color": "#949599",
-      "fadeLength": 0.25
+      "fadeLength": 0.25,
+      "edgeColor": "#00949599"
     },
     "logo": {
       "size": 96
     },
     "hintColor": "#FFFFFF",
-    "hintText": "To begin, click your user name",
-    "infoText": "After you log on, you can add or change accounts. Open Control Panel, then User Accounts.",
     "infoColor": "#FFFFFF",
     "tile": {
       "width": 340,
@@ -803,7 +815,8 @@
           "color": "#E0656872"
         }
       ],
-      "dimmedOpacity": 0.5
+      "dimmedOpacity": 0.5,
+      "expandedGap": 6
     },
     "passwordPanel": {
       "fieldWidth": 180,
@@ -838,9 +851,10 @@
           "color": "#6A6D77"
         }
       ],
-      "labelText": "Type your password",
       "shakeDistance": 8,
-      "shakeDurationMs": 400
+      "shakeDurationMs": 400,
+      "spacing": 4,
+      "labelColor": "#FFFFFF"
     },
     "turnOffButton": {
       "iconSize": 26,
@@ -859,13 +873,32 @@
         }
       ],
       "textColor": "#FFFFFF",
-      "text": "Turn off computer"
+      "spacing": 8,
+      "hoverOverlay": "#40FFFFFF",
+      "pressedOverlay": "#30000000"
     },
     "bottomControls": {
       "height": 22,
       "background": "#30FFFFFF",
       "border": "#60FFFFFF",
-      "textColor": "#FFFFFF"
+      "textColor": "#FFFFFF",
+      "radius": 3,
+      "paddingH": 7,
+      "spacing": 4,
+      "hoverBackground": "#50FFFFFF"
+    },
+    "layout": {
+      "panelGap": 32,
+      "sidePadding": 32,
+      "hintMaxWidth": 320,
+      "hintSpacing": 14,
+      "bottomControlsSpacing": 8,
+      "infoMaxWidth": 320,
+      "listPadding": 8
+    },
+    "successText": {
+      "color": "#FFFFFF",
+      "shadowColor": "#80000000"
     }
   },
   "dialogs": {
@@ -946,7 +979,14 @@
           "color": "#2B8A1C"
         }
       ],
-      "labelColor": "#FFFFFF"
+      "labelColor": "#FFFFFF",
+      "footerHeight": 40,
+      "buttonSpacing": 44,
+      "labelSpacing": 6,
+      "glyphColor": "#FFFFFF",
+      "hoverOverlay": "#40FFFFFF",
+      "pressedOverlay": "#30000000",
+      "logoSize": 34
     },
     "logOff": {
       "width": 314,
@@ -1228,5 +1268,16 @@
       "$XDG_DATA_HOME/meadow/assets-override",
       "/usr/share/meadow/assets-override"
     ]
+  },
+  "logo": {
+    "colors": [
+      "#F5C22B",
+      "#2E8BEA",
+      "#4CAE3A",
+      "#7CC43E"
+    ],
+    "gapRatio": 0.07,
+    "radiusRatio": 0.3,
+    "glossAlpha": 0.45
   }
 }

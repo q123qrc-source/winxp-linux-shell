@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0
+     Meadow logo: four glossy rounded panes arranged as a diamond (sun, sky,
+     grass, leaves). Original artwork; the in-app logo is drawn by MeadowLogo
+     with the same geometry. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="sun" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE36A"/><stop offset="0.55" stop-color="#F5C22B"/><stop offset="1" stop-color="#C49B22"/></linearGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6DB4F5"/><stop offset="0.55" stop-color="#2E8BEA"/><stop offset="1" stop-color="#256FBB"/></linearGradient>
+    <linearGradient id="grass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#83CF6E"/><stop offset="0.55" stop-color="#4CAE3A"/><stop offset="1" stop-color="#3D8B2E"/></linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#A9DE73"/><stop offset="0.55" stop-color="#7CC43E"/><stop offset="1" stop-color="#639D32"/></linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0.6" y2="0.6"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.5"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient>
+  </defs>
+  <!-- grid side 181 (= 256 / sqrt 2), gap 12.7, tile 84.2, radius 25 -->
+  <g transform="translate(128 128) rotate(45)">
+    <rect x="-90.5" y="-90.5" width="84.2" height="84.2" rx="25" fill="url(#sun)" stroke="#A3811C" stroke-width="2.6"/>
+    <rect x="6.3" y="-90.5" width="84.2" height="84.2" rx="25" fill="url(#sky)" stroke="#1F5D9C" stroke-width="2.6"/>
+    <rect x="-90.5" y="6.3" width="84.2" height="84.2" rx="25" fill="url(#leaf)" stroke="#53832A" stroke-width="2.6"/>
+    <rect x="6.3" y="6.3" width="84.2" height="84.2" rx="25" fill="url(#grass)" stroke="#337427" stroke-width="2.6"/>
+    <rect x="-90.5" y="-90.5" width="84.2" height="84.2" rx="25" fill="url(#gloss)"/>
+    <rect x="6.3" y="-90.5" width="84.2" height="84.2" rx="25" fill="url(#gloss)"/>
+    <rect x="-90.5" y="6.3" width="84.2" height="84.2" rx="25" fill="url(#gloss)"/>
+    <rect x="6.3" y="6.3" width="84.2" height="84.2" rx="25" fill="url(#gloss)"/>
+  </g>
+</svg>

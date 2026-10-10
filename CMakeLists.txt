@@ -66,6 +66,7 @@ endif()
 option(MEADOW_BUILD_GALLERY "Build the control gallery and screenshot tools" ON)
 if(MEADOW_BUILD_GALLERY)
     add_subdirectory(tools/gallery)
+    add_subdirectory(tools/greeter-preview)
 endif()
 
 # --- Data-only components -------------------------------------------------
@@ -74,6 +75,8 @@ if(MEADOW_BUILD_THEMES)
         install(FILES theme/${scheme}/theme.json DESTINATION ${MEADOW_DATADIR}/themes/${scheme})
     endforeach()
     install(FILES theme/schema.json DESTINATION ${MEADOW_DATADIR}/themes)
+    install(FILES theme/assets/meadow-logo.svg DESTINATION ${MEADOW_DATADIR}/assets)
+    install(DIRECTORY theme/assets/ DESTINATION ${MEADOW_DATADIR}/assets FILES_MATCHING PATTERN "avatar-*.svg")
     add_subdirectory(toolkit-themes)
     install(FILES decorations/labwc/themerc
             DESTINATION ${CMAKE_INSTALL_DATADIR}/themes/Meadow-Luna/openbox-3)
