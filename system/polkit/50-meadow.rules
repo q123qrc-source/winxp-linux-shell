@@ -1,0 +1,10 @@
+// Optional, NOT installed by default. Documented in docs/ARCHITECTURE.md.
+// Example: allow active local Meadow sessions to suspend without a prompt.
+// Copy to /etc/polkit-1/rules.d/ only if your site policy allows it.
+//
+// polkit.addRule(function(action, subject) {
+//     if (action.id == "org.freedesktop.login1.suspend" &&
+//         subject.local && subject.active) {
+//         return polkit.Result.YES;
+//     }
+// });

@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# labwc environment file (KEY=value). Toolkit variables are set by
+# meadow-session; only keyboard defaults live here.
+XKB_DEFAULT_LAYOUT=us

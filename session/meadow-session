@@ -1,0 +1,35 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Starts a Meadow session: exports the desktop identity and toolkit theming,
+# then hands over to labwc with Meadow's configuration directory.
+#
+# Configuration lookup: ~/.config/meadow/labwc (user copy) wins over the
+# packaged defaults in $MEADOW_DATADIR/labwc.
+
+MEADOW_DATADIR="${MEADOW_DATADIR:-/usr/share/meadow}"
+
+export XDG_CURRENT_DESKTOP=Meadow
+export XDG_SESSION_DESKTOP=meadow
+export XDG_SESSION_TYPE=wayland
+export DESKTOP_SESSION=meadow
+
+export QT_QPA_PLATFORM="wayland;xcb"
+# qt6ct is optional; Kvantum alone provides the widget style.
+if [ -z "$QT_QPA_PLATFORMTHEME" ] && command -v qt6ct >/dev/null 2>&1; then
+    export QT_QPA_PLATFORMTHEME=qt6ct
+fi
+export QT_STYLE_OVERRIDE=kvantum
+export GTK_THEME=Meadow-Luna
+export XCURSOR_THEME=meadow-cursors
+export XCURSOR_SIZE="${XCURSOR_SIZE:-24}"
+export MOZ_ENABLE_WAYLAND=1
+
+config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/meadow/labwc"
+[ -d "$config_dir" ] || config_dir="$MEADOW_DATADIR/labwc"
+
+if ! command -v labwc >/dev/null 2>&1; then
+    echo "meadow-session: labwc is not installed" >&2
+    exit 1
+fi
+
+exec labwc --config-dir "$config_dir" "$@"

@@ -1,0 +1,16 @@
+Source: meadow
+Section: x11
+Priority: optional
+Maintainer: Meadow contributors <q123qrc@gmail.com>
+Build-Depends: debhelper-compat (= 13), cmake, ninja-build, extra-cmake-modules,
+ qt6-base-dev, qt6-declarative-dev, qt6-wayland-dev, qt6-multimedia-dev,
+ liblayershellqtinterface-dev, libwayland-dev, wayland-protocols, python3
+Standards-Version: 4.7.0
+Homepage: https://github.com/q123qrc-source/winxp-linux-shell
+Rules-Requires-Root: no
+
+Package: meadow
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, labwc, sddm
+Description: Classic Luna-style Wayland desktop
+ Secondary packaging target; completed in phase 10.

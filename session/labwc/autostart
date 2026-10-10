@@ -1,0 +1,14 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Run by labwc at startup. meadow-shell is restarted if it crashes; phase 10
+# adds back-off and a systemd user unit alternative.
+dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null &
+
+/usr/libexec/xdg-desktop-portal >/dev/null 2>&1 &
+
+(
+    while :; do
+        meadow-shell && break
+        sleep 1
+    done
+) &

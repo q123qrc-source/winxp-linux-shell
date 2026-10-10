@@ -1,0 +1,74 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# meadow-setup — opt-in system integration for Meadow (greeter, fingerprint, lock PAM).
+#
+# Packages never change login behavior; this tool is the only thing that does,
+# and only when a user asks. Every change is backed up (*.meadow-bak), marked,
+# and reversible with the matching disable-* command.
+#
+# Phase 1 skeleton: prints the plan for each command. Phase 11 implements them.
+set -euo pipefail
+
+usage() {
+    cat <<'USAGE'
+Usage: meadow-setup [--dry-run] COMMAND
+
+Commands:
+  enable-greeter       Install /etc/sddm.conf.d/10-meadow.conf, pick the SDDM
+                       display server, optionally make SDDM the active DM.
+  disable-greeter      Remove the drop-in and restore the previous DM.
+  enable-fingerprint   authselect with-fingerprint, patch /etc/pam.d/sddm only
+                       if needed, install /etc/pam.d/meadow-lock, verify.
+  disable-fingerprint  Revert every fingerprint change from backups/markers.
+  status               Show what Meadow has changed on this system.
+
+Options:
+  --dry-run            Print every action without changing anything.
+  -h, --help           Show this help.
+
+Recovery and details: /usr/share/doc/meadow*/PAM_FINGERPRINT.md
+USAGE
+}
+
+dry_run=0
+cmd=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --dry-run) dry_run=1 ;;
+        -h|--help) usage; exit 0 ;;
+        -*) echo "meadow-setup: unknown option $1" >&2; usage >&2; exit 2 ;;
+        *) [ -z "$cmd" ] && cmd="$1" || { echo "meadow-setup: unexpected argument $1" >&2; exit 2; } ;;
+    esac
+    shift
+done
+
+plan() {
+    case "$1" in
+        enable-greeter)
+            echo "would: back up and write /etc/sddm.conf.d/10-meadow.conf from /usr/share/meadow/sddm.conf.d/10-meadow.conf.example"
+            echo "would: detect sddm-wayland-generic / sddm-wayland-plasma / sddm-x11 and set [General] DisplayServer"
+            echo "would: after confirmation, record the current display-manager.service and run systemctl enable --force sddm.service" ;;
+        disable-greeter)
+            echo "would: remove /etc/sddm.conf.d/10-meadow.conf (restore *.meadow-bak if present)"
+            echo "would: re-enable the recorded previous display-manager.service" ;;
+        enable-fingerprint)
+            echo "would: show 'authselect current' and run 'authselect enable-feature with-fingerprint'"
+            echo "would: insert the marked pam_fprintd line into /etc/pam.d/sddm only if no substack reaches pam_fprintd"
+            echo "would: install /etc/pam.d/meadow-lock using the substack /etc/pam.d/sddm uses"
+            echo "would: verify with pamtester and print TTY recovery steps" ;;
+        disable-fingerprint)
+            echo "would: remove the marked block from /etc/pam.d/sddm (or restore its *.meadow-bak)"
+            echo "would: remove /etc/pam.d/meadow-lock and run 'authselect disable-feature with-fingerprint' if Meadow enabled it" ;;
+        status)
+            echo "would: list Meadow drop-ins, PAM markers and backups" ;;
+        *)
+            echo "meadow-setup: unknown command '$1'" >&2; usage >&2; exit 2 ;;
+    esac
+}
+
+[ -n "$cmd" ] || { usage >&2; exit 2; }
+plan "$cmd"
+if [ "$dry_run" -eq 0 ]; then
+    echo "meadow-setup: '$cmd' is not implemented yet (phase 11); nothing was changed." >&2
+    exit 3
+fi

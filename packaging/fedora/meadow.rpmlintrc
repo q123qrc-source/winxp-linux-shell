@@ -1,0 +1,17 @@
+# rpmlint suppressions for Meadow. Every entry must say why it is justified.
+
+# "labwc" is the name of the Wayland compositor Meadow runs on, not a typo.
+addFilter(r"spelling-error .*labwc")
+
+# The "meadow" metapackage only pulls in the subpackages. It is arch-specific
+# because it Requires meadow-shell%{?_isa}, so it has no binaries of its own
+# by design.
+addFilter(r"meadow\.[^:]+: E: no-binary")
+
+# Source0 is produced locally by tools/make-tarball.sh (git archive), and
+# Packit builds the same tarball, so there is no download URL to point at.
+addFilter(r"invalid-url Source0: meadow-")
+
+# Man pages for meadow-shell, meadow-session and meadow-setup are written in
+# phase 11 together with meadow-setup's real implementation. TODO: remove then.
+addFilter(r"no-manual-page-for-binary meadow-")

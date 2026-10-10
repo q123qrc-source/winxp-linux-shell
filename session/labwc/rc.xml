@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later
+     labwc configuration for Meadow. Phase 5 completes the keybind set; this
+     skeleton already uses the Meadow decoration theme. -->
+<labwc_config>
+  <core>
+    <decoration>server</decoration>
+    <gap>0</gap>
+  </core>
+
+  <theme>
+    <name>Meadow-Luna</name>
+    <cornerRadius>8</cornerRadius>
+    <font place="ActiveWindow"><name>sans</name><size>10</size><weight>bold</weight></font>
+    <font place="InactiveWindow"><name>sans</name><size>10</size><weight>bold</weight></font>
+  </theme>
+
+  <focus>
+    <followMouse>no</followMouse>
+    <raiseOnFocus>yes</raiseOnFocus>
+  </focus>
+
+  <placement>
+    <policy>automatic</policy>
+  </placement>
+
+  <keyboard>
+    <keybind key="A-F4"><action name="Close"/></keybind>
+    <keybind key="A-Tab"><action name="NextWindow"/></keybind>
+    <keybind key="W-e"><action name="Execute" command="pcmanfm-qt"/></keybind>
+  </keyboard>
+
+  <mouse>
+    <context name="TitleBar">
+      <mousebind button="Left" action="DoubleClick"><action name="ToggleMaximize"/></mousebind>
+    </context>
+  </mouse>
+</labwc_config>

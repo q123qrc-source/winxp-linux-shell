@@ -1,0 +1,1214 @@
+{
+  "meta": {
+    "id": "luna-olive",
+    "name": "Luna Olive Green",
+    "schemaVersion": 1,
+    "description": "Olive Green variant; generated from luna-blue by hue mapping, then hand-tunable."
+  },
+  "scale": {
+    "factor": 1.0,
+    "supported": [
+      1.0,
+      1.25,
+      1.5,
+      2.0
+    ],
+    "baseDpi": 96
+  },
+  "fonts": {
+    "ui": {
+      "families": [
+        "Tahoma",
+        "Noto Sans",
+        "DejaVu Sans",
+        "Liberation Sans",
+        "sans-serif"
+      ],
+      "pixelSize": 11
+    },
+    "title": {
+      "families": [
+        "Trebuchet MS",
+        "Noto Sans",
+        "DejaVu Sans",
+        "Liberation Sans",
+        "sans-serif"
+      ],
+      "pixelSize": 13,
+      "bold": true
+    },
+    "start": {
+      "families": [
+        "Franklin Gothic Medium",
+        "Noto Sans",
+        "DejaVu Sans",
+        "Liberation Sans",
+        "sans-serif"
+      ],
+      "pixelSize": 18,
+      "bold": true,
+      "italic": true
+    },
+    "welcomeUser": {
+      "families": [
+        "Tahoma",
+        "Noto Sans",
+        "DejaVu Sans",
+        "Liberation Sans",
+        "sans-serif"
+      ],
+      "pixelSize": 20
+    },
+    "welcomeHint": {
+      "families": [
+        "Tahoma",
+        "Noto Sans",
+        "DejaVu Sans",
+        "Liberation Sans",
+        "sans-serif"
+      ],
+      "pixelSize": 18
+    },
+    "menuHeader": {
+      "families": [
+        "Tahoma",
+        "Noto Sans",
+        "DejaVu Sans",
+        "Liberation Sans",
+        "sans-serif"
+      ],
+      "pixelSize": 14,
+      "bold": true
+    },
+    "menuItemBold": {
+      "families": [
+        "Tahoma",
+        "Noto Sans",
+        "DejaVu Sans",
+        "Liberation Sans",
+        "sans-serif"
+      ],
+      "pixelSize": 11,
+      "bold": true
+    },
+    "small": {
+      "families": [
+        "Tahoma",
+        "Noto Sans",
+        "DejaVu Sans",
+        "Liberation Sans",
+        "sans-serif"
+      ],
+      "pixelSize": 10
+    }
+  },
+  "colors": {
+    "accent": "#A0B461",
+    "accentDark": "#4C572C",
+    "accentLight": "#BBD17A",
+    "selection": "#91A25F",
+    "selectionText": "#FFFFFF",
+    "windowBackground": "#ECE9D8",
+    "windowText": "#000000",
+    "disabledText": "#ACA899",
+    "focusRing": "#000000",
+    "white": "#FFFFFF",
+    "shadow": "#80000000",
+    "textShadow": "#A0000000",
+    "highContrastBackground": "#000000",
+    "highContrastText": "#FFFFFF",
+    "highContrastAccent": "#FFFF00"
+  },
+  "taskbar": {
+    "height": 30,
+    "exclusiveZone": 30,
+    "gradient": [
+      {
+        "pos": 0.0,
+        "color": "#9CAF65"
+      },
+      {
+        "pos": 0.04,
+        "color": "#ABBD76"
+      },
+      {
+        "pos": 0.08,
+        "color": "#9CB05E"
+      },
+      {
+        "pos": 0.5,
+        "color": "#A0B461"
+      },
+      {
+        "pos": 0.9,
+        "color": "#98AC5B"
+      },
+      {
+        "pos": 1.0,
+        "color": "#788748"
+      }
+    ],
+    "topEdgeHeight": 1,
+    "topEdgeColor": "#B6C38F",
+    "spacing": 2,
+    "autoHideRevealHeight": 2,
+    "autoHideDelayMs": 500
+  },
+  "startButton": {
+    "width": 100,
+    "height": 30,
+    "cornerRadiusRight": 12,
+    "logoSize": 20,
+    "logoMarginLeft": 8,
+    "labelSpacing": 4,
+    "label": "start",
+    "labelColor": "#FFFFFF",
+    "labelShadowColor": "#A0103010",
+    "labelShadowOffset": 1,
+    "gradient": {
+      "normal": [
+        {
+          "pos": 0.0,
+          "color": "#5EAC56"
+        },
+        {
+          "pos": 0.12,
+          "color": "#4E9B48"
+        },
+        {
+          "pos": 0.5,
+          "color": "#3C9A3C"
+        },
+        {
+          "pos": 0.88,
+          "color": "#348734"
+        },
+        {
+          "pos": 1.0,
+          "color": "#2A6F2A"
+        }
+      ],
+      "hover": [
+        {
+          "pos": 0.0,
+          "color": "#79C66F"
+        },
+        {
+          "pos": 0.12,
+          "color": "#64B85C"
+        },
+        {
+          "pos": 0.5,
+          "color": "#4DB04D"
+        },
+        {
+          "pos": 0.88,
+          "color": "#419E41"
+        },
+        {
+          "pos": 1.0,
+          "color": "#327F32"
+        }
+      ],
+      "pressed": [
+        {
+          "pos": 0.0,
+          "color": "#246A24"
+        },
+        {
+          "pos": 0.12,
+          "color": "#2B7A2B"
+        },
+        {
+          "pos": 0.5,
+          "color": "#2F832F"
+        },
+        {
+          "pos": 0.88,
+          "color": "#33893A"
+        },
+        {
+          "pos": 1.0,
+          "color": "#3D963D"
+        }
+      ]
+    },
+    "highlightColor": "#40FFFFFF",
+    "borderColor": "#1E5A1E"
+  },
+  "quickLaunch": {
+    "iconSize": 16,
+    "itemPadding": 3,
+    "gripWidth": 6,
+    "gripDotColor": "#65733A",
+    "gripDotHighlight": "#B6C58A",
+    "enabledByDefault": true
+  },
+  "taskButton": {
+    "maxWidth": 160,
+    "minWidth": 40,
+    "height": 22,
+    "radius": 3,
+    "iconSize": 16,
+    "padding": 4,
+    "textColor": "#FFFFFF",
+    "gradient": {
+      "normal": [
+        {
+          "pos": 0.0,
+          "color": "#B5C682"
+        },
+        {
+          "pos": 0.1,
+          "color": "#B3C775"
+        },
+        {
+          "pos": 0.9,
+          "color": "#A8BD6B"
+        },
+        {
+          "pos": 1.0,
+          "color": "#98AB5F"
+        }
+      ],
+      "hover": [
+        {
+          "pos": 0.0,
+          "color": "#C2D196"
+        },
+        {
+          "pos": 0.1,
+          "color": "#BED184"
+        },
+        {
+          "pos": 0.9,
+          "color": "#B6C97C"
+        },
+        {
+          "pos": 1.0,
+          "color": "#A6B96E"
+        }
+      ],
+      "active": [
+        {
+          "pos": 0.0,
+          "color": "#83944D"
+        },
+        {
+          "pos": 0.1,
+          "color": "#8A9C54"
+        },
+        {
+          "pos": 0.9,
+          "color": "#92A55B"
+        },
+        {
+          "pos": 1.0,
+          "color": "#97AA60"
+        }
+      ],
+      "attention": [
+        {
+          "pos": 0.0,
+          "color": "#FFB547"
+        },
+        {
+          "pos": 0.1,
+          "color": "#F7A33A"
+        },
+        {
+          "pos": 0.9,
+          "color": "#E8892A"
+        },
+        {
+          "pos": 1.0,
+          "color": "#D67418"
+        }
+      ]
+    },
+    "borderColor": "#7A8A4A",
+    "activeBorderColor": "#5C6936",
+    "attentionPulseMs": 600,
+    "attentionPulseCount": 7
+  },
+  "tray": {
+    "gradient": [
+      {
+        "pos": 0.0,
+        "color": "#84984A"
+      },
+      {
+        "pos": 0.05,
+        "color": "#A7BF5F"
+      },
+      {
+        "pos": 0.1,
+        "color": "#AEC664"
+      },
+      {
+        "pos": 0.5,
+        "color": "#A8C15F"
+      },
+      {
+        "pos": 0.95,
+        "color": "#A6BE5E"
+      },
+      {
+        "pos": 1.0,
+        "color": "#9DB457"
+      }
+    ],
+    "leftBorderColor": "#576431",
+    "leftBorderHighlight": "#B1C968",
+    "leftBorderWidth": 1,
+    "iconSize": 16,
+    "iconSpacing": 2,
+    "paddingLeft": 8,
+    "paddingRight": 8,
+    "chevronSize": 15,
+    "chevronColor": "#FFFFFF"
+  },
+  "clock": {
+    "format": "HH:mm",
+    "tooltipFormat": "dddd, MMMM d, yyyy",
+    "textColor": "#FFFFFF",
+    "paddingLeft": 6
+  },
+  "languageBar": {
+    "width": 22,
+    "background": "#9AAD61",
+    "border": "#65733A",
+    "textColor": "#FFFFFF"
+  },
+  "startMenu": {
+    "width": 380,
+    "height": 480,
+    "radiusTop": 7,
+    "borderColor": "#728340",
+    "borderWidth": 1,
+    "header": {
+      "height": 64,
+      "gradient": [
+        {
+          "pos": 0.0,
+          "color": "#94A957"
+        },
+        {
+          "pos": 0.08,
+          "color": "#91A651"
+        },
+        {
+          "pos": 0.5,
+          "color": "#91A651"
+        },
+        {
+          "pos": 0.92,
+          "color": "#91A651"
+        },
+        {
+          "pos": 1.0,
+          "color": "#819448"
+        }
+      ],
+      "highlightColor": "#B2C57A",
+      "avatarSize": 48,
+      "avatarBorderWidth": 2,
+      "avatarBorderColor": "#FFFFFF",
+      "avatarRadius": 4,
+      "nameColor": "#FFFFFF",
+      "nameShadowColor": "#A02D3418"
+    },
+    "headerSeparator": {
+      "height": 2,
+      "gradient": [
+        {
+          "pos": 0.0,
+          "color": "#00F0A060"
+        },
+        {
+          "pos": 0.5,
+          "color": "#F0A060"
+        },
+        {
+          "pos": 1.0,
+          "color": "#00F0A060"
+        }
+      ]
+    },
+    "left": {
+      "width": 190,
+      "background": "#FFFFFF",
+      "itemHeight": 36,
+      "iconSize": 32,
+      "smallItemHeight": 34,
+      "padding": 6,
+      "subtitleColor": "#7F7F7F",
+      "separatorColor": "#D5D3CC",
+      "hoverBackground": "#91A25F",
+      "hoverText": "#FFFFFF",
+      "mfuCount": 6,
+      "allProgramsArrowColor": "#3A9D23",
+      "allProgramsHeight": 30
+    },
+    "right": {
+      "background": "#C9CDBB",
+      "borderLeftColor": "#B9C39B",
+      "itemHeight": 26,
+      "iconSize": 24,
+      "padding": 6,
+      "textColor": "#4C572C",
+      "boldItems": true,
+      "separatorColor": "#BBC3A4",
+      "hoverBackground": "#91A25F",
+      "hoverText": "#FFFFFF"
+    },
+    "footer": {
+      "height": 40,
+      "gradient": [
+        {
+          "pos": 0.0,
+          "color": "#9FAF6D"
+        },
+        {
+          "pos": 0.1,
+          "color": "#A5B86D"
+        },
+        {
+          "pos": 0.9,
+          "color": "#93A658"
+        },
+        {
+          "pos": 1.0,
+          "color": "#889B50"
+        }
+      ],
+      "buttonIconSize": 22,
+      "buttonTextColor": "#FFFFFF",
+      "buttonHoverBackground": "#30FFFFFF"
+    },
+    "allPrograms": {
+      "itemHeight": 22,
+      "iconSize": 16,
+      "minWidth": 180,
+      "maxWidth": 360,
+      "background": "#FFFFFF",
+      "borderColor": "#A0A0A0",
+      "sideStripColor": "#7B8757",
+      "hoverDelayMs": 400,
+      "newProgramHighlight": "#FFF1A6",
+      "newProgramDays": 7
+    }
+  },
+  "window": {
+    "titlebar": {
+      "height": 30,
+      "radiusTop": 8,
+      "gradient": {
+        "active": [
+          {
+            "pos": 0.0,
+            "color": "#B5D162"
+          },
+          {
+            "pos": 0.06,
+            "color": "#A8C358"
+          },
+          {
+            "pos": 0.12,
+            "color": "#A8C358"
+          },
+          {
+            "pos": 0.6,
+            "color": "#B4D15E"
+          },
+          {
+            "pos": 0.9,
+            "color": "#AAC559"
+          },
+          {
+            "pos": 1.0,
+            "color": "#98B04F"
+          }
+        ],
+        "inactive": [
+          {
+            "pos": 0.0,
+            "color": "#C0C9A5"
+          },
+          {
+            "pos": 0.06,
+            "color": "#ABB789"
+          },
+          {
+            "pos": 0.6,
+            "color": "#B6C195"
+          },
+          {
+            "pos": 1.0,
+            "color": "#A7B385"
+          }
+        ]
+      },
+      "textColor": "#FFFFFF",
+      "inactiveTextColor": "#C8CBBD",
+      "textShadowColor": "#A04D582C",
+      "textShadowOffset": 1,
+      "iconSize": 16,
+      "paddingLeft": 6
+    },
+    "border": {
+      "width": 4,
+      "activeColor": "#A5C056",
+      "activeHighlight": "#ABC362",
+      "activeShadow": "#9AB254",
+      "inactiveColor": "#ACB88A",
+      "inactiveHighlight": "#B8C19D",
+      "inactiveShadow": "#9EA97E"
+    },
+    "buttons": {
+      "size": 21,
+      "radius": 3,
+      "spacing": 2,
+      "marginRight": 5,
+      "glyphColor": "#FFFFFF",
+      "borderColor": "#FFFFFF",
+      "normal": {
+        "normal": [
+          {
+            "pos": 0.0,
+            "color": "#B6C783"
+          },
+          {
+            "pos": 0.5,
+            "color": "#A6BA68"
+          },
+          {
+            "pos": 1.0,
+            "color": "#98AD5B"
+          }
+        ],
+        "hover": [
+          {
+            "pos": 0.0,
+            "color": "#BECC95"
+          },
+          {
+            "pos": 0.5,
+            "color": "#B3C67B"
+          },
+          {
+            "pos": 1.0,
+            "color": "#A9BD6E"
+          }
+        ],
+        "pressed": [
+          {
+            "pos": 0.0,
+            "color": "#859750"
+          },
+          {
+            "pos": 0.5,
+            "color": "#97AB5D"
+          },
+          {
+            "pos": 1.0,
+            "color": "#A2B569"
+          }
+        ]
+      },
+      "close": {
+        "normal": [
+          {
+            "pos": 0.0,
+            "color": "#E8826A"
+          },
+          {
+            "pos": 0.5,
+            "color": "#D9502E"
+          },
+          {
+            "pos": 1.0,
+            "color": "#C23A1C"
+          }
+        ],
+        "hover": [
+          {
+            "pos": 0.0,
+            "color": "#F59C86"
+          },
+          {
+            "pos": 0.5,
+            "color": "#E8664A"
+          },
+          {
+            "pos": 1.0,
+            "color": "#D44E2E"
+          }
+        ],
+        "pressed": [
+          {
+            "pos": 0.0,
+            "color": "#A8301A"
+          },
+          {
+            "pos": 0.5,
+            "color": "#BC3C22"
+          },
+          {
+            "pos": 1.0,
+            "color": "#CC4A2E"
+          }
+        ]
+      },
+      "inactive": [
+        {
+          "pos": 0.0,
+          "color": "#BFC6AA"
+        },
+        {
+          "pos": 0.5,
+          "color": "#B3BD97"
+        },
+        {
+          "pos": 1.0,
+          "color": "#AAB48B"
+        }
+      ]
+    }
+  },
+  "welcome": {
+    "background": "#A6B47A",
+    "topBand": {
+      "height": 80,
+      "color": "#6E803A"
+    },
+    "bottomBand": {
+      "height": 80,
+      "gradient": [
+        {
+          "pos": 0.0,
+          "color": "#879658"
+        },
+        {
+          "pos": 0.5,
+          "color": "#6E803A"
+        },
+        {
+          "pos": 1.0,
+          "color": "#6E803A"
+        }
+      ]
+    },
+    "dividerTop": {
+      "height": 2,
+      "gradient": [
+        {
+          "pos": 0.0,
+          "color": "#00A6B47A"
+        },
+        {
+          "pos": 0.3,
+          "color": "#C4CBB2"
+        },
+        {
+          "pos": 0.7,
+          "color": "#C4CBB2"
+        },
+        {
+          "pos": 1.0,
+          "color": "#00A6B47A"
+        }
+      ]
+    },
+    "dividerBottom": {
+      "height": 2,
+      "gradient": [
+        {
+          "pos": 0.0,
+          "color": "#00F59F2E"
+        },
+        {
+          "pos": 0.3,
+          "color": "#F59F2E"
+        },
+        {
+          "pos": 0.7,
+          "color": "#F59F2E"
+        },
+        {
+          "pos": 1.0,
+          "color": "#00F59F2E"
+        }
+      ]
+    },
+    "glow": {
+      "color": "#90C7D1AA",
+      "centerX": 0.25,
+      "centerY": 0.35,
+      "radius": 0.45
+    },
+    "verticalDivider": {
+      "width": 1,
+      "color": "#C4CBB2",
+      "fadeLength": 0.25
+    },
+    "logo": {
+      "size": 96
+    },
+    "hintColor": "#FFFFFF",
+    "hintText": "To begin, click your user name",
+    "infoText": "After you log on, you can add or change accounts. Open Control Panel, then User Accounts.",
+    "infoColor": "#FFFFFF",
+    "tile": {
+      "width": 340,
+      "height": 72,
+      "avatarSize": 48,
+      "avatarFrameWidth": 2,
+      "avatarFrameColor": "#FFFFFF",
+      "avatarFrameHoverColor": "#FFC85A",
+      "avatarRadius": 5,
+      "radius": 6,
+      "spacing": 8,
+      "padding": 10,
+      "nameColor": "#FFFFFF",
+      "subtextColor": "#C7CBB9",
+      "hoverGradient": [
+        {
+          "pos": 0.0,
+          "color": "#009BAF62"
+        },
+        {
+          "pos": 0.3,
+          "color": "#809BAF62"
+        },
+        {
+          "pos": 1.0,
+          "color": "#C09BAF62"
+        }
+      ],
+      "selectedGradient": [
+        {
+          "pos": 0.0,
+          "color": "#00869752"
+        },
+        {
+          "pos": 0.3,
+          "color": "#A0869752"
+        },
+        {
+          "pos": 1.0,
+          "color": "#E0869752"
+        }
+      ],
+      "dimmedOpacity": 0.5
+    },
+    "passwordPanel": {
+      "fieldWidth": 180,
+      "fieldHeight": 24,
+      "submitSize": 24,
+      "hintButtonSize": 24,
+      "submitGradient": [
+        {
+          "pos": 0.0,
+          "color": "#7FD36A"
+        },
+        {
+          "pos": 0.5,
+          "color": "#3EA82A"
+        },
+        {
+          "pos": 1.0,
+          "color": "#2B8B1C"
+        }
+      ],
+      "hintGradient": [
+        {
+          "pos": 0.0,
+          "color": "#B8C592"
+        },
+        {
+          "pos": 0.5,
+          "color": "#A2B46B"
+        },
+        {
+          "pos": 1.0,
+          "color": "#8D9D5A"
+        }
+      ],
+      "labelText": "Type your password",
+      "shakeDistance": 8,
+      "shakeDurationMs": 400
+    },
+    "turnOffButton": {
+      "iconSize": 26,
+      "gradient": [
+        {
+          "pos": 0.0,
+          "color": "#F0826A"
+        },
+        {
+          "pos": 0.5,
+          "color": "#D9402A"
+        },
+        {
+          "pos": 1.0,
+          "color": "#B8301C"
+        }
+      ],
+      "textColor": "#FFFFFF",
+      "text": "Turn off computer"
+    },
+    "bottomControls": {
+      "height": 22,
+      "background": "#30FFFFFF",
+      "border": "#60FFFFFF",
+      "textColor": "#FFFFFF"
+    }
+  },
+  "dialogs": {
+    "background": "#ECE9D8",
+    "radius": 6,
+    "headerHeight": 48,
+    "headerGradient": [
+      {
+        "pos": 0.0,
+        "color": "#788A43"
+      },
+      {
+        "pos": 1.0,
+        "color": "#647338"
+      }
+    ],
+    "headerTextColor": "#FFFFFF",
+    "footerColor": "#6C7D38",
+    "grayscaleFadeMs": 1500,
+    "dimOverlayColor": "#80000000",
+    "turnOff": {
+      "width": 314,
+      "height": 200,
+      "bodyGradient": [
+        {
+          "pos": 0.0,
+          "color": "#A2B175"
+        },
+        {
+          "pos": 0.5,
+          "color": "#AEBC87"
+        },
+        {
+          "pos": 1.0,
+          "color": "#A2B175"
+        }
+      ],
+      "roundButtonSize": 33,
+      "standByGradient": [
+        {
+          "pos": 0.0,
+          "color": "#FFE88A"
+        },
+        {
+          "pos": 0.5,
+          "color": "#F5C125"
+        },
+        {
+          "pos": 1.0,
+          "color": "#D89E00"
+        }
+      ],
+      "turnOffGradient": [
+        {
+          "pos": 0.0,
+          "color": "#F7957F"
+        },
+        {
+          "pos": 0.5,
+          "color": "#E2482D"
+        },
+        {
+          "pos": 1.0,
+          "color": "#BC2E14"
+        }
+      ],
+      "restartGradient": [
+        {
+          "pos": 0.0,
+          "color": "#9BE08A"
+        },
+        {
+          "pos": 0.5,
+          "color": "#45B030"
+        },
+        {
+          "pos": 1.0,
+          "color": "#2B8A1C"
+        }
+      ],
+      "labelColor": "#FFFFFF"
+    },
+    "logOff": {
+      "width": 314,
+      "height": 200
+    }
+  },
+  "controls": {
+    "button": {
+      "height": 23,
+      "minWidth": 75,
+      "radius": 3,
+      "paddingH": 8,
+      "borderColor": "#525F2B",
+      "textColor": "#000000",
+      "gradient": {
+        "normal": [
+          {
+            "pos": 0.0,
+            "color": "#FFFFFF"
+          },
+          {
+            "pos": 0.85,
+            "color": "#F0F0EA"
+          },
+          {
+            "pos": 1.0,
+            "color": "#D6D0C5"
+          }
+        ],
+        "hover": [
+          {
+            "pos": 0.0,
+            "color": "#FFFFFF"
+          },
+          {
+            "pos": 0.85,
+            "color": "#F0F0EA"
+          },
+          {
+            "pos": 1.0,
+            "color": "#D6D0C5"
+          }
+        ],
+        "pressed": [
+          {
+            "pos": 0.0,
+            "color": "#D1CCC1"
+          },
+          {
+            "pos": 0.15,
+            "color": "#E3E2DA"
+          },
+          {
+            "pos": 1.0,
+            "color": "#EFEEE8"
+          }
+        ],
+        "disabled": [
+          {
+            "pos": 0.0,
+            "color": "#F5F4EA"
+          },
+          {
+            "pos": 1.0,
+            "color": "#F5F4EA"
+          }
+        ]
+      },
+      "hoverRingColors": [
+        "#FFF0CF",
+        "#F9B33F",
+        "#E59700"
+      ],
+      "defaultRingColors": [
+        "#CCD1BB",
+        "#B7C09B",
+        "#B4C387"
+      ],
+      "focusRingInset": 3,
+      "disabledBorderColor": "#C9C7BA"
+    },
+    "textField": {
+      "height": 21,
+      "borderColor": "#91987E",
+      "focusBorderColor": "#91A25F",
+      "background": "#FFFFFF",
+      "disabledBackground": "#F5F4EA",
+      "textColor": "#000000",
+      "selectionColor": "#91A25F",
+      "padding": 3
+    },
+    "checkBox": {
+      "size": 13,
+      "borderColor": "#5E693C",
+      "gradient": [
+        {
+          "pos": 0.0,
+          "color": "#DCDCD7"
+        },
+        {
+          "pos": 1.0,
+          "color": "#FFFFFF"
+        }
+      ],
+      "hoverRingColor": "#F8B636",
+      "checkColor": "#21A121",
+      "spacing": 5
+    },
+    "comboBox": {
+      "height": 21,
+      "buttonWidth": 17,
+      "borderColor": "#91987E",
+      "buttonGradient": [
+        {
+          "pos": 0.0,
+          "color": "#C7CEB4"
+        },
+        {
+          "pos": 1.0,
+          "color": "#BAC49C"
+        }
+      ],
+      "buttonHoverGradient": [
+        {
+          "pos": 0.0,
+          "color": "#CCD0C1"
+        },
+        {
+          "pos": 1.0,
+          "color": "#C4CBAD"
+        }
+      ],
+      "arrowColor": "#676D54",
+      "popupBorderColor": "#000000",
+      "itemHeight": 18
+    },
+    "scrollBar": {
+      "width": 17,
+      "trackColor": "#F4F3EE",
+      "thumbGradient": [
+        {
+          "pos": 0.0,
+          "color": "#C9CFB8"
+        },
+        {
+          "pos": 1.0,
+          "color": "#C3CBAC"
+        }
+      ],
+      "thumbHoverGradient": [
+        {
+          "pos": 0.0,
+          "color": "#CCD0C0"
+        },
+        {
+          "pos": 1.0,
+          "color": "#C8CFB5"
+        }
+      ],
+      "thumbBorderColor": "#B6BE9D",
+      "thumbRadius": 3,
+      "gripColor": "#BFCB9B",
+      "arrowColor": "#676D54"
+    },
+    "tooltip": {
+      "background": "#FFFFE1",
+      "borderColor": "#000000",
+      "textColor": "#000000",
+      "padding": 3,
+      "delayMs": 500,
+      "timeoutMs": 5000
+    },
+    "balloon": {
+      "background": "#FFFFE1",
+      "borderColor": "#000000",
+      "textColor": "#000000",
+      "titleBold": true,
+      "radius": 7,
+      "tailWidth": 18,
+      "tailHeight": 18,
+      "padding": 8,
+      "maxWidth": 300,
+      "closeButtonSize": 14,
+      "timeoutMs": 10000
+    },
+    "progressBar": {
+      "height": 15,
+      "borderColor": "#686868",
+      "blockWidth": 8,
+      "blockSpacing": 2,
+      "blockGradient": [
+        {
+          "pos": 0.0,
+          "color": "#ACEDA6"
+        },
+        {
+          "pos": 0.5,
+          "color": "#2FCE24"
+        },
+        {
+          "pos": 1.0,
+          "color": "#ACEDA6"
+        }
+      ]
+    },
+    "menu": {
+      "background": "#FFFFFF",
+      "borderColor": "#ACA899",
+      "itemHeight": 18,
+      "separatorColor": "#ACA899",
+      "hoverBackground": "#91A25F",
+      "hoverText": "#FFFFFF"
+    }
+  },
+  "desktop": {
+    "background": "#7B8757",
+    "wallpaper": "meadow-hills.svg",
+    "wallpaperMode": "stretch",
+    "iconGridWidth": 75,
+    "iconGridHeight": 75,
+    "iconSize": 32,
+    "labelColor": "#FFFFFF",
+    "labelShadowColor": "#C0000000",
+    "selectionColor": "#8091A25F",
+    "rubberBandBorder": "#91A25F",
+    "rubberBandFill": "#4091A25F"
+  },
+  "lockScreen": {
+    "reuseWelcome": true,
+    "unlockFadeMs": 250
+  },
+  "animation": {
+    "reducedMotion": false,
+    "fast": 100,
+    "normal": 200,
+    "slow": 400,
+    "startMenuOpenMs": 150,
+    "startMenuSlide": 12,
+    "fadeMs": 200,
+    "easing": "OutCubic"
+  },
+  "sounds": {
+    "startup": "startup.oga",
+    "logon": "logon.oga",
+    "logoff": "logoff.oga",
+    "shutdown": "shutdown.oga",
+    "criticalStop": "critical-stop.oga",
+    "exclamation": "exclamation.oga",
+    "notify": "notify.oga",
+    "balloon": "balloon.oga",
+    "deviceConnect": "device-connect.oga",
+    "deviceDisconnect": "device-disconnect.oga"
+  },
+  "assets": {
+    "logo": "meadow-logo.svg",
+    "wallpaper": "meadow-hills.svg",
+    "defaultAvatars": [
+      "avatar-flower.svg",
+      "avatar-ball.svg",
+      "avatar-kite.svg",
+      "avatar-fish.svg"
+    ],
+    "overrideDirs": [
+      "$XDG_DATA_HOME/meadow/assets-override",
+      "/usr/share/meadow/assets-override"
+    ]
+  }
+}

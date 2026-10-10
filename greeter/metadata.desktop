@@ -1,0 +1,14 @@
+[SddmGreeterTheme]
+Name=Meadow
+Description=Welcome screen for the Meadow desktop
+Author=Meadow contributors
+Copyright=GPL-3.0-or-later (code), CC-BY-SA-4.0 (artwork)
+License=GPL-3.0-or-later
+Type=sddm-theme
+Version=0.1.0
+Website=https://github.com/q123qrc-source/winxp-linux-shell
+MainScript=Main.qml
+ConfigFile=theme.conf
+Theme-Id=meadow
+Theme-API=2.0
+QtVersion=6

@@ -1,0 +1,6 @@
+# >>> meadow fingerprint >>>
+# Inserted by `meadow-setup enable-fingerprint` before the password auth line of
+# /etc/pam.d/sddm, only if fingerprint auth is not already reachable through its
+# substacks. Removed by `meadow-setup disable-fingerprint`. See docs/PAM_FINGERPRINT.md.
+auth  [success=done default=ignore]  pam_fprintd.so max-tries=3 timeout=15
+# <<< meadow fingerprint <<<

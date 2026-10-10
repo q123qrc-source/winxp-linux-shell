@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Meadow
+Comment=Classic Luna-style desktop on Wayland
+Exec=meadow-session
+TryExec=meadow-session
+DesktopNames=Meadow

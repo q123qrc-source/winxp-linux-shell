@@ -1,0 +1,18 @@
+Meadow is distributed under two licenses:
+
+  * Source code (C++, QML, CMake, shell and Python scripts, CSS, configuration)
+    is licensed under the GNU General Public License, version 3 or (at your
+    option) any later version. SPDX: GPL-3.0-or-later.
+    Full text: LICENSES/GPL-3.0-or-later.txt
+
+  * Original artwork (SVG icons, cursors, wallpapers, logos, decoration button
+    images) and synthesized sounds are licensed under the Creative Commons
+    Attribution-ShareAlike 4.0 International license. SPDX: CC-BY-SA-4.0.
+    Full text: LICENSES/CC-BY-SA-4.0.txt
+
+Each file carries an SPDX-License-Identifier where the format allows it.
+
+Meadow contains no Microsoft assets. "Windows" and "Windows XP" are trademarks
+of Microsoft Corporation; Meadow is not affiliated with or endorsed by Microsoft.
+
+Copyright (C) 2026 Meadow contributors

@@ -1,0 +1,7 @@
+#%PAM-1.0
+# PAM service for the Meadow lock screen (installed to /etc/pam.d/meadow-lock by
+# `meadow-setup enable-fingerprint`). On Fedora, meadow-setup rewrites the
+# substack below to whatever /etc/pam.d/sddm uses; with authselect's
+# with-fingerprint feature that substack already tries pam_fprintd first.
+auth       substack     password-auth
+account    include      password-auth

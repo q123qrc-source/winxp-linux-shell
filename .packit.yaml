@@ -1,0 +1,38 @@
+# Packit: COPR builds for pull requests and tags; ctest runs in %check.
+# https://packit.dev/docs/configuration
+specfile_path: packaging/fedora/meadow.spec
+upstream_package_name: meadow
+downstream_package_name: meadow
+upstream_tag_template: v{version}
+
+actions:
+  create-archive:
+    - bash -c "tools/make-tarball.sh packaging/fedora >/dev/null && ls packaging/fedora/meadow-*.tar.gz"
+  get-current-version:
+    - bash -c "sed -n 's/^ *VERSION \\([0-9][0-9.]*\\)$/\\1/p' CMakeLists.txt | head -n1"
+
+srpm_build_deps:
+  - git
+  - bash
+
+jobs:
+  - job: copr_build
+    trigger: pull_request
+    targets:
+      - fedora-all-x86_64
+      - fedora-all-aarch64
+
+  - job: copr_build
+    trigger: release
+    owner: "<owner>"
+    project: meadow
+    targets:
+      - fedora-all-x86_64
+      - fedora-all-aarch64
+
+  - job: tests
+    trigger: pull_request
+    targets:
+      - fedora-all-x86_64
+    # Uses the %check section (ctest) of the COPR build until a tmt plan exists.
+    skip_build: false

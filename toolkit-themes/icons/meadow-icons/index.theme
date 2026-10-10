@@ -1,0 +1,40 @@
+[Icon Theme]
+Name=Meadow Icons
+Comment=Original glossy icons for the Meadow desktop
+Inherits=Adwaita,hicolor
+Directories=scalable/apps,scalable/places,scalable/devices,scalable/mimetypes,scalable/actions
+
+[scalable/apps]
+Size=48
+MinSize=16
+MaxSize=256
+Type=Scalable
+Context=Applications
+
+[scalable/places]
+Size=48
+MinSize=16
+MaxSize=256
+Type=Scalable
+Context=Places
+
+[scalable/devices]
+Size=48
+MinSize=16
+MaxSize=256
+Type=Scalable
+Context=Devices
+
+[scalable/mimetypes]
+Size=48
+MinSize=16
+MaxSize=256
+Type=Scalable
+Context=MimeTypes
+
+[scalable/actions]
+Size=48
+MinSize=16
+MaxSize=256
+Type=Scalable
+Context=Actions

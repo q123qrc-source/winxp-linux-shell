@@ -1,0 +1,8 @@
+[Sound Theme]
+Name=Meadow
+Comment=Original synthesized sound scheme (tools/gen-sounds.py)
+Inherits=freedesktop
+Directories=stereo
+
+[stereo]
+OutputProfile=stereo

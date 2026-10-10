@@ -1,0 +1,26 @@
+# Maintainer: Meadow contributors
+# Secondary target; completed in phase 10.
+pkgname=meadow
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Classic Luna-style Wayland desktop: shell, SDDM theme and themes"
+arch=(x86_64 aarch64)
+url="https://github.com/q123qrc-source/winxp-linux-shell"
+license=('GPL-3.0-or-later' 'CC-BY-SA-4.0')
+depends=(qt6-base qt6-declarative qt6-wayland qt6-multimedia layer-shell-qt labwc sddm)
+makedepends=(cmake ninja extra-cmake-modules qt6-tools wayland-protocols python)
+source=("$pkgname-$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+  cmake -B build -S "$pkgname-$pkgver" -G Ninja -DCMAKE_INSTALL_PREFIX=/usr
+  cmake --build build
+}
+
+check() {
+  ctest --test-dir build --output-on-failure
+}
+
+package() {
+  DESTDIR="$pkgdir" cmake --install build
+}

@@ -1,0 +1,8 @@
+# Installed by `meadow-setup enable-greeter` to /etc/sddm.conf.d/10-meadow.conf.
+# Never installed into /etc by a package.
+[Theme]
+Current=meadow
+
+[General]
+# meadow-setup sets this to match the installed sddm-wayland-* / sddm-x11 package.
+#DisplayServer=wayland

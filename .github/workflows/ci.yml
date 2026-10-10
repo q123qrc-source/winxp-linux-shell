@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  fedora:
+    name: Fedora ${{ matrix.release }} build + tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        release: [latest, rawhide]
+    container:
+      image: registry.fedoraproject.org/fedora:${{ matrix.release }}
+    steps:
+      - name: Install git
+        run: dnf -y install git
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install build dependencies
+        run: |
+          dnf -y install dnf-plugins-core rpm-build rpmlint desktop-file-utils
+          dnf -y builddep packaging/fedora/meadow.spec
+      - name: Configure
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
+      - name: Build
+        run: cmake --build build
+      - name: Unit, schema, asset-policy and QML smoke tests
+        run: ctest --test-dir build --output-on-failure
+      - name: Validate desktop and metadata files
+        run: tools/validate-session-desktop.sh session/meadow.desktop
+      - name: RPM build and rpmlint
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          tools/make-tarball.sh
+          rpmbuild -ba packaging/fedora/meadow.spec --define "_sourcedir $PWD"
+          rpmlint -r packaging/fedora/meadow.rpmlintrc packaging/fedora/meadow.spec ~/rpmbuild/RPMS/*/*.rpm
+      # Headless screenshot tests (labwc, WLR_BACKENDS=headless) are added in phase 2.
