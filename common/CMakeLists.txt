@@ -41,7 +41,7 @@ endif()
 set(controls_qml
     LunaButton.qml LunaTextField.qml LunaWindowFrame.qml LunaDialog.qml
     LunaCheckBox.qml LunaComboBox.qml LunaScrollBar.qml LunaTooltip.qml
-    BalloonTip.qml GlossyGradient.qml ShadowText.qml Logo.qml Avatar.qml)
+    BalloonTip.qml GlossyGradient.qml ShadowText.qml Logo.qml Avatar.qml LunaGroupBox.qml)
 list(TRANSFORM controls_qml PREPEND qml/Meadow/Controls/)
 
 # The qmldir file is generated from this call; no hand-written qmldir is kept.

@@ -5,7 +5,7 @@ project(meadow
     VERSION 0.1.0
     DESCRIPTION "An XP-inspired desktop shell, greeter and theme set for Wayland"
     HOMEPAGE_URL "https://github.com/q123qrc-source/winxp-linux-shell"
-    LANGUAGES CXX)
+    LANGUAGES C CXX)  # C: wayland-scanner protocol code
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -61,6 +61,9 @@ set(MEADOW_SDDM_THEME_DIR "${CMAKE_INSTALL_DATADIR}/sddm/themes/meadow" CACHE PA
 
 add_subdirectory(common)
 if(MEADOW_BUILD_SHELL)
+    # The shell needs Wayland and layer-shell (taskbar, popups).
+    find_package(Qt6 ${MEADOW_QT_MIN_VERSION} REQUIRED COMPONENTS WaylandClient)
+    find_package(LayerShellQt 6.0 REQUIRED)
     add_subdirectory(shell)
 endif()
 option(MEADOW_BUILD_GALLERY "Build the control gallery and screenshot tools" ON)

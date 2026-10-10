@@ -15,6 +15,7 @@ Commands:
   lock                Lock the session                     (Win+L)
   log-off             Show the Log Off dialog              (Ctrl+Alt+Delete)
   turn-off            Show the Turn Off Computer dialog
+  next-layout         Switch to the next keyboard layout   (Alt+Shift)
   version             Print the running shell's version
 USAGE
 }
@@ -26,6 +27,7 @@ case "${1:-}" in
     lock)              method=Lock ;;
     log-off)           method=ShowLogOffDialog ;;
     turn-off)          method=ShowTurnOffDialog ;;
+    next-layout)       method=NextKeyboardLayout ;;
     version)           method=Version ;;
     -h|--help|help)    usage; exit 0 ;;
     *)                 usage >&2; exit 2 ;;

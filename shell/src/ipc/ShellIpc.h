@@ -6,7 +6,7 @@
 
 // org.meadow.Shell on the session bus (shell/dbus/org.meadow.Shell.xml).
 // Each D-Bus method re-emits as a Qt signal for the QML that implements it;
-// until those parts exist (phases 6-8) calls are logged.
+// signals without a receiver yet (phases 7-8) are only logged.
 class ShellIpc : public QObject
 {
     Q_OBJECT
@@ -28,6 +28,7 @@ public:
     void Lock();
     void ShowLogOffDialog();
     void ShowTurnOffDialog();
+    void NextKeyboardLayout();
     QString Version() const;
 
 Q_SIGNALS:
@@ -37,4 +38,5 @@ Q_SIGNALS:
     void lockRequested();
     void logOffDialogRequested();
     void turnOffDialogRequested();
+    void nextKeyboardLayoutRequested();
 };

@@ -33,6 +33,8 @@ BuildRequires:  cmake(Qt6LinguistTools)
 BuildRequires:  cmake(LayerShellQt)
 BuildRequires:  pkgconfig(wayland-client)
 BuildRequires:  pkgconfig(wayland-protocols)
+# wlr-foreign-toplevel-management (taskbar window list)
+BuildRequires:  pkgconfig(wlr-protocols)
 BuildRequires:  polkit-qt6-1-devel
 BuildRequires:  desktop-file-utils
 BuildRequires:  librsvg2-tools
@@ -41,6 +43,8 @@ BuildRequires:  python3
 # Needed by %%ctest: the QML smoke test renders offscreen.
 BuildRequires:  qt6-qtbase-gui
 BuildRequires:  qt6-qtsvg
+# %%ctest runs D-Bus tests on a private session bus (skipped without it).
+BuildRequires:  dbus-daemon
 
 Requires:       %{name}-shell%{?_isa} = %{version}-%{release}
 Requires:       sddm-theme-%{name} = %{version}-%{release}
@@ -79,6 +83,8 @@ Requires:       pipewire
 Requires:       wireplumber
 Requires:       NetworkManager
 Requires:       upower
+# "Open Network Connections" in the network tray menu.
+Recommends:     nm-connection-editor
 Requires:       pcmanfm-qt
 Requires:       kvantum
 # meadow-setup
@@ -171,6 +177,7 @@ tools/validate-session-desktop.sh %{buildroot}%{_datadir}/wayland-sessions/meado
 %{_datadir}/dbus-1/interfaces/org.meadow.Shell.xml
 %dir %{_datadir}/%{name}
 %{_datadir}/%{name}/labwc/
+%{_datadir}/%{name}/shell.conf
 %{_datadir}/%{name}/sddm.conf.d/
 %{_datadir}/%{name}/pam.d/
 %{_datadir}/%{name}/polkit/
@@ -199,4 +206,6 @@ tools/validate-session-desktop.sh %{buildroot}%{_datadir}/wayland-sessions/meado
 
 %changelog
 * Sat Oct 10 2026 Meadow contributors <q123qrc@gmail.com> - 0.1.0-1
+- Phase 6: taskbar, window list, notification area, notifications, clock,
+  volume, network, battery, language bar and Taskbar Properties
 - Phase 1 skeleton: build system, theme tokens, stubs

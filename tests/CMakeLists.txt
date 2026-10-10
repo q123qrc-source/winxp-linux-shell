@@ -19,6 +19,9 @@ target_compile_definitions(test_controls PRIVATE MEADOW_BUILD_QML_DIR="${CMAKE_B
 if(MEADOW_BUILD_SHELL)
     meadow_add_test(test_appmenu meadow-shell-core)
     meadow_add_test(test_settings meadow-shell-core)
+    target_compile_definitions(test_settings PRIVATE MEADOW_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+    meadow_add_test(test_apps meadow-shell-core)
+    target_compile_definitions(test_apps PRIVATE MEADOW_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 
     # org.meadow.Shell + meadow-shellctl on a private session bus.
     find_program(DBUS_RUN_SESSION dbus-run-session)
@@ -31,6 +34,39 @@ if(MEADOW_BUILD_SHELL)
         add_test(NAME test_shellipc COMMAND test_shellipc)
     endif()
     set_tests_properties(test_shellipc PROPERTIES ENVIRONMENT "${test_env}")
+
+    # The window list against a real (headless) labwc.
+    if(MEADOW_BUILD_GALLERY)
+        qt_add_executable(test_toplevel_labwc test_toplevel_labwc.cpp)
+        target_link_libraries(test_toplevel_labwc PRIVATE Qt6::Test meadow-shell-core)
+        target_compile_definitions(test_toplevel_labwc PRIVATE MEADOW_DECOR_TEST="$<TARGET_FILE:meadow-decor-test>")
+        add_test(NAME test_toplevel_labwc
+                 COMMAND ${PROJECT_SOURCE_DIR}/tools/with-headless-labwc.sh -- $<TARGET_FILE:test_toplevel_labwc>)
+        set_tests_properties(test_toplevel_labwc PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 120)
+    endif()
+
+    # Taskbar QML in preview mode, driven by mouse clicks.
+    qt_add_executable(test_shell_qml test_shell_qml.cpp)
+    target_link_libraries(test_shell_qml PRIVATE Qt6::Test Qt6::Quick meadow-shell-ui meadow-shell-uiplugin)
+    target_compile_definitions(test_shell_qml PRIVATE MEADOW_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+                                                      MEADOW_BUILD_QML_DIR="${CMAKE_BINARY_DIR}/qml")
+    if(DBUS_RUN_SESSION)
+        add_test(NAME test_shell_qml COMMAND ${DBUS_RUN_SESSION} -- $<TARGET_FILE:test_shell_qml>)
+    else()
+        add_test(NAME test_shell_qml COMMAND test_shell_qml)
+    endif()
+    set_tests_properties(test_shell_qml PROPERTIES ENVIRONMENT "${test_env};QT_QUICK_BACKEND=software" TIMEOUT 120)
+
+    # Tray services and notifications against mocks on a private bus.
+    qt_add_executable(test_services test_services.cpp)
+    target_link_libraries(test_services PRIVATE Qt6::Test Qt6::DBus meadow-shell-core)
+    target_compile_definitions(test_services PRIVATE MEADOW_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+    if(DBUS_RUN_SESSION)
+        add_test(NAME test_services COMMAND ${DBUS_RUN_SESSION} -- $<TARGET_FILE:test_services>)
+    else()
+        add_test(NAME test_services COMMAND test_services)
+    endif()
+    set_tests_properties(test_services PROPERTIES ENVIRONMENT "${test_env}" TIMEOUT 120)
 endif()
 
 add_test(NAME theme_schema

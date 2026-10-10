@@ -10,7 +10,12 @@ ctest --test-dir build --output-on-failure
 |---|---|
 | `test_themeloader` | scheme lookup and listing, token paths, bad/malformed schemes, scale + `px()`, font fallback, durations and reduced motion, live reload (including rename-over saves and broken edits), the QML singleton sharing one instance, asset override order, path traversal rejection |
 | `test_controls` | sound event resolution (bundled vs override) and muting, gradient stop parsing, every `Meadow.Controls` type instantiates without QML warnings, dialog accept/reject |
-| `test_appmenu`, `test_settings` | placeholders until phases 7/6 |
+| `test_appmenu` | placeholder until phase 7 |
+| `test_settings` | shell.conf: built-in defaults, packaged defaults, user overrides, reset, change signals |
+| `test_apps` | `.desktop` parsing (localized names, escaped list separators, `Exec` quoting and field codes, OnlyShowIn/NoDisplay) and app_id → desktop entry matching (exact, case, reverse DNS, StartupWMClass, last component) |
+| `test_services` | under `dbus-run-session`: battery and network against mock UPower/NetworkManager (`tools/mock-system-services.py`: wired, wireless, limited, offline, none), volume through `tools/fake-wpctl` (parsing, set-volume/set-mute, 100% cap), keyboard layouts (xkb names from a fixture `evdev.xml`, rotation, the overlay env file, `grp:*` removed, a restarted shell continuing the order), notification markup sanitizing, the full `org.freedesktop.Notifications` API over D-Bus (capabilities, server info, replace, expiry, actions, critical urgency, CloseNotification) and the bounded queue |
+| `test_toplevel_labwc` | the window list against a real headless labwc (`tools/with-headless-labwc.sh`): windows appear with titles and app_ids, activate, click-on-active minimizes and click again restores, maximize, show desktop and restore (active window last), close, 10 windows; skipped without labwc |
+| `test_shell_qml` | the taskbar QML in preview mode driven by real mouse and key events: click/minimize/restore semantics, middle-click close, window menu, outside click and Escape close menus, grouping at 10 windows and the group menu, Close Group, attention highlight, show desktop (also from Quick Launch), Start button, balloon click runs the default action, language bar menu, clock calendar and hiding the clock, auto-hide, Taskbar Properties (applies only on OK), lock from the taskbar menu |
 | `test_greeter` | Turn Off dialog: buttons follow `sddm.canX`, Hibernate replaces Stand By (no suspend or Shift held), calls reach SDDM; keyboard layout cycling; avatar fallback for generic faces |
 | `greeter_flows` | nineteen end-to-end Welcome screen scenarios, including fingerprint: auto-start for enrolled users, no auto-start when unknown/not enrolled/off, `always`, Enter on an empty field, a failed reading leaving password login available, and a password typed during a reading being queued rather than dropped (the mock drops overlapping logins like SDDM's daemon). Also through the mock SDDM (wrong/right password, password-less user, selection without login, Turn Off without action, secondary screen, RTL, high contrast, silver at 2×, scrolling list). Fails on QML warnings and if the typed password appears in any output |
 | `greeter_sddm_smoke` | loads `greeter/` in the real `sddm-greeter-qt6 --test-mode` (offscreen) and fails on QML errors; skipped when SDDM is not installed |
@@ -20,7 +25,7 @@ ctest --test-dir build --output-on-failure
 | `labwc_config` | rc.xml has every required keybind, uses only real labwc 0.9 actions and known `Execute` commands/`meadow-shellctl` subcommands, no duplicate keys; menu.xml actions; every generated themerc key is one labwc knows (labwc silently ignores unknown ones); 30 px title bar; all 16 button SVGs present |
 | `labwc_config_smoke` | real headless labwc loads the session config with each theme without errors (skipped without labwc) |
 | `qml_literals` | no color or numeric literals in product QML (`tools/check-qml-literals.py`); opt out per line with `// theme-ok: reason` |
-| `screenshot_gallery` (label `screenshot`) | 25 goldens: the labwc session (`tools/session-screenshot.sh`: blue, olive, silver and a maximized window, headless labwc + test windows), the button sheets of each scheme (all 16 states, including hover, which a headless session cannot show), plus the earlier 18: the control gallery (blue at 1×/1.25×/1.5×/2×, olive, silver) and the Welcome screen (1024×768, 1920×1080 selected, 2× selected, wrong password, Caps Lock, Turn Off dialog, high contrast, RTL, silver, secondary screen) |
+| `screenshot_gallery` (label `screenshot`) | 39 goldens. 14 for the shell: taskbar in each scheme, grouped buttons with the group menu, tray with a StatusNotifierItem and its DBusMenu (`tools/sni-test-item.py`), volume popup, network menu (wireless, low battery), window menu, taskbar menu, calendar, balloon, Taskbar Properties (all via `tools/shell-preview.sh`), and the real shell on layer-shell surfaces in headless labwc with 10 windows and with the calendar open (`tools/shell-session-screenshot.sh`). The earlier 25: the labwc session (`tools/session-screenshot.sh`: blue, olive, silver and a maximized window, headless labwc + test windows), the button sheets of each scheme (all 16 states, including hover, which a headless session cannot show), plus the earlier 18: the control gallery (blue at 1×/1.25×/1.5×/2×, olive, silver) and the Welcome screen (1024×768, 1920×1080 selected, 2× selected, wrong password, Caps Lock, Turn Off dialog, high contrast, RTL, silver, secondary screen) |
 | `theme_schema` | every scheme has exactly the tokens/types in `theme/schema.json`; valid colors and gradients |
 | `asset_policy` | no Microsoft-style assets or font/audio binaries in the tree; nothing in `assets-override/` |
 | `shell_version`, `shell_preview_smoke` | the binary starts, and the full QML module loads offscreen with no QML errors |
@@ -83,8 +88,27 @@ the real `sddm-greeter-qt6 --test-mode` inside a headless labwc and captures it
 with `grim`. Use it for a visual check after greeter changes. Phase 3 checked
 1024×768, 1920×1080 and output scale 2 this way.
 
-Shell surfaces inside a headless labwc (`WLR_BACKENDS=headless`) join the
-screenshot set in phase 6.
+### Shell
+
+```sh
+tools/shell-preview.sh build [--mocks] [--sni] [--network wireless] -- --preview-windows 10 --open calendar
+tools/shell-session-screenshot.sh build out.png [--windows 10] [--open calendar] [--notify]
+```
+
+The first runs `meadow-shell --preview` in a sandbox: a private session bus,
+fixture applications, a fixed clock (`MEADOW_FAKE_TIME`) and drawn icons
+(`MEADOW_ICONS_GENERIC=1`). It can add mock audio, battery and network
+services and a test tray icon. Without `--grab` it stays open, which is
+useful on a desktop. The second runs the real shell on layer-shell surfaces in
+headless labwc, opens test windows and captures them with `grim`.
+
+`meadow-shell --open POPUP` accepts `calendar`, `volume`, `network`,
+`language`, `window-menu`, `group`, `taskbar-menu`, `tray-menu`, `properties`,
+`balloon` and `start`.
+
+Headless labwc has no keyboard, so Alt+Shift switching is a manual VM check.
+The keymap rebuild on `--reconfigure` was verified from the labwc 0.9.6
+source, and test_services checks the file it reads.
 
 ## Manual checklist (Fedora VM, SELinux enforcing; phase 12)
 

@@ -254,7 +254,8 @@
     "gripWidth": 6,
     "gripDotColor": "#A1A6B8",
     "gripDotHighlight": "#DDE1EF",
-    "enabledByDefault": true
+    "enabledByDefault": true,
+    "gripDotPitch": 4
   },
   "taskButton": {
     "maxWidth": 160,
@@ -341,7 +342,9 @@
     "borderColor": "#B0B5C8",
     "activeBorderColor": "#9CA0B2",
     "attentionPulseMs": 600,
-    "attentionPulseCount": 7
+    "attentionPulseCount": 7,
+    "groupThreshold": 90,
+    "groupArrowSize": 8
   },
   "tray": {
     "gradient": [
@@ -378,19 +381,93 @@
     "paddingLeft": 8,
     "paddingRight": 8,
     "chevronSize": 15,
-    "chevronColor": "#3C4150"
+    "chevronColor": "#3C4150",
+    "chevronGradient": [
+      {
+        "pos": 0.0,
+        "color": "#60FFFFFF"
+      },
+      {
+        "pos": 1.0,
+        "color": "#10FFFFFF"
+      }
+    ],
+    "chevronHoverGradient": [
+      {
+        "pos": 0.0,
+        "color": "#A0FFFFFF"
+      },
+      {
+        "pos": 1.0,
+        "color": "#40FFFFFF"
+      }
+    ],
+    "chevronBorderColor": "#80FFFFFF",
+    "chevronGlyphInset": 4,
+    "expandedTimeoutMs": 10000,
+    "volume": {
+      "width": 70,
+      "padding": 8,
+      "sliderLength": 100,
+      "trackWidth": 4,
+      "thumbWidth": 21,
+      "thumbHeight": 11,
+      "tickCount": 11,
+      "tickLength": 5,
+      "tickColor": "#808080",
+      "trackColor": "#FFFFFF",
+      "trackBorderColor": "#9D9D9D",
+      "thumbGradient": [
+        {
+          "pos": 0.0,
+          "color": "#FFFFFF"
+        },
+        {
+          "pos": 1.0,
+          "color": "#D6D0C5"
+        }
+      ],
+      "thumbBorderColor": "#1E2433",
+      "background": "#ECE9D8",
+      "borderColor": "#ACA899",
+      "wheelStep": 0.05,
+      "keyStep": 0.05
+    }
   },
   "clock": {
     "format": "HH:mm",
     "tooltipFormat": "dddd, MMMM d, yyyy",
     "textColor": "#1E2433",
-    "paddingLeft": 6
+    "paddingLeft": 6,
+    "calendar": {
+      "cellWidth": 24,
+      "cellHeight": 18,
+      "padding": 8,
+      "arrowSize": 9,
+      "background": "#FFFFFF",
+      "borderColor": "#ACA899",
+      "headerGradient": [
+        {
+          "pos": 0.0,
+          "color": "#DDE2F7"
+        },
+        {
+          "pos": 1.0,
+          "color": "#C9CFE4"
+        }
+      ],
+      "headerText": "#1E2433",
+      "weekdayText": "#1E2433",
+      "todayBackground": "#6E7B97",
+      "todayText": "#FFFFFF"
+    }
   },
   "languageBar": {
     "width": 22,
     "background": "#C6CBDF",
     "border": "#A1A6B8",
-    "textColor": "#1E2433"
+    "textColor": "#1E2433",
+    "height": 18
   },
   "startMenu": {
     "width": 380,
@@ -1001,7 +1078,11 @@
       "height": 200
     },
     "padding": 11,
-    "buttonSpacing": 6
+    "buttonSpacing": 6,
+    "taskbarProperties": {
+      "width": 360,
+      "optionSpacing": 6
+    }
   },
   "controls": {
     "button": {
@@ -1226,7 +1307,23 @@
       "paddingY": 3,
       "separatorPadding": 3,
       "widthMin": 150,
-      "widthMax": 400
+      "widthMax": 400,
+      "shadowOffset": 2,
+      "shadowColor": "#40000000",
+      "checkWidth": 20,
+      "glyphSize": 9,
+      "radioSize": 5,
+      "iconSize": 16,
+      "shortcutSpacing": 24,
+      "arrowWidth": 14,
+      "submenuDelayMs": 400
+    },
+    "groupBox": {
+      "borderColor": "#D0D0BF",
+      "radius": 4,
+      "padding": 8,
+      "titleColor": "#1E2433",
+      "titleInset": 6
     }
   },
   "desktop": {

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Picture Viewer
+Name[de]=Bildbetrachter
+GenericName=Image Viewer
+Icon=org.example.Viewer
+Exec=viewer --title "My \\"Viewer\\"" %U --name=%c
+StartupWMClass=ExampleViewer
+Categories=Graphics;Viewer\;Photo;

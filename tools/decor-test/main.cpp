@@ -44,8 +44,11 @@ int main(int argc, char *argv[])
     const QCommandLineOption titleOpt(QStringLiteral("title"), QStringLiteral("Window title."), QStringLiteral("text"), QStringLiteral("Untitled"));
     const QCommandLineOption sizeOpt(QStringLiteral("size"), QStringLiteral("Client size WxH."), QStringLiteral("WxH"), QStringLiteral("400x240"));
     const QCommandLineOption maxOpt(QStringLiteral("maximized"), QStringLiteral("Start maximized."));
-    parser.addOptions({titleOpt, sizeOpt, maxOpt});
+    const QCommandLineOption appIdOpt(QStringLiteral("app-id"), QStringLiteral("Wayland app_id (default meadow-decor-test)."), QStringLiteral("id"));
+    parser.addOptions({titleOpt, sizeOpt, maxOpt, appIdOpt});
     parser.process(app);
+    if (parser.isSet(appIdOpt))
+        QGuiApplication::setDesktopFileName(parser.value(appIdOpt));
 
     const QStringList wh = parser.value(sizeOpt).split(QLatin1Char('x'));
     PlainWindow window(QStringLiteral("Client area of “%1”.\nThe title bar, buttons and border are drawn by labwc.").arg(parser.value(titleOpt)));

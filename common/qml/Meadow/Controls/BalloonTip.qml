@@ -13,6 +13,12 @@ Item {
     property string text
     // LunaGlyph.Info, Warning, Error, Question or None.
     property int icon: LunaGlyph.Info
+    // An image instead of the glyph (e.g. a notification's app icon).
+    property url iconSource
+    // Format of `text`; notifications pass sanitized Text.StyledText.
+    property int textFormat: Text.PlainText
+    // Buttons under the text: [{key, label}]; clicking one emits actionTriggered.
+    property var actions: []
     property bool tailOnTop: false
     // Tail tip position from the left edge; defaults near the right end.
     property real tailX: width - Theme.px(tk.tailWidth) * 2
@@ -28,6 +34,7 @@ Item {
 
     signal clicked()
     signal closed()
+    signal actionTriggered(string key)
 
     function show() {
         visible = true
@@ -40,8 +47,9 @@ Item {
         opacity = 0
     }
 
-    implicitWidth: Math.min(Theme.px(tk.maxWidth), Math.max(header.implicitWidth, body.implicitWidth) + pad * 2)
-    implicitHeight: header.implicitHeight + (root.text.length > 0 ? Theme.px(tk.spacing) + body.implicitHeight : 0) + pad * 2 + tail
+    implicitWidth: Math.min(Theme.px(tk.maxWidth), Math.max(header.implicitWidth, body.implicitWidth, actionRow.implicitWidth) + pad * 2)
+    implicitHeight: header.implicitHeight + (root.text.length > 0 ? Theme.px(tk.spacing) + body.implicitHeight : 0)
+                    + (actionRow.visible ? Theme.px(tk.spacing) + actionRow.implicitHeight : 0) + pad * 2 + tail
 
     Accessible.role: Accessible.AlertMessage
     Accessible.name: title
@@ -83,10 +91,10 @@ Item {
 
         Item {
             id: header
-            readonly property real iconWidth: headerIcon.visible ? headerIcon.width + Theme.px(root.tk.spacing) : 0
+            readonly property real iconWidth: headerIcon.visible || headerImage.visible ? headerIcon.width + Theme.px(root.tk.spacing) : 0
             width: parent.width
             implicitWidth: iconWidth + titleText.implicitWidth + (closeButton.visible ? closeButton.width + Theme.px(root.tk.spacing) : 0)
-            implicitHeight: Math.max(headerIcon.visible ? headerIcon.height : 0, titleText.height)
+            implicitHeight: Math.max(headerIcon.visible || headerImage.visible ? headerIcon.height : 0, titleText.height)
             height: implicitHeight
 
             LunaGlyph {
@@ -95,8 +103,15 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 width: Theme.px(root.tk.iconSize)
                 height: width
-                visible: root.icon !== LunaGlyph.None
+                visible: root.icon !== LunaGlyph.None && !headerImage.visible
                 glyph: root.icon
+            }
+            Image {
+                id: headerImage
+                anchors.fill: headerIcon
+                visible: root.iconSource.toString().length > 0 && status !== Image.Error
+                source: root.iconSource
+                sourceSize: Qt.size(width, height)
             }
             Text {
                 id: titleText
@@ -120,9 +135,26 @@ Item {
             width: parent.width
             visible: root.text.length > 0
             text: root.text
+            textFormat: root.textFormat
             font: Theme.fonts.ui
             color: root.tk.textColor
             wrapMode: Text.Wrap
+        }
+
+        Row {
+            id: actionRow
+            anchors.right: parent.right
+            y: body.y + (body.visible ? body.height : 0) + Theme.px(root.tk.spacing)
+            visible: root.actions.length > 0
+            spacing: Theme.px(root.tk.spacing)
+            Repeater {
+                model: root.actions
+                delegate: LunaButton {
+                    required property var modelData
+                    text: modelData.label
+                    onClicked: root.actionTriggered(modelData.key)
+                }
+            }
         }
 
         GradientBox {

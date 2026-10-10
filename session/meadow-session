@@ -48,4 +48,36 @@ if ! command -v labwc >/dev/null 2>&1; then
     exit 1
 fi
 
+# Runtime overlay: labwc reads its config from a per-session directory of
+# symlinks to the real files plus a writable environment.d/, where
+# meadow-shell's language bar writes the keyboard layout order before asking
+# labwc to reconfigure. Nothing under the user's or the packaged config dir
+# is modified. Without XDG_RUNTIME_DIR the plain config dir is used.
+if [ -n "${XDG_RUNTIME_DIR:-}" ] && [ -d "$XDG_RUNTIME_DIR" ]; then
+    # Named after this PID, which labwc keeps after exec; overlays of
+    # sessions that have ended are removed.
+    for old in "$XDG_RUNTIME_DIR"/meadow/labwc-*; do
+        [ -d "$old" ] || continue
+        kill -0 "${old##*-}" 2>/dev/null || rm -rf "$old"
+    done
+    overlay="$XDG_RUNTIME_DIR/meadow/labwc-$$"
+    if mkdir -p "$overlay/environment.d"; then
+        for f in "$config_dir"/*; do
+            [ -e "$f" ] || continue
+            name=$(basename "$f")
+            [ "$name" = environment.d ] && continue
+            ln -sf "$f" "$overlay/$name"
+        done
+        # The user's own environment.d entries keep working.
+        if [ -d "$config_dir/environment.d" ]; then
+            for f in "$config_dir"/environment.d/*.env; do
+                [ -e "$f" ] && ln -sf "$f" "$overlay/environment.d/$(basename "$f")"
+            done
+        fi
+        export MEADOW_LABWC_ENV_FILE="$overlay/environment.d/90-meadow-keyboard.env"
+        rm -f "$MEADOW_LABWC_ENV_FILE"
+        config_dir="$overlay"
+    fi
+fi
+
 exec labwc --config-dir "$config_dir" "$@"

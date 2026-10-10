@@ -29,6 +29,12 @@ GALLERY = ("tools/gallery/meadow-gallery", "build")
 GREETER = ("tools/greeter-preview/meadow-greeter-preview", "build")
 SESSION = ("tools/session-screenshot.sh", "source")
 BUTTONS = ("tools/gen-labwc-theme.py", "source")
+SHELL = ("tools/shell-preview.sh", "source")
+SHELL_SESSION = ("tools/shell-session-screenshot.sh", "source")
+
+
+def theme(scheme):
+    return ["--theme", str(ROOT / "theme" / scheme / "theme.json")]
 
 # (name, tool, arguments)
 CASES = [
@@ -56,6 +62,22 @@ CASES = [
     ("labwc-buttons-luna-blue", BUTTONS, ["--scheme", "luna-blue"]),
     ("labwc-buttons-luna-olive", BUTTONS, ["--scheme", "luna-olive"]),
     ("labwc-buttons-luna-silver", BUTTONS, ["--scheme", "luna-silver"]),
+    # Taskbar (meadow-shell --preview, sample windows, fixed clock, drawn icons).
+    ("shell-taskbar", SHELL, ["--", "--size", "1024x120", "--preview-windows", "5"]),
+    ("shell-taskbar-olive", SHELL, ["--", "--size", "1024x120"] + theme("luna-olive")),
+    ("shell-taskbar-silver", SHELL, ["--", "--size", "1024x120"] + theme("luna-silver")),
+    ("shell-grouped", SHELL, ["--", "--size", "800x200", "--preview-windows", "10", "--open", "group"]),
+    ("shell-tray", SHELL, ["--mocks", "--sni", "--", "--size", "640x260", "--delay", "2500", "--open", "tray-menu"]),
+    ("shell-volume", SHELL, ["--mocks", "--", "--size", "640x260", "--delay", "1200", "--open", "volume"]),
+    ("shell-network-wireless", SHELL, ["--mocks", "--network", "wireless", "--battery", "8", "--", "--size", "640x260", "--delay", "1200", "--open", "network"]),
+    ("shell-window-menu", SHELL, ["--", "--size", "640x260", "--preview-windows", "3", "--open", "window-menu"]),
+    ("shell-taskbar-menu", SHELL, ["--", "--size", "640x260", "--preview-windows", "3", "--open", "taskbar-menu"]),
+    ("shell-calendar", SHELL, ["--", "--size", "640x300", "--open", "calendar"]),
+    ("shell-balloon", SHELL, ["--", "--size", "640x260", "--delay", "1200", "--open", "balloon"]),
+    ("shell-properties", SHELL, ["--", "--size", "640x480", "--open", "properties"]),
+    # The real shell on layer-shell surfaces in headless labwc, 10 windows.
+    ("shell-session-10-windows", SHELL_SESSION, ["--windows", "10"]),
+    ("shell-session-calendar", SHELL_SESSION, ["--windows", "3", "--open", "calendar"]),
     ("greeter-fingerprint-failed", GREETER, ["--fingerprint", "enrolled:alice", "--fp-result", "fail", "--select", "0", "--delay", "1500"]),
 ]
 

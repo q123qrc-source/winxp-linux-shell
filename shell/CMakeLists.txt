@@ -2,9 +2,13 @@
 
 # Non-UI logic lives in a static library so unit tests can link it directly.
 qt_add_library(meadow-shell-core STATIC
+    src/wayland/ToplevelModel.h src/wayland/ToplevelModel.cpp
     src/wayland/ForeignToplevelModel.h src/wayland/ForeignToplevelModel.cpp
     src/wayland/SessionLock.h src/wayland/SessionLock.cpp
     src/models/AppMenuModel.h src/models/AppMenuModel.cpp
+    src/models/DesktopEntry.h src/models/DesktopEntry.cpp
+    src/models/AppRegistry.h src/models/AppRegistry.cpp
+    src/models/IconProvider.h src/models/IconProvider.cpp
     src/models/RecentAppsModel.h src/models/RecentAppsModel.cpp
     src/models/PlacesModel.h src/models/PlacesModel.cpp
     src/services/PowerService.h src/services/PowerService.cpp
@@ -12,7 +16,10 @@ qt_add_library(meadow-shell-core STATIC
     src/services/VolumeService.h src/services/VolumeService.cpp
     src/services/NetworkService.h src/services/NetworkService.cpp
     src/services/BatteryService.h src/services/BatteryService.cpp
-    src/services/TrayHost.h src/services/TrayHost.cpp
+    src/services/DBusProperties.h src/services/DBusProperties.cpp
+    src/services/TrayTypes.h src/services/TrayTypes.cpp
+    src/services/StatusNotifierWatcher.h src/services/StatusNotifierWatcher.cpp
+    src/services/TrayModel.h src/services/TrayModel.cpp
     src/services/NotificationServer.h src/services/NotificationServer.cpp
     src/services/PolkitAgent.h src/services/PolkitAgent.cpp
     src/services/KeyboardLayoutService.h src/services/KeyboardLayoutService.cpp
@@ -23,29 +30,57 @@ qt_add_library(meadow-shell-core STATIC
 qt_add_dbus_adaptor(shell_dbus_sources dbus/org.meadow.Shell.xml ipc/ShellIpc.h ShellIpc shelladaptor ShellAdaptor)
 target_sources(meadow-shell-core PRIVATE ${shell_dbus_sources})
 target_include_directories(meadow-shell-core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(meadow-shell-core PUBLIC meadow-common Qt6::Core Qt6::Gui Qt6::DBus)
+target_link_libraries(meadow-shell-core PUBLIC meadow-common Qt6::Core Qt6::Gui Qt6::DBus Qt6::Quick Qt6::WaylandClient)
+target_compile_definitions(meadow-shell-core PRIVATE MEADOW_DATADIR="${CMAKE_INSTALL_FULL_DATADIR}/meadow")
 
-qt_add_executable(meadow-shell src/main.cpp)
-target_link_libraries(meadow-shell PRIVATE meadow-shell-core meadow-common Qt6::Quick)
+# Window list: wlr-foreign-toplevel-management client code from the protocol
+# XML shipped by wlr-protocols (Fedora: wlr-protocols-devel).
+find_package(PkgConfig REQUIRED)
+pkg_get_variable(WLR_PROTOCOLS_DIR wlr-protocols pkgdatadir)
+if(NOT WLR_PROTOCOLS_DIR)
+    message(FATAL_ERROR "wlr-protocols not found (dnf install wlr-protocols-devel)")
+endif()
+qt6_generate_wayland_protocol_client_sources(meadow-shell-core
+    FILES ${WLR_PROTOCOLS_DIR}/unstable/wlr-foreign-toplevel-management-unstable-v1.xml)
+
+# QML-facing glue (Shell singleton, ShellSurface, TrayGlyph) and the
+# Meadow.Shell QML module, as a static library so QML tests can load it.
+qt_add_library(meadow-shell-ui STATIC
+    src/ui/ShellContext.h src/ui/ShellContext.cpp
+    src/ui/ShellSurface.h src/ui/ShellSurface.cpp
+    src/ui/TrayGlyph.h src/ui/TrayGlyph.cpp
+)
+target_link_libraries(meadow-shell-ui PUBLIC meadow-shell-core meadow-common Qt6::Quick LayerShellQt::Interface)
+# The generated QML type registrations include the headers by file name.
+target_include_directories(meadow-shell-ui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/ui)
 
 set(shell_qml
-    Main.qml
-    Taskbar.qml StartButton.qml QuickLaunch.qml TaskButton.qml TaskGroupMenu.qml
-    NotificationArea.qml Clock.qml LanguageBar.qml
+    Main.qml Session.qml
+    Taskbar.qml StartButton.qml Grip.qml QuickLaunch.qml TaskList.qml TaskButton.qml TaskGroupMenu.qml
+    NotificationArea.qml TrayButton.qml Clock.qml CalendarPopup.qml VolumePopup.qml LanguageBar.qml
+    PopupHost.qml ShellMenu.qml TipHost.qml Tips.qml BalloonHost.qml TaskbarProperties.qml
+    # Later phases (stubs until then).
     StartMenu.qml StartMenuUserHeader.qml StartMenuLeftColumn.qml StartMenuRightColumn.qml
     AllProgramsCascade.qml StartMenuFooter.qml
     Desktop.qml DesktopIcon.qml DesktopContextMenu.qml
     RunDialog.qml LogOffDialog.qml TurnOffComputerDialog.qml
-    AltTabSwitcher.qml LockScreen.qml VolumePopup.qml DisplayProperties.qml
-    ControlPanel.qml TaskbarProperties.qml)
+    AltTabSwitcher.qml LockScreen.qml DisplayProperties.qml ControlPanel.qml)
 list(TRANSFORM shell_qml PREPEND qml/)
+set_source_files_properties(qml/Tips.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
-qt_add_qml_module(meadow-shell
+qt_add_qml_module(meadow-shell-ui
     URI Meadow.Shell
     VERSION 1.0
+    OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/qml/Meadow/Shell
+    IMPORT_PATH ${CMAKE_BINARY_DIR}/qml
     QML_FILES ${shell_qml}
+    DEPENDENCIES QtQuick Meadow.Controls
 )
+
+qt_add_executable(meadow-shell src/main.cpp)
+target_link_libraries(meadow-shell PRIVATE meadow-shell-ui meadow-shell-uiplugin)
 
 install(TARGETS meadow-shell RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(PROGRAMS meadow-shellctl DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES dbus/org.meadow.Shell.xml DESTINATION ${CMAKE_INSTALL_DATADIR}/dbus-1/interfaces)
+install(FILES data/shell.conf DESTINATION ${MEADOW_DATADIR})

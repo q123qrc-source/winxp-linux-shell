@@ -68,6 +68,9 @@
     <keybind key="A-F4"><action name="Close" /></keybind>
     <keybind key="A-space"><action name="ShowMenu" menu="client-menu" atCursor="no" /></keybind>
     <keybind key="C-A-Delete"><action name="Execute" command="meadow-shellctl log-off" /></keybind>
+    <!-- Alt+Shift (either order) cycles the language bar's layouts. -->
+    <keybind key="A-Shift_L" onRelease="yes"><action name="Execute" command="meadow-shellctl next-layout" /></keybind>
+    <keybind key="S-Alt_L" onRelease="yes"><action name="Execute" command="meadow-shellctl next-layout" /></keybind>
 
     <keybind key="W-Up"><action name="Maximize" /></keybind>
     <keybind key="W-Down"><action name="UnMaximize" /></keybind>

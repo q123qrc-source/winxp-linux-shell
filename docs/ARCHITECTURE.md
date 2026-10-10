@@ -37,11 +37,14 @@ This document is the high-level design. Exact metrics and colors live in
             │    └─ restart loop ─▶ meadow-shell
             └─ keybinds ─▶ meadow-shellctl ──session bus──▶ org.meadow.Shell
 
- meadow-shell (one process, several Wayland surfaces)
-  ├─ layer "bottom" (exclusive zone 30px) : Taskbar (start button, quick launch, tasks, tray, clock)
-  ├─ layer "background"                   : Desktop (wallpaper, icons)
-  ├─ layer "overlay"                      : Start menu, All Programs, tray menus, balloons,
-  │                                         volume/calendar popups, Alt+Tab, grayscale fade
+ meadow-shell (one process, several Wayland surfaces; shell/qml/Session.qml)
+  ├─ layer "top", bottom edge, exclusive zone 30px : Taskbar (start, quick launch, tasks, language bar, tray, clock)
+  ├─ layer "overlay", full screen, while open      : popups (menus, calendar, volume); keyboard exclusive;
+  │                                                  a press outside every popup closes them
+  ├─ layer "overlay", full screen, input-transparent: tooltips
+  ├─ layer "overlay", bottom-right                 : notification balloons
+  ├─ layer "background"                            : Desktop (wallpaper, icons; phase 8)
+  ├─ layer "overlay"                               : Start menu, All Programs, Alt+Tab, grayscale fade (phases 7-8)
   ├─ xdg toplevels                        : Run, Display Properties, Control Panel, polkit dialogs
   └─ ext-session-lock surfaces            : LockScreen (PAM service "meadow-lock")
 ```
@@ -74,12 +77,46 @@ bus call it makes is the read-only fprintd query.
 | system | `org.freedesktop.Accounts` | Start menu header, Control Panel | real name, avatar |
 | system | `org.freedesktop.PolicyKit1` | PolkitAgent (polkit-qt6) | authentication dialogs |
 | system | `net.reactivated.Fprint` | FingerprintQuery (greeter), LockScreen | reader and enrolled-finger check (read-only) |
-| session | `org.kde.StatusNotifierWatcher` / `…Item`, `com.canonical.dbusmenu` | TrayHost | tray icons and menus |
-| session | `org.freedesktop.Notifications` | NotificationServer | balloon tips |
-| session | `org.meadow.Shell` (ours, `shell/dbus/org.meadow.Shell.xml`) | ShellIpc | ToggleStartMenu, ShowRunDialog, ShowDesktop, Lock, ShowLogOffDialog, ShowTurnOffDialog, Version |
+| session | `org.kde.StatusNotifierWatcher` (provided by the shell unless another component does), `…Item`, `com.canonical.dbusmenu` | StatusNotifierWatcher, TrayModel | tray icons and menus |
+| session | `org.freedesktop.Notifications` (spec 1.2; skipped if another daemon owns the name) | NotificationServer | balloon tips |
+| session | `org.meadow.Shell` (ours, `shell/dbus/org.meadow.Shell.xml`) | ShellIpc | ToggleStartMenu, ShowRunDialog, ShowDesktop, Lock, ShowLogOffDialog, ShowTurnOffDialog, NextKeyboardLayout, Version |
 
-Audio uses PipeWire/WirePlumber. Phase 6 starts with `wpctl` plus change
-monitoring, and moves to libpipewire only if profiling shows a need.
+Audio uses PipeWire/WirePlumber through `wpctl` (`VolumeService` polls
+`wpctl get-volume @DEFAULT_AUDIO_SINK@` every 3 s and runs `set-volume` /
+`set-mute`); it moves to libpipewire only if profiling shows a need.
+
+### Shell internals (phase 6)
+
+| Piece | Where | Notes |
+|---|---|---|
+| `Shell` QML singleton | `shell/src/ui/ShellContext` | exposes `windows`, `settings`, `apps`, `tray`, `notifications`, `volume`, `network`, `battery`, `keyboard`, `ipc`, `now`, `startMenuOpen`, `preview` |
+| `ShellSurface` | `shell/src/ui/ShellSurface` | makes a QML `Window` a layer surface (LayerShellQt); a no-op in `--preview` or off Wayland, so the same QML runs anywhere |
+| Window list | `ToplevelModel` → `ForeignToplevelModel` (wlr-foreign-toplevel v3) / `PreviewToplevelModel` | taskbar click = activate or minimize the active window; Win+D minimizes all and restores them (active one last) |
+| App lookup | `AppRegistry`, `DesktopEntry` | app_id → .desktop (exact, case-insensitive, StartupWMClass, last reverse-DNS part) → name and icon; `image://icon` draws a generic icon for unknown names |
+| Tray | `StatusNotifierWatcher`, `TrayModel`, `TrayImageProvider` | SNI pixmaps/icon names, tooltips, Activate/SecondaryActivate/Scroll, DBusMenu `GetLayout` + `Event` |
+| Notifications | `NotificationServer` | one balloon at a time (oldest first, at most 20 queued); body markup reduced to b/i/u/br; actions; urgency 2 and timeout 0 never expire; texts are never logged |
+| Status icons | `VolumeService`, `NetworkService`, `BatteryService`, `TrayGlyph` | icons drawn procedurally; UPower `DisplayDevice`, NM `PrimaryConnection` |
+| Language bar | `KeyboardLayoutService` | see below |
+| Settings | `Settings` | `~/.config/meadow/shell.conf` over `/usr/share/meadow/shell.conf` |
+
+**Keyboard layouts.** labwc has no IPC to query or switch the layout, and
+xkb's own group switching would happen behind the shell's back. So the shell
+owns the order: the first entry of `XKB_DEFAULT_LAYOUT` is the active layout.
+`meadow-session` starts labwc from a per-session overlay directory
+(`$XDG_RUNTIME_DIR/meadow/labwc-<pid>/`: symlinks to the real config plus a
+writable `environment.d/`). Switching writes
+`environment.d/90-meadow-keyboard.env` (layouts rotated, `grp:*` options
+removed) and runs `labwc --reconfigure`. In labwc 0.9.6 that re-reads the
+environment files and rebuilds each keyboard's keymap from `XKB_DEFAULT_*`
+(`seat_reconfigure` → `keyboard_configure` → `set_layout`). Alt+Shift is an
+`onRelease` keybind to `meadow-shellctl next-layout`. A side effect: each
+switch also reloads rc.xml and the theme.
+
+**Popups.** Menus, the calendar and the volume slider live in one PopupHost
+inside a full-screen overlay surface that maps only while a popup is open.
+This gives XP's "click anywhere else closes the menu" without compositor grabs.
+The cost is that the closing click is consumed rather than passed on (XP passes
+it through).
 
 ### SDDM QML API (greeter)
 
@@ -199,7 +236,8 @@ Main.qml                     SDDM context → scheme + scale from theme.conf; pr
 ```
 /usr/share/wayland-sessions/meadow.desktop   Exec=meadow-session, DesktopNames=Meadow
 meadow-session        exports XDG_CURRENT_DESKTOP=Meadow and the toolkit theme variables; keyboard layout from
-                      localectl's X11 keymap; exec labwc --config-dir ~/.config/meadow/labwc | /usr/share/meadow/labwc
+                      localectl's X11 keymap; builds the runtime overlay of ~/.config/meadow/labwc |
+                      /usr/share/meadow/labwc (see "Keyboard layouts") and execs labwc --config-dir <overlay>
   rc.xml              generated from rc.xml.in (fonts and corner radius from tokens): server-side decorations,
                       click-to-focus with raise, automatic placement, icon:iconify,max,close, classic Alt+Tab OSD
   menu.xml            window menu (title-bar right-click, window icon, Alt+Space); no root menu, the shell owns the desktop
@@ -220,9 +258,10 @@ meadow-session        exports XDG_CURRENT_DESKTOP=Meadow and the toolkit theme v
 | Alt+F4 / Alt+Space | close / window menu |
 | Ctrl+Alt+Delete | `meadow-shellctl log-off` |
 | Volume keys | `wpctl` |
+| Alt+Shift (either order) | `meadow-shellctl next-layout` |
 
-labwc has no show-desktop action, so Win+D needs the shell (phase 6,
-foreign-toplevel). `meadow-shellctl` exits 1 with "meadow-shell is not
+labwc has no show-desktop action, so Win+D goes to the shell, which
+minimizes through foreign-toplevel. `meadow-shellctl` exits 1 with "meadow-shell is not
 running" when no shell owns `org.meadow.Shell`. `lock` then falls back to
 `loginctl lock-session`.
 
@@ -231,8 +270,9 @@ running" when no shell owns `org.meadow.Shell`. `lock` then falls back to
 | Path | Target | Notes |
 |---|---|---|
 | `common/` | `meadow-common` (SHARED, SONAME `.0`) + `meadow-commonplugin` | the QML module's qmldir is generated by `qt_add_qml_module` |
-| `shell/src/**` | `meadow-shell-core` (STATIC) | all non-UI logic; unit tests link it |
-| `shell/src/main.cpp`, `shell/qml/` | `meadow-shell` + QML module `Meadow.Shell` | `--preview`, `--theme`, `--exit-after-ms` |
+| `shell/src/**` (except `ui/`) | `meadow-shell-core` (STATIC) | all non-UI logic; unit tests link it |
+| `shell/src/ui/`, `shell/qml/` | `meadow-shell-ui` (STATIC) + QML module `Meadow.Shell` | static so QML tests can load it |
+| `shell/src/main.cpp` | `meadow-shell` | `--preview [--preview-windows N] [--size WxH]`, `--open POPUP`, `--grab FILE`, `--theme`, `--exit-after-ms` |
 | `greeter/` | installed as-is to `/usr/share/sddm/themes/meadow` | `helper/` built from phase 4 |
 | `tools/gallery/` | `meadow-gallery` + `meadow-imgdiff` (not installed) | control gallery and screenshot comparison |
 | `tools/greeter-preview/` | `meadow-greeter-preview` (not installed) | Welcome screen with mock SDDM objects |
@@ -290,7 +330,7 @@ first uses them. The Fedora spec already BuildRequires all of them.
 | 3 | SDDM Welcome screen (done) |
 | 4 | Fingerprint login (PAM snippet, greeter UX, meadow-setup fingerprint commands) (done) |
 | 5 | Session script, labwc config, decorations, shell IPC (done) |
-| 6 | Taskbar, tray, notifications, clock, volume/network/battery |
+| 6 | Taskbar, tray, notifications, clock, volume/network/battery (done) |
 | 7 | Start menu, All Programs, Run, Log Off / Turn Off dialogs |
 | 8 | Desktop, lock screen, Display Properties, Control Panel, Alt+Tab |
 | 9 | GTK/Kvantum themes, icons, cursors, sounds, fontconfig |

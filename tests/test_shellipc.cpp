@@ -52,6 +52,7 @@ private Q_SLOTS:
         QTest::newRow("lock") << QStringLiteral("lock") << QByteArray(SIGNAL(lockRequested()));
         QTest::newRow("log-off") << QStringLiteral("log-off") << QByteArray(SIGNAL(logOffDialogRequested()));
         QTest::newRow("turn-off") << QStringLiteral("turn-off") << QByteArray(SIGNAL(turnOffDialogRequested()));
+        QTest::newRow("next-layout") << QStringLiteral("next-layout") << QByteArray(SIGNAL(nextKeyboardLayoutRequested()));
     }
 
     void commands()

@@ -18,6 +18,8 @@
     <method name="ShowLogOffDialog"/>
     <!-- Turn Off Computer dialog. -->
     <method name="ShowTurnOffDialog"/>
+    <!-- Switch to the next keyboard layout in the language bar (Alt+Shift). -->
+    <method name="NextKeyboardLayout"/>
     <!-- meadow-shell version; also a cheap liveness check. -->
     <method name="Version">
       <arg name="version" type="s" direction="out"/>

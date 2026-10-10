@@ -23,10 +23,11 @@ cmake --build build
 ctest --test-dir build
 ```
 
-Run the shell in a normal window without root or layer-shell:
+Run the taskbar in a normal window, without root or layer-shell, with sample
+windows (add `--mocks --sni` for volume/network/battery and a tray icon):
 
 ```sh
-MEADOW_THEME_DIR=$PWD/theme QML_IMPORT_PATH=$PWD/build/qml build/shell/meadow-shell --preview
+tools/shell-preview.sh build -- --preview-windows 10
 ```
 
 Try the Welcome screen without SDDM:

@@ -71,6 +71,12 @@ void ShellIpc::ShowTurnOffDialog()
     Q_EMIT turnOffDialogRequested();
 }
 
+void ShellIpc::NextKeyboardLayout()
+{
+    qCInfo(lcIpc) << "NextKeyboardLayout";
+    Q_EMIT nextKeyboardLayoutRequested();
+}
+
 QString ShellIpc::Version() const
 {
     return QStringLiteral(MEADOW_VERSION);

@@ -1,0 +1,18 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Stand-in for wpctl in tests (MEADOW_WPCTL=tools/fake-wpctl). State lives in
+# $FAKE_WPCTL_STATE (default /tmp/fake-wpctl-$USER): "<volume> <muted 0|1>".
+# Every call is appended to $FAKE_WPCTL_STATE.log.
+state="${FAKE_WPCTL_STATE:-/tmp/fake-wpctl-$(id -u)}"
+[ -f "$state" ] || echo "0.40 0" > "$state"
+echo "$*" >> "$state.log"
+read -r vol muted < "$state"
+case "$1" in
+    get-volume)
+        if [ "$muted" = 1 ]; then echo "Volume: $vol [MUTED]"; else echo "Volume: $vol"; fi ;;
+    set-volume) echo "$3 $muted" > "$state" ;;
+    set-mute)
+        case "$3" in toggle) muted=$((1 - muted)) ;; *) muted="$3" ;; esac
+        echo "$vol $muted" > "$state" ;;
+    *) exit 1 ;;
+esac

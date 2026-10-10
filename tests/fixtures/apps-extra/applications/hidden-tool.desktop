@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Hidden Tool
+Exec=hidden-tool
+NoDisplay=true
+OnlyShowIn=KDE;

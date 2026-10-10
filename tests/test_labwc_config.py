@@ -62,6 +62,7 @@ REQUIRED = {
     "A-Tab": ("NextWindow", None),
     "A-F4": ("Close", None),
     "C-A-Delete": ("Execute", "meadow-shellctl log-off"),
+    "A-Shift_L": ("Execute", "meadow-shellctl next-layout"),
     "A-space": ("ShowMenu", None),
 }
 

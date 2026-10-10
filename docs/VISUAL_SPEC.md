@@ -78,6 +78,24 @@ the task list. It can be toggled; the default is `enabledByDefault`.
 - Language bar: a `languageBar.width` px box showing "EN", "AR", …
 - Volume, network and battery icons sit before the clock.
 
+### Popups and balloons (phase 6)
+
+| Item | Spec | Tokens |
+|---|---|---|
+| Context menus | white, 1px grey border, soft 2px shadow, 18px rows, blue hover with white text, bold default item, check/radio column, separators, ▸ submenus opening after `submenuDelayMs` | `controls.menu.*` |
+| Group button | "N App name" with a small ▾; groups form when buttons would get narrower than `groupThreshold`, largest app first | `taskButton.groupThreshold`, `groupArrowSize` |
+| Volume popup | beige panel: "Volume", a vertical slider with `tickCount` ticks, Mute check box | `tray.volume.*` |
+| Calendar | the long date, a blue month header with arrows, locale-ordered weekday initials, today highlighted | `clock.calendar.*` |
+| Chevron | round translucent button with ‹‹ / ›› | `tray.chevron*` |
+| Balloons | `controls.balloon.*`, tail pointing at the notification area; app icon, bold summary, body with b/i/u, optional action buttons | `controls.balloon.*` |
+| Tooltips | pale yellow above the taskbar after `delayMs` | `controls.tooltip.*` |
+| Status icons | volume, network (wired/wireless/limited/offline), battery (charge, charging) and Show Desktop are drawn procedurally (`TrayGlyph`), original art | — |
+| Taskbar Properties | dialog body with group boxes | `dialogs.taskbarProperties.*`, `controls.groupBox.*` |
+
+Attention: wlr-foreign-toplevel has no "urgent" state, so the orange
+attention flash triggers only through the model's `needsAttention` role (preview
+and tests). Real windows cannot request it until labwc exposes urgency.
+
 ## 2. Start menu (`startMenu.*`)
 
 380×480 (`width`, `height`), docked above the Start button, top corners rounded

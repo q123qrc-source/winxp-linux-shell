@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Minimal xkb rules description for test_services (same structure as
+     xkeyboard-config's evdev.xml). -->
+<xkbConfigRegistry version="1.1">
+  <modelList/>
+  <layoutList>
+    <layout>
+      <configItem>
+        <name>us</name>
+        <shortDescription>en</shortDescription>
+        <description>English (US)</description>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem>
+            <name>intl</name>
+            <description>English (US, intl., with dead keys)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem>
+        <name>ara</name>
+        <shortDescription>ar</shortDescription>
+        <description>Arabic</description>
+      </configItem>
+      <variantList>
+        <variant>
+          <configItem>
+            <name>digits</name>
+            <description>Arabic (Eastern Arabic numerals)</description>
+          </configItem>
+        </variant>
+      </variantList>
+    </layout>
+    <layout>
+      <configItem>
+        <name>de</name>
+        <shortDescription>de</shortDescription>
+        <description>German</description>
+      </configItem>
+    </layout>
+  </layoutList>
+</xkbConfigRegistry>
