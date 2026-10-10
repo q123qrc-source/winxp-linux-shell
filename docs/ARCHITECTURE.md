@@ -103,9 +103,36 @@ theme/<scheme>/theme.json ──▶ ThemeLoader (C++) ──▶ QML singleton `T
 - QML must not contain literal sizes or colors. Phase 2 adds a lint check.
 - `MEADOW_THEME` selects the scheme. In dev mode (`-DMEADOW_DEV_MODE=ON`) a file
   watcher reloads the theme live (phase 2).
+- `Theme.tokens` is one JS object built per load, so bindings read plain JS
+  properties rather than converting a `QVariantMap` on every access.
+  `Theme.px(n)` scales and rounds a metric. `Theme.fonts.<role>` is a `QFont`
+  for the first *installed* family in the role's list. `Theme.duration(name)`
+  returns 0 under reduced motion (`animation.reducedMotion` or
+  `MEADOW_REDUCED_MOTION=1`). Every property notifies through `themeChanged`.
+- Environment: `MEADOW_THEME` (scheme), `MEADOW_THEME_DIR` (source-tree
+  themes), `MEADOW_SCALE`, `MEADOW_THEME_LIVE=1` (watch the file), and
+  `MEADOW_MUTE=1` / `MEADOW_SOUND_DIR` for SoundPlayer.
 - **Construction rule:** `ThemeLoader` is deliberately not default-constructible.
   Qt prefers a default constructor over `create()` for `QML_SINGLETON` types, and
   that would give QML an empty, separate instance.
+
+### Controls
+
+`Meadow.Controls` builds on `QtQuick.Templates`, so keyboard handling, focus
+and accessibility come from Qt, while all visuals come from tokens. Three C++
+painted items carry the drawing that QML can't express from data on Qt 6.5:
+
+| Item | Purpose |
+|---|---|
+| `GradientBox` | fill from a token gradient list, per-corner radii, solid or dotted border |
+| `LunaGlyph` | vector glyphs: check, arrows, chevrons, caption buttons, info/warning/error/question badges |
+| `BalloonShape` | balloon body with a slanted tail (top or bottom) |
+
+The QML controls are LunaButton, LunaTextField, LunaCheckBox, LunaComboBox,
+LunaScrollBar, LunaTooltip, BalloonTip, LunaWindowFrame, LunaDialog,
+GlossyGradient and ShadowText. Each interactive control has a `previewState`
+property ("hover", "pressed", "focus") that forces a visual state for the
+gallery and screenshot tests. It never changes behavior.
 
 ## 5. Source layout and build
 
@@ -115,6 +142,7 @@ theme/<scheme>/theme.json ──▶ ThemeLoader (C++) ──▶ QML singleton `T
 | `shell/src/**` | `meadow-shell-core` (STATIC) | all non-UI logic; unit tests link it |
 | `shell/src/main.cpp`, `shell/qml/` | `meadow-shell` + QML module `Meadow.Shell` | `--preview`, `--theme`, `--exit-after-ms` |
 | `greeter/` | installed as-is to `/usr/share/sddm/themes/meadow` | `helper/` built from phase 4 |
+| `tools/gallery/` | `meadow-gallery` + `meadow-imgdiff` (not installed) | control gallery and screenshot comparison |
 | `tests/` | Qt Test executables + Python checks | `MEADOW_THEME_DIR` points at the source tree |
 
 Optional dependencies (`Qt6::WaylandClient`, `LayerShellQt`, `Qt6::Multimedia`,
@@ -159,8 +187,8 @@ first uses them. The Fedora spec already BuildRequires all of them.
 
 | Phase | Deliverable |
 |---|---|
-| 1 | Scaffold, docs, theme tokens, CMake, spec draft (this commit) |
-| 2 | ThemeLoader complete, SoundPlayer, all Luna controls, gallery, golden screenshots |
+| 1 | Scaffold, docs, theme tokens, CMake, spec draft (done) |
+| 2 | ThemeLoader complete, SoundPlayer, all Luna controls, gallery, golden screenshots (done) |
 | 3 | SDDM Welcome screen |
 | 4 | Fingerprint login (PAM snippet, greeter UX, helper) |
 | 5 | Session script, labwc config, decorations |

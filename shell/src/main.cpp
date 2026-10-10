@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
     ThemeLoader *theme = ThemeLoader::instance();
     if (parser.isSet(themeOpt) && !theme->loadFile(parser.value(themeOpt)))
         return 1;
-    if (theme->tokens().isEmpty()) {
+    if (theme->tokenMap().isEmpty()) {
         qCCritical(lcShell).noquote() << "no theme loaded:" << theme->errorString();
         return 1;
     }

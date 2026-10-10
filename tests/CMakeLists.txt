@@ -11,7 +11,11 @@ function(meadow_add_test name)
     set_tests_properties(${name} PROPERTIES ENVIRONMENT "${test_env}")
 endfunction()
 
-meadow_add_test(test_themeloader meadow-common)
+meadow_add_test(test_themeloader meadow-common Qt6::Qml)
+meadow_add_test(test_controls meadow-common Qt6::Qml)
+# Tests import Meadow.Controls from the build tree.
+target_compile_definitions(test_themeloader PRIVATE MEADOW_BUILD_QML_DIR="${CMAKE_BINARY_DIR}/qml")
+target_compile_definitions(test_controls PRIVATE MEADOW_BUILD_QML_DIR="${CMAKE_BINARY_DIR}/qml")
 if(MEADOW_BUILD_SHELL)
     meadow_add_test(test_appmenu meadow-shell-core)
     meadow_add_test(test_settings meadow-shell-core)
@@ -22,6 +26,17 @@ add_test(NAME theme_schema
 
 add_test(NAME session_desktop COMMAND ${PROJECT_SOURCE_DIR}/tools/validate-session-desktop.sh ${PROJECT_SOURCE_DIR}/session/meadow.desktop)
 set_tests_properties(session_desktop PROPERTIES SKIP_RETURN_CODE 77)
+
+add_test(NAME qml_literals
+         COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/tools/check-qml-literals.py ${PROJECT_SOURCE_DIR})
+
+if(MEADOW_BUILD_GALLERY)
+    # Pixel comparison against tests/golden; font-dependent, so it carries the
+    # "screenshot" label and the RPM %check excludes it.
+    add_test(NAME screenshot_gallery
+             COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/tools/screenshot-test.py --build-dir ${CMAKE_BINARY_DIR})
+    set_tests_properties(screenshot_gallery PROPERTIES LABELS screenshot SKIP_RETURN_CODE 77 TIMEOUT 300)
+endif()
 
 add_test(NAME asset_policy COMMAND ${PROJECT_SOURCE_DIR}/tools/check-assets.sh ${PROJECT_SOURCE_DIR})
 

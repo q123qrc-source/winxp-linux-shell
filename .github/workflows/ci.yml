@@ -26,14 +26,23 @@ jobs:
           fetch-depth: 0
       - name: Install build dependencies
         run: |
-          dnf -y install dnf-plugins-core rpm-build rpmlint desktop-file-utils
+          dnf -y install dnf-plugins-core rpm-build rpmlint desktop-file-utils google-noto-sans-fonts fontconfig
           dnf -y builddep packaging/fedora/meadow.spec
       - name: Configure
         run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
       - name: Build
         run: cmake --build build
-      - name: Unit, schema, asset-policy and QML smoke tests
-        run: ctest --test-dir build --output-on-failure
+      - name: Unit, schema, lint, asset-policy and QML smoke tests
+        run: ctest --test-dir build --output-on-failure --label-exclude screenshot
+      - name: Screenshot tests (tests/golden)
+        if: matrix.release == 'latest'
+        run: python3 tools/screenshot-test.py --build-dir build
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ matrix.release }}
+          path: build/screenshots/
       - name: Validate desktop and metadata files
         run: tools/validate-session-desktop.sh session/meadow.desktop
       - name: RPM build and rpmlint
@@ -42,4 +51,4 @@ jobs:
           tools/make-tarball.sh
           rpmbuild -ba packaging/fedora/meadow.spec --define "_sourcedir $PWD"
           rpmlint -r packaging/fedora/meadow.rpmlintrc packaging/fedora/meadow.spec ~/rpmbuild/RPMS/*/*.rpm
-      # Headless screenshot tests (labwc, WLR_BACKENDS=headless) are added in phase 2.
+      # Shell surfaces inside headless labwc (WLR_BACKENDS=headless) join in phase 6.

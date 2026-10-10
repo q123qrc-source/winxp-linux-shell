@@ -116,7 +116,8 @@ fontconfig snippet mapping classic UI font names to open fonts.
 
 %build
 %cmake -G Ninja \
-    -DMEADOW_BUILD_TESTS=ON
+    -DMEADOW_BUILD_TESTS=ON \
+    -DMEADOW_BUILD_GALLERY=ON
 %cmake_build
 
 %install
@@ -127,7 +128,8 @@ fontconfig snippet mapping classic UI font names to open fonts.
 # Session entries carry DesktopNames=, which desktop-file-validate rejects;
 # the script checks it and validates the rest.
 tools/validate-session-desktop.sh %{buildroot}%{_datadir}/wayland-sessions/meadow.desktop
-%ctest
+# Screenshot comparisons depend on the exact fonts installed; they run in CI only.
+%ctest --label-exclude screenshot
 
 %files
 # Metapackage: no files of its own besides the license and README.

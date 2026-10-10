@@ -168,13 +168,13 @@ Same frame, with Switch User / Log Off buttons plus Cancel.
 
 | Control | States | Key tokens |
 |---|---|---|
-| Button | normal, hover (orange 3-ring), pressed, focused (dotted focus rect `focusRingInset`), default (blue 3-ring), disabled | `button.*` |
-| TextField | normal, focused (border `focusBorderColor`), disabled | `textField.*` |
+| Button | normal, hover (orange ring), pressed, focused (dotted focus rect `focusRingInset` + blue ring), default (blue ring), disabled. The ring is `ringWidth` px, a vertical gradient through `hoverRingColors` / `defaultRingColors` | `button.*` |
+| TextField | normal, focused (border `focusBorderColor`), disabled; `defaultWidth` | `textField.*` |
 | CheckBox | unchecked, checked (green tick `checkColor`), hover ring, disabled | `checkBox.*` |
-| ComboBox | normal, hover (button lightens), open, disabled | `comboBox.*` |
-| ScrollBar | track, thumb normal/hover/pressed with grip lines, arrow buttons | `scrollBar.*` |
+| ComboBox | normal, hover (button lightens), pressed/open (button gradient inverted), focused (text on selection blue), disabled; popup shows up to `popupMaxItems` rows | `comboBox.*` |
+| ScrollBar | track, arrow buttons (auto-repeat `autoRepeatDelayMs`/`autoRepeatMs`), thumb normal/hover/pressed with `gripLines` grip lines; the gradient runs across the bar | `scrollBar.*` |
 | Tooltip | pale yellow box with a 1px black border, delay `delayMs` | `tooltip.*` |
-| BalloonTip | rounded (`radius`) yellow balloon with a tail, bold title, close button, timeout | `balloon.*` |
+| BalloonTip | rounded (`radius`) yellow balloon with a slanted tail (top or bottom), `iconSize` icon, bold title, close button, `timeoutMs` | `balloon.*` |
 | ProgressBar | green blocks (`blockWidth`, `blockSpacing`, `blockGradient`) | `progressBar.*` |
 | Menu | white, selection blue, separators | `menu.*` |
 
@@ -194,8 +194,13 @@ stays visible without pulsing).
 - **luna-blue**: reference values above.
 - **luna-olive**: the same keys, with blue-range colors mapped to olive. The
   green start button, red close button and yellow/green dialog buttons are unchanged.
-- **luna-silver**: blue-range colors desaturated to silver. The text and glyph
-  colors for silver taskbar and title bars still need tuning (they stay white
-  for now). That tuning is tracked for phase 2.
+- **luna-silver**: blue-range colors desaturated to light silver. Text on
+  silver surfaces is dark (`taskButton.textColor`, `clock.textColor`,
+  `window.titlebar.textColor`), caption glyphs are dark
+  (`window.buttons.glyphColor`), and the close button keeps its white X
+  (`window.buttons.closeGlyphColor`). Surfaces that carry white text (Welcome
+  screen, Start menu header/footer, dialog headers) stay darker steel.
+- Olive and silver started as hue mappings of blue and were then tuned by hand.
+  Edit their JSON directly; nothing regenerates them.
 
 All three must pass `tools/theme-schema.py check theme`.

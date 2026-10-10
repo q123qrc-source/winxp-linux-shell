@@ -3,7 +3,7 @@
     "id": "luna-olive",
     "name": "Luna Olive Green",
     "schemaVersion": 1,
-    "description": "Olive Green variant; generated from luna-blue by hue mapping, then hand-tunable."
+    "description": "Olive Green variant. Bootstrapped from luna-blue by hue mapping, then tuned by hand; edit this file directly."
   },
   "scale": {
     "factor": 1.0,
@@ -103,10 +103,10 @@
     }
   },
   "colors": {
-    "accent": "#A0B461",
-    "accentDark": "#4C572C",
-    "accentLight": "#BBD17A",
-    "selection": "#91A25F",
+    "accent": "#89A34E",
+    "accentDark": "#414E22",
+    "accentLight": "#A2BD64",
+    "selection": "#7D924E",
     "selectionText": "#FFFFFF",
     "windowBackground": "#ECE9D8",
     "windowText": "#000000",
@@ -125,31 +125,31 @@
     "gradient": [
       {
         "pos": 0.0,
-        "color": "#9CAF65"
+        "color": "#879E52"
       },
       {
         "pos": 0.04,
-        "color": "#ABBD76"
+        "color": "#95AA62"
       },
       {
         "pos": 0.08,
-        "color": "#9CB05E"
+        "color": "#869F4C"
       },
       {
         "pos": 0.5,
-        "color": "#A0B461"
+        "color": "#89A34E"
       },
       {
         "pos": 0.9,
-        "color": "#98AC5B"
+        "color": "#839B49"
       },
       {
         "pos": 1.0,
-        "color": "#788748"
+        "color": "#677A3A"
       }
     ],
     "topEdgeHeight": 1,
-    "topEdgeColor": "#B6C38F",
+    "topEdgeColor": "#A0B07B",
     "spacing": 2,
     "autoHideRevealHeight": 2,
     "autoHideDelayMs": 500
@@ -240,8 +240,8 @@
     "iconSize": 16,
     "itemPadding": 3,
     "gripWidth": 6,
-    "gripDotColor": "#65733A",
-    "gripDotHighlight": "#B6C58A",
+    "gripDotColor": "#56682E",
+    "gripDotHighlight": "#A0B276",
     "enabledByDefault": true
   },
   "taskButton": {
@@ -256,55 +256,55 @@
       "normal": [
         {
           "pos": 0.0,
-          "color": "#B5C682"
+          "color": "#9EB36D"
         },
         {
           "pos": 0.1,
-          "color": "#B3C775"
+          "color": "#9BB460"
         },
         {
           "pos": 0.9,
-          "color": "#A8BD6B"
+          "color": "#91AA57"
         },
         {
           "pos": 1.0,
-          "color": "#98AB5F"
+          "color": "#839A4D"
         }
       ],
       "hover": [
         {
           "pos": 0.0,
-          "color": "#C2D196"
+          "color": "#ABBD80"
         },
         {
           "pos": 0.1,
-          "color": "#BED184"
+          "color": "#A5BD6F"
         },
         {
           "pos": 0.9,
-          "color": "#B6C97C"
+          "color": "#9EB567"
         },
         {
           "pos": 1.0,
-          "color": "#A6B96E"
+          "color": "#90A75A"
         }
       ],
       "active": [
         {
           "pos": 0.0,
-          "color": "#83944D"
+          "color": "#70863D"
         },
         {
           "pos": 0.1,
-          "color": "#8A9C54"
+          "color": "#778D43"
         },
         {
           "pos": 0.9,
-          "color": "#92A55B"
+          "color": "#7E954A"
         },
         {
           "pos": 1.0,
-          "color": "#97AA60"
+          "color": "#83994E"
         }
       ],
       "attention": [
@@ -326,8 +326,8 @@
         }
       ]
     },
-    "borderColor": "#7A8A4A",
-    "activeBorderColor": "#5C6936",
+    "borderColor": "#697C3B",
+    "activeBorderColor": "#4F5F2B",
     "attentionPulseMs": 600,
     "attentionPulseCount": 7
   },
@@ -335,31 +335,31 @@
     "gradient": [
       {
         "pos": 0.0,
-        "color": "#84984A"
+        "color": "#71893A"
       },
       {
         "pos": 0.05,
-        "color": "#A7BF5F"
+        "color": "#8FAC4A"
       },
       {
         "pos": 0.1,
-        "color": "#AEC664"
+        "color": "#95B34F"
       },
       {
         "pos": 0.5,
-        "color": "#A8C15F"
+        "color": "#90AE4B"
       },
       {
         "pos": 0.95,
-        "color": "#A6BE5E"
+        "color": "#8EAC49"
       },
       {
         "pos": 1.0,
-        "color": "#9DB457"
+        "color": "#86A344"
       }
     ],
-    "leftBorderColor": "#576431",
-    "leftBorderHighlight": "#B1C968",
+    "leftBorderColor": "#4B5A26",
+    "leftBorderHighlight": "#98B553",
     "leftBorderWidth": 1,
     "iconSize": 16,
     "iconSpacing": 2,
@@ -376,47 +376,47 @@
   },
   "languageBar": {
     "width": 22,
-    "background": "#9AAD61",
-    "border": "#65733A",
+    "background": "#859C4F",
+    "border": "#56682E",
     "textColor": "#FFFFFF"
   },
   "startMenu": {
     "width": 380,
     "height": 480,
     "radiusTop": 7,
-    "borderColor": "#728340",
+    "borderColor": "#627632",
     "borderWidth": 1,
     "header": {
       "height": 64,
       "gradient": [
         {
           "pos": 0.0,
-          "color": "#94A957"
+          "color": "#6B803A"
         },
         {
           "pos": 0.08,
-          "color": "#91A651"
+          "color": "#687E35"
         },
         {
           "pos": 0.5,
-          "color": "#91A651"
+          "color": "#687E35"
         },
         {
           "pos": 0.92,
-          "color": "#91A651"
+          "color": "#687E35"
         },
         {
           "pos": 1.0,
-          "color": "#819448"
+          "color": "#5D702F"
         }
       ],
-      "highlightColor": "#B2C57A",
+      "highlightColor": "#829555",
       "avatarSize": 48,
       "avatarBorderWidth": 2,
       "avatarBorderColor": "#FFFFFF",
       "avatarRadius": 4,
       "nameColor": "#FFFFFF",
-      "nameShadowColor": "#A02D3418"
+      "nameShadowColor": "#A020280F"
     },
     "headerSeparator": {
       "height": 2,
@@ -444,22 +444,22 @@
       "padding": 6,
       "subtitleColor": "#7F7F7F",
       "separatorColor": "#D5D3CC",
-      "hoverBackground": "#91A25F",
+      "hoverBackground": "#7D924E",
       "hoverText": "#FFFFFF",
       "mfuCount": 6,
       "allProgramsArrowColor": "#3A9D23",
       "allProgramsHeight": 30
     },
     "right": {
-      "background": "#C9CDBB",
-      "borderLeftColor": "#B9C39B",
+      "background": "#B4B9A7",
+      "borderLeftColor": "#A4B087",
       "itemHeight": 26,
       "iconSize": 24,
       "padding": 6,
-      "textColor": "#4C572C",
+      "textColor": "#414E22",
       "boldItems": true,
-      "separatorColor": "#BBC3A4",
-      "hoverBackground": "#91A25F",
+      "separatorColor": "#A7B090",
+      "hoverBackground": "#7D924E",
       "hoverText": "#FFFFFF"
     },
     "footer": {
@@ -467,19 +467,19 @@
       "gradient": [
         {
           "pos": 0.0,
-          "color": "#9FAF6D"
+          "color": "#74854C"
         },
         {
           "pos": 0.1,
-          "color": "#A5B86D"
+          "color": "#788B4B"
         },
         {
           "pos": 0.9,
-          "color": "#93A658"
+          "color": "#6A7E3B"
         },
         {
           "pos": 1.0,
-          "color": "#889B50"
+          "color": "#627535"
         }
       ],
       "buttonIconSize": 22,
@@ -493,7 +493,7 @@
       "maxWidth": 360,
       "background": "#FFFFFF",
       "borderColor": "#A0A0A0",
-      "sideStripColor": "#7B8757",
+      "sideStripColor": "#6B7A49",
       "hoverDelayMs": 400,
       "newProgramHighlight": "#FFF1A6",
       "newProgramDays": 7
@@ -507,63 +507,64 @@
         "active": [
           {
             "pos": 0.0,
-            "color": "#B5D162"
+            "color": "#9BBD4C"
           },
           {
             "pos": 0.06,
-            "color": "#A8C358"
+            "color": "#8FB043"
           },
           {
             "pos": 0.12,
-            "color": "#A8C358"
+            "color": "#8FB043"
           },
           {
             "pos": 0.6,
-            "color": "#B4D15E"
+            "color": "#9ABD48"
           },
           {
             "pos": 0.9,
-            "color": "#AAC559"
+            "color": "#91B243"
           },
           {
             "pos": 1.0,
-            "color": "#98B04F"
+            "color": "#829F3C"
           }
         ],
         "inactive": [
           {
             "pos": 0.0,
-            "color": "#C0C9A5"
+            "color": "#AAB591"
           },
           {
             "pos": 0.06,
-            "color": "#ABB789"
+            "color": "#97A577"
           },
           {
             "pos": 0.6,
-            "color": "#B6C195"
+            "color": "#A1AE81"
           },
           {
             "pos": 1.0,
-            "color": "#A7B385"
+            "color": "#93A173"
           }
         ]
       },
       "textColor": "#FFFFFF",
-      "inactiveTextColor": "#C8CBBD",
-      "textShadowColor": "#A04D582C",
+      "inactiveTextColor": "#B3B8A9",
+      "textShadowColor": "#A0424F23",
       "textShadowOffset": 1,
       "iconSize": 16,
-      "paddingLeft": 6
+      "paddingLeft": 6,
+      "textSpacing": 4
     },
     "border": {
       "width": 4,
-      "activeColor": "#A5C056",
-      "activeHighlight": "#ABC362",
-      "activeShadow": "#9AB254",
-      "inactiveColor": "#ACB88A",
-      "inactiveHighlight": "#B8C19D",
-      "inactiveShadow": "#9EA97E"
+      "activeColor": "#8DAD42",
+      "activeHighlight": "#92B04D",
+      "activeShadow": "#84A141",
+      "inactiveColor": "#98A677",
+      "inactiveHighlight": "#A3AE8A",
+      "inactiveShadow": "#8B986D"
     },
     "buttons": {
       "size": 21,
@@ -576,43 +577,43 @@
         "normal": [
           {
             "pos": 0.0,
-            "color": "#B6C783"
+            "color": "#9FB46E"
           },
           {
             "pos": 0.5,
-            "color": "#A6BA68"
+            "color": "#8FA854"
           },
           {
             "pos": 1.0,
-            "color": "#98AD5B"
+            "color": "#839C49"
           }
         ],
         "hover": [
           {
             "pos": 0.0,
-            "color": "#BECC95"
+            "color": "#A7B880"
           },
           {
             "pos": 0.5,
-            "color": "#B3C67B"
+            "color": "#9CB366"
           },
           {
             "pos": 1.0,
-            "color": "#A9BD6E"
+            "color": "#92AA5A"
           }
         ],
         "pressed": [
           {
             "pos": 0.0,
-            "color": "#859750"
+            "color": "#728840"
           },
           {
             "pos": 0.5,
-            "color": "#97AB5D"
+            "color": "#829A4B"
           },
           {
             "pos": 1.0,
-            "color": "#A2B569"
+            "color": "#8CA456"
           }
         ]
       },
@@ -663,39 +664,41 @@
       "inactive": [
         {
           "pos": 0.0,
-          "color": "#BFC6AA"
+          "color": "#ABB397"
         },
         {
           "pos": 0.5,
-          "color": "#B3BD97"
+          "color": "#9FAA84"
         },
         {
           "pos": 1.0,
-          "color": "#AAB48B"
+          "color": "#96A379"
         }
-      ]
+      ],
+      "glyphInset": 5,
+      "closeGlyphColor": "#FFFFFF"
     }
   },
   "welcome": {
-    "background": "#A6B47A",
+    "background": "#798856",
     "topBand": {
       "height": 80,
-      "color": "#6E803A"
+      "color": "#4F6125"
     },
     "bottomBand": {
       "height": 80,
       "gradient": [
         {
           "pos": 0.0,
-          "color": "#879658"
+          "color": "#62713D"
         },
         {
           "pos": 0.5,
-          "color": "#6E803A"
+          "color": "#4F6125"
         },
         {
           "pos": 1.0,
-          "color": "#6E803A"
+          "color": "#4F6125"
         }
       ]
     },
@@ -704,19 +707,19 @@
       "gradient": [
         {
           "pos": 0.0,
-          "color": "#00A6B47A"
+          "color": "#00798856"
         },
         {
           "pos": 0.3,
-          "color": "#C4CBB2"
+          "color": "#939984"
         },
         {
           "pos": 0.7,
-          "color": "#C4CBB2"
+          "color": "#939984"
         },
         {
           "pos": 1.0,
-          "color": "#00A6B47A"
+          "color": "#00798856"
         }
       ]
     },
@@ -742,14 +745,14 @@
       ]
     },
     "glow": {
-      "color": "#90C7D1AA",
+      "color": "#90949E7D",
       "centerX": 0.25,
       "centerY": 0.35,
       "radius": 0.45
     },
     "verticalDivider": {
       "width": 1,
-      "color": "#C4CBB2",
+      "color": "#939984",
       "fadeLength": 0.25
     },
     "logo": {
@@ -771,33 +774,33 @@
       "spacing": 8,
       "padding": 10,
       "nameColor": "#FFFFFF",
-      "subtextColor": "#C7CBB9",
+      "subtextColor": "#959A8A",
       "hoverGradient": [
         {
           "pos": 0.0,
-          "color": "#009BAF62"
+          "color": "#00708442"
         },
         {
           "pos": 0.3,
-          "color": "#809BAF62"
+          "color": "#80708442"
         },
         {
           "pos": 1.0,
-          "color": "#C09BAF62"
+          "color": "#C0708442"
         }
       ],
       "selectedGradient": [
         {
           "pos": 0.0,
-          "color": "#00869752"
+          "color": "#00617238"
         },
         {
           "pos": 0.3,
-          "color": "#A0869752"
+          "color": "#A0617238"
         },
         {
           "pos": 1.0,
-          "color": "#E0869752"
+          "color": "#E0617238"
         }
       ],
       "dimmedOpacity": 0.5
@@ -824,15 +827,15 @@
       "hintGradient": [
         {
           "pos": 0.0,
-          "color": "#B8C592"
+          "color": "#889569"
         },
         {
           "pos": 0.5,
-          "color": "#A2B46B"
+          "color": "#76884A"
         },
         {
           "pos": 1.0,
-          "color": "#8D9D5A"
+          "color": "#66773D"
         }
       ],
       "labelText": "Type your password",
@@ -872,15 +875,15 @@
     "headerGradient": [
       {
         "pos": 0.0,
-        "color": "#788A43"
+        "color": "#56682C"
       },
       {
         "pos": 1.0,
-        "color": "#647338"
+        "color": "#485725"
       }
     ],
     "headerTextColor": "#FFFFFF",
-    "footerColor": "#6C7D38",
+    "footerColor": "#4D5F24",
     "grayscaleFadeMs": 1500,
     "dimOverlayColor": "#80000000",
     "turnOff": {
@@ -889,15 +892,15 @@
       "bodyGradient": [
         {
           "pos": 0.0,
-          "color": "#A2B175"
+          "color": "#768652"
         },
         {
           "pos": 0.5,
-          "color": "#AEBC87"
+          "color": "#808E61"
         },
         {
           "pos": 1.0,
-          "color": "#A2B175"
+          "color": "#768652"
         }
       ],
       "roundButtonSize": 33,
@@ -948,7 +951,9 @@
     "logOff": {
       "width": 314,
       "height": 200
-    }
+    },
+    "padding": 11,
+    "buttonSpacing": 6
   },
   "controls": {
     "button": {
@@ -956,7 +961,7 @@
       "minWidth": 75,
       "radius": 3,
       "paddingH": 8,
-      "borderColor": "#525F2B",
+      "borderColor": "#465621",
       "textColor": "#000000",
       "gradient": {
         "normal": [
@@ -1018,26 +1023,28 @@
         "#E59700"
       ],
       "defaultRingColors": [
-        "#CCD1BB",
-        "#B7C09B",
-        "#B4C387"
+        "#B6BDA6",
+        "#A2AD88",
+        "#9EB073"
       ],
       "focusRingInset": 3,
-      "disabledBorderColor": "#C9C7BA"
+      "disabledBorderColor": "#C9C7BA",
+      "ringWidth": 2
     },
     "textField": {
       "height": 21,
-      "borderColor": "#91987E",
-      "focusBorderColor": "#91A25F",
+      "borderColor": "#81896E",
+      "focusBorderColor": "#7D924E",
       "background": "#FFFFFF",
       "disabledBackground": "#F5F4EA",
       "textColor": "#000000",
-      "selectionColor": "#91A25F",
-      "padding": 3
+      "selectionColor": "#7D924E",
+      "padding": 3,
+      "defaultWidth": 150
     },
     "checkBox": {
       "size": 13,
-      "borderColor": "#5E693C",
+      "borderColor": "#515F31",
       "gradient": [
         {
           "pos": 0.0,
@@ -1055,30 +1062,32 @@
     "comboBox": {
       "height": 21,
       "buttonWidth": 17,
-      "borderColor": "#91987E",
+      "borderColor": "#81896E",
       "buttonGradient": [
         {
           "pos": 0.0,
-          "color": "#C7CEB4"
+          "color": "#B2BA9F"
         },
         {
           "pos": 1.0,
-          "color": "#BAC49C"
+          "color": "#A5B188"
         }
       ],
       "buttonHoverGradient": [
         {
           "pos": 0.0,
-          "color": "#CCD0C1"
+          "color": "#B7BCAC"
         },
         {
           "pos": 1.0,
-          "color": "#C4CBAD"
+          "color": "#AEB898"
         }
       ],
-      "arrowColor": "#676D54",
+      "arrowColor": "#5B6249",
       "popupBorderColor": "#000000",
-      "itemHeight": 18
+      "itemHeight": 18,
+      "defaultWidth": 150,
+      "popupMaxItems": 8
     },
     "scrollBar": {
       "width": 17,
@@ -1086,27 +1095,33 @@
       "thumbGradient": [
         {
           "pos": 0.0,
-          "color": "#C9CFB8"
+          "color": "#B3BAA3"
         },
         {
           "pos": 1.0,
-          "color": "#C3CBAC"
+          "color": "#AEB897"
         }
       ],
       "thumbHoverGradient": [
         {
           "pos": 0.0,
-          "color": "#CCD0C0"
+          "color": "#B7BCAB"
         },
         {
           "pos": 1.0,
-          "color": "#C8CFB5"
+          "color": "#B3BAA1"
         }
       ],
-      "thumbBorderColor": "#B6BE9D",
+      "thumbBorderColor": "#A1AC8A",
       "thumbRadius": 3,
-      "gripColor": "#BFCB9B",
-      "arrowColor": "#676D54"
+      "gripColor": "#A9B886",
+      "arrowColor": "#5B6249",
+      "gripLines": 4,
+      "gripLength": 7,
+      "minThumbLength": 12,
+      "autoRepeatDelayMs": 300,
+      "autoRepeatMs": 50,
+      "arrowInset": 4
     },
     "tooltip": {
       "background": "#FFFFE1",
@@ -1114,7 +1129,8 @@
       "textColor": "#000000",
       "padding": 3,
       "delayMs": 500,
-      "timeoutMs": 5000
+      "timeoutMs": 5000,
+      "offsetY": 20
     },
     "balloon": {
       "background": "#FFFFE1",
@@ -1127,7 +1143,9 @@
       "padding": 8,
       "maxWidth": 300,
       "closeButtonSize": 14,
-      "timeoutMs": 10000
+      "timeoutMs": 10000,
+      "iconSize": 16,
+      "spacing": 6
     },
     "progressBar": {
       "height": 15,
@@ -1154,12 +1172,12 @@
       "borderColor": "#ACA899",
       "itemHeight": 18,
       "separatorColor": "#ACA899",
-      "hoverBackground": "#91A25F",
+      "hoverBackground": "#7D924E",
       "hoverText": "#FFFFFF"
     }
   },
   "desktop": {
-    "background": "#7B8757",
+    "background": "#6B7A49",
     "wallpaper": "meadow-hills.svg",
     "wallpaperMode": "stretch",
     "iconGridWidth": 75,
@@ -1167,9 +1185,9 @@
     "iconSize": 32,
     "labelColor": "#FFFFFF",
     "labelShadowColor": "#C0000000",
-    "selectionColor": "#8091A25F",
-    "rubberBandBorder": "#91A25F",
-    "rubberBandFill": "#4091A25F"
+    "selectionColor": "#807D924E",
+    "rubberBandBorder": "#7D924E",
+    "rubberBandFill": "#407D924E"
   },
   "lockScreen": {
     "reuseWelcome": true,

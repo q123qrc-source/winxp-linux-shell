@@ -11,7 +11,7 @@ classic early-2000s "Luna" desktop with entirely original artwork. It includes:
 - **meadow-themes**: the Luna Blue, Olive Green and Silver color schemes, plus
   matching GTK 3/4, Kvantum, labwc, icon, cursor and sound themes.
 
-Fedora is the primary target. Status: **phase 1 of 12 (scaffold)**. See
+Fedora is the primary target. Status: **phase 2 of 12 (theme engine and Luna controls)**. See
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design and the roadmap.
 
 ## Building
@@ -28,6 +28,8 @@ Run the shell in a normal window without root or layer-shell:
 ```sh
 MEADOW_THEME_DIR=$PWD/theme QML_IMPORT_PATH=$PWD/build/qml build/shell/meadow-shell --preview
 ```
+
+Browse every control in every state: [tools/gallery](tools/gallery/README.md).
 
 RPM builds, COPR and mock: [packaging/fedora/README-fedora.md](packaging/fedora/README-fedora.md).
 

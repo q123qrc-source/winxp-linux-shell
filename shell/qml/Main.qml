@@ -7,8 +7,8 @@ import Meadow.Controls
 
 Window {
     id: root
-    width: 1024
-    height: 768
+    width: 1024 // theme-ok: preview window size, not a shell metric
+    height: 768 // theme-ok: preview window size, not a shell metric
     visible: true
     title: qsTr("Meadow Shell Preview")
     color: Theme.tokens.desktop.background

@@ -3,7 +3,7 @@
     "id": "luna-silver",
     "name": "Luna Silver",
     "schemaVersion": 1,
-    "description": "Silver variant; generated from luna-blue by hue mapping, then hand-tunable."
+    "description": "Silver variant. Bootstrapped from luna-blue by hue mapping, then tuned by hand; edit this file directly."
   },
   "scale": {
     "factor": 1.0,
@@ -103,10 +103,10 @@
     }
   },
   "colors": {
-    "accent": "#C7CCDD",
-    "accentDark": "#797D88",
-    "accentLight": "#E1E6F7",
-    "selection": "#B9BECC",
+    "accent": "#C9CFE4",
+    "accentDark": "#1E2433",
+    "accentLight": "#DDE2F7",
+    "selection": "#6E7B97",
     "selectionText": "#FFFFFF",
     "windowBackground": "#ECE9D8",
     "windowText": "#000000",
@@ -125,31 +125,31 @@
     "gradient": [
       {
         "pos": 0.0,
-        "color": "#C4C9D8"
+        "color": "#C8CDE0"
       },
       {
         "pos": 0.04,
-        "color": "#D2D7E5"
+        "color": "#D3D8EA"
       },
       {
         "pos": 0.08,
-        "color": "#C3C9D9"
+        "color": "#C7CCE1"
       },
       {
         "pos": 0.5,
-        "color": "#C7CCDD"
+        "color": "#C9CFE4"
       },
       {
         "pos": 0.9,
-        "color": "#C0C5D6"
+        "color": "#C4C9DF"
       },
       {
         "pos": 1.0,
-        "color": "#A2A6B4"
+        "color": "#AEB3C6"
       }
     ],
     "topEdgeHeight": 1,
-    "topEdgeColor": "#DDE0EB",
+    "topEdgeColor": "#DEE1EE",
     "spacing": 2,
     "autoHideRevealHeight": 2,
     "autoHideDelayMs": 500
@@ -240,8 +240,8 @@
     "iconSize": 16,
     "itemPadding": 3,
     "gripWidth": 6,
-    "gripDotColor": "#9094A1",
-    "gripDotHighlight": "#DDE1EC",
+    "gripDotColor": "#A1A6B8",
+    "gripDotHighlight": "#DDE1EF",
     "enabledByDefault": true
   },
   "taskButton": {
@@ -251,60 +251,60 @@
     "radius": 3,
     "iconSize": 16,
     "padding": 4,
-    "textColor": "#FFFFFF",
+    "textColor": "#1E2433",
     "gradient": {
       "normal": [
         {
           "pos": 0.0,
-          "color": "#DCE0EE"
+          "color": "#DBDFF0"
         },
         {
           "pos": 0.1,
-          "color": "#D9DEEE"
+          "color": "#D7DCF1"
         },
         {
           "pos": 0.9,
-          "color": "#CFD4E5"
+          "color": "#D0D5EA"
         },
         {
           "pos": 1.0,
-          "color": "#C0C5D4"
+          "color": "#C4C9DE"
         }
       ],
       "hover": [
         {
           "pos": 0.0,
-          "color": "#E8ECF7"
+          "color": "#E5E9F7"
         },
         {
           "pos": 0.1,
-          "color": "#E4E9F7"
+          "color": "#E0E5F7"
         },
         {
           "pos": 0.9,
-          "color": "#DCE1F0"
+          "color": "#DADFF2"
         },
         {
           "pos": 1.0,
-          "color": "#CDD3E2"
+          "color": "#CFD4E7"
         }
       ],
       "active": [
         {
           "pos": 0.0,
-          "color": "#ACB1C0"
+          "color": "#B5BACF"
         },
         {
           "pos": 0.1,
-          "color": "#B3B8C7"
+          "color": "#BBC0D4"
         },
         {
           "pos": 0.9,
-          "color": "#BBC0CF"
+          "color": "#C1C6DA"
         },
         {
           "pos": 1.0,
-          "color": "#BFC4D3"
+          "color": "#C4C9DD"
         }
       ],
       "attention": [
@@ -326,8 +326,8 @@
         }
       ]
     },
-    "borderColor": "#A4A8B6",
-    "activeBorderColor": "#888C98",
+    "borderColor": "#B0B5C8",
+    "activeBorderColor": "#9CA0B2",
     "attentionPulseMs": 600,
     "attentionPulseCount": 7
   },
@@ -335,88 +335,88 @@
     "gradient": [
       {
         "pos": 0.0,
-        "color": "#ADB2C3"
+        "color": "#B6BBD1"
       },
       {
         "pos": 0.05,
-        "color": "#CDD4E7"
+        "color": "#CDD3EB"
       },
       {
         "pos": 0.1,
-        "color": "#D4DAEE"
+        "color": "#D2D8F0"
       },
       {
         "pos": 0.5,
-        "color": "#CFD5E8"
+        "color": "#CED4EC"
       },
       {
         "pos": 0.95,
-        "color": "#CDD3E6"
+        "color": "#CCD2EB"
       },
       {
         "pos": 1.0,
-        "color": "#C4CADD"
+        "color": "#C6CCE4"
       }
     ],
-    "leftBorderColor": "#838794",
-    "leftBorderHighlight": "#D7DDF0",
+    "leftBorderColor": "#989CAE",
+    "leftBorderHighlight": "#D4DAF2",
     "leftBorderWidth": 1,
     "iconSize": 16,
     "iconSpacing": 2,
     "paddingLeft": 8,
     "paddingRight": 8,
     "chevronSize": 15,
-    "chevronColor": "#FFFFFF"
+    "chevronColor": "#3C4150"
   },
   "clock": {
     "format": "HH:mm",
     "tooltipFormat": "dddd, MMMM d, yyyy",
-    "textColor": "#FFFFFF",
+    "textColor": "#1E2433",
     "paddingLeft": 6
   },
   "languageBar": {
     "width": 22,
-    "background": "#C2C7D6",
-    "border": "#9094A1",
-    "textColor": "#FFFFFF"
+    "background": "#C6CBDF",
+    "border": "#A1A6B8",
+    "textColor": "#1E2433"
   },
   "startMenu": {
     "width": 380,
     "height": 480,
     "radiusTop": 7,
-    "borderColor": "#9CA1B0",
+    "borderColor": "#AAAFC3",
     "borderWidth": 1,
     "header": {
       "height": 64,
       "gradient": [
         {
           "pos": 0.0,
-          "color": "#BCC2D3"
+          "color": "#707380"
         },
         {
           "pos": 0.08,
-          "color": "#B9BFD0"
+          "color": "#6D717E"
         },
         {
           "pos": 0.5,
-          "color": "#B9BFD0"
+          "color": "#6D717E"
         },
         {
           "pos": 0.92,
-          "color": "#B9BFD0"
+          "color": "#6D717E"
         },
         {
           "pos": 1.0,
-          "color": "#AAB0C0"
+          "color": "#626470"
         }
       ],
-      "highlightColor": "#D9DDEC",
+      "highlightColor": "#868995",
       "avatarSize": 48,
       "avatarBorderWidth": 2,
       "avatarBorderColor": "#FFFFFF",
       "avatarRadius": 4,
       "nameColor": "#FFFFFF",
-      "nameShadowColor": "#A05C5F68"
+      "nameShadowColor": "#A0222328"
     },
     "headerSeparator": {
       "height": 2,
@@ -444,22 +444,22 @@
       "padding": 6,
       "subtitleColor": "#7F7F7F",
       "separatorColor": "#D5D3CC",
-      "hoverBackground": "#B9BECC",
+      "hoverBackground": "#6E7B97",
       "hoverText": "#FFFFFF",
       "mfuCount": 6,
       "allProgramsArrowColor": "#3A9D23",
       "allProgramsHeight": 30
     },
     "right": {
-      "background": "#EFF0F4",
-      "borderLeftColor": "#E0E3EB",
+      "background": "#EFF0F5",
+      "borderLeftColor": "#E2E4EE",
       "itemHeight": 26,
       "iconSize": 24,
       "padding": 6,
-      "textColor": "#797D88",
+      "textColor": "#1E2433",
       "boldItems": true,
-      "separatorColor": "#E2E4EB",
-      "hoverBackground": "#B9BECC",
+      "separatorColor": "#E4E6EE",
+      "hoverBackground": "#6E7B97",
       "hoverText": "#FFFFFF"
     },
     "footer": {
@@ -467,19 +467,19 @@
       "gradient": [
         {
           "pos": 0.0,
-          "color": "#C7CBD9"
+          "color": "#787A85"
         },
         {
           "pos": 0.1,
-          "color": "#CCD1E0"
+          "color": "#7D7F8B"
         },
         {
           "pos": 0.9,
-          "color": "#BBC0D0"
+          "color": "#6F727E"
         },
         {
           "pos": 1.0,
-          "color": "#B1B6C6"
+          "color": "#676A75"
         }
       ],
       "buttonIconSize": 22,
@@ -493,7 +493,7 @@
       "maxWidth": 360,
       "background": "#FFFFFF",
       "borderColor": "#A0A0A0",
-      "sideStripColor": "#A6A9B4",
+      "sideStripColor": "#B4B7C6",
       "hoverDelayMs": 400,
       "newProgramHighlight": "#FFF1A6",
       "newProgramDays": 7
@@ -507,112 +507,113 @@
         "active": [
           {
             "pos": 0.0,
-            "color": "#DBE2F7"
+            "color": "#D6DDF7"
           },
           {
             "pos": 0.06,
-            "color": "#CED5EB"
+            "color": "#CDD3EE"
           },
           {
             "pos": 0.12,
-            "color": "#CED5EB"
+            "color": "#CDD3EE"
           },
           {
             "pos": 0.6,
-            "color": "#DAE1F7"
+            "color": "#D5DCF7"
           },
           {
             "pos": 0.9,
-            "color": "#D0D7EC"
+            "color": "#CED4EF"
           },
           {
             "pos": 1.0,
-            "color": "#BFC6D9"
+            "color": "#C2C8E1"
           }
         ],
         "inactive": [
           {
             "pos": 0.0,
-            "color": "#E7E9F0"
+            "color": "#E7E9F2"
           },
           {
             "pos": 0.06,
-            "color": "#D3D6DF"
+            "color": "#D7DAE6"
           },
           {
             "pos": 0.6,
-            "color": "#DDE0E8"
+            "color": "#DFE1EC"
           },
           {
             "pos": 1.0,
-            "color": "#CFD2DC"
+            "color": "#D4D7E3"
           }
         ]
       },
-      "textColor": "#FFFFFF",
-      "inactiveTextColor": "#EEEFF2",
-      "textShadowColor": "#A07A7D88",
+      "textColor": "#1E2433",
+      "inactiveTextColor": "#9A9DAA",
+      "textShadowColor": "#A0FFFFFF",
       "textShadowOffset": 1,
       "iconSize": 16,
-      "paddingLeft": 6
+      "paddingLeft": 6,
+      "textSpacing": 4
     },
     "border": {
       "width": 4,
-      "activeColor": "#CCD3E8",
-      "activeHighlight": "#D1D7EB",
-      "activeShadow": "#C2C8DB",
-      "inactiveColor": "#D4D7E0",
-      "inactiveHighlight": "#DFE1E8",
-      "inactiveShadow": "#C7CAD3"
+      "activeColor": "#CBD1EC",
+      "activeHighlight": "#D0D6EE",
+      "activeShadow": "#C4CAE2",
+      "inactiveColor": "#D8DBE6",
+      "inactiveHighlight": "#E1E3EC",
+      "inactiveShadow": "#CED1DC"
     },
     "buttons": {
       "size": 21,
       "radius": 3,
       "spacing": 2,
       "marginRight": 5,
-      "glyphColor": "#FFFFFF",
+      "glyphColor": "#3C4150",
       "borderColor": "#FFFFFF",
       "normal": {
         "normal": [
           {
             "pos": 0.0,
-            "color": "#DCE1EE"
+            "color": "#DCE0F1"
           },
           {
             "pos": 0.5,
-            "color": "#CCD2E2"
+            "color": "#CED3E8"
           },
           {
             "pos": 1.0,
-            "color": "#C0C6D6"
+            "color": "#C4CADF"
           }
         ],
         "hover": [
           {
             "pos": 0.0,
-            "color": "#E5E8F3"
+            "color": "#E3E7F4"
           },
           {
             "pos": 0.5,
-            "color": "#DADFEE"
+            "color": "#D9DEF0"
           },
           {
             "pos": 1.0,
-            "color": "#D0D5E5"
+            "color": "#D1D6EA"
           }
         ],
         "pressed": [
           {
             "pos": 0.0,
-            "color": "#AEB3C2"
+            "color": "#B7BCD0"
           },
           {
             "pos": 0.5,
-            "color": "#BFC4D4"
+            "color": "#C4C9DE"
           },
           {
             "pos": 1.0,
-            "color": "#C9CEDE"
+            "color": "#CCD1E5"
           }
         ]
       },
@@ -663,39 +664,41 @@
       "inactive": [
         {
           "pos": 0.0,
-          "color": "#E6E8EE"
+          "color": "#E8E9F0"
         },
         {
           "pos": 0.5,
-          "color": "#DBDDE5"
+          "color": "#DEE0EA"
         },
         {
           "pos": 1.0,
-          "color": "#D2D5DD"
+          "color": "#D7D9E4"
         }
-      ]
+      ],
+      "glyphInset": 5,
+      "closeGlyphColor": "#FFFFFF"
     }
   },
   "welcome": {
-    "background": "#CDD1DD",
+    "background": "#7D7F88",
     "topBand": {
       "height": 80,
-      "color": "#989EAD"
+      "color": "#535661"
     },
     "bottomBand": {
       "height": 80,
       "gradient": [
         {
           "pos": 0.0,
-          "color": "#B0B4C1"
+          "color": "#666871"
         },
         {
           "pos": 0.5,
-          "color": "#989EAD"
+          "color": "#535661"
         },
         {
           "pos": 1.0,
-          "color": "#989EAD"
+          "color": "#535661"
         }
       ]
     },
@@ -704,19 +707,19 @@
       "gradient": [
         {
           "pos": 0.0,
-          "color": "#00CDD1DD"
+          "color": "#007D7F88"
         },
         {
           "pos": 0.3,
-          "color": "#EBEDF1"
+          "color": "#949599"
         },
         {
           "pos": 0.7,
-          "color": "#EBEDF1"
+          "color": "#949599"
         },
         {
           "pos": 1.0,
-          "color": "#00CDD1DD"
+          "color": "#007D7F88"
         }
       ]
     },
@@ -742,14 +745,14 @@
       ]
     },
     "glow": {
-      "color": "#90EDF0F7",
+      "color": "#9097989E",
       "centerX": 0.25,
       "centerY": 0.35,
       "radius": 0.45
     },
     "verticalDivider": {
       "width": 1,
-      "color": "#EBEDF1",
+      "color": "#949599",
       "fadeLength": 0.25
     },
     "logo": {
@@ -771,33 +774,33 @@
       "spacing": 8,
       "padding": 10,
       "nameColor": "#FFFFFF",
-      "subtextColor": "#EDEFF2",
+      "subtextColor": "#96979A",
       "hoverGradient": [
         {
           "pos": 0.0,
-          "color": "#00C3C8D8"
+          "color": "#00757884"
         },
         {
           "pos": 0.3,
-          "color": "#80C3C8D8"
+          "color": "#80757884"
         },
         {
           "pos": 1.0,
-          "color": "#C0C3C8D8"
+          "color": "#C0757884"
         }
       ],
       "selectedGradient": [
         {
           "pos": 0.0,
-          "color": "#00AFB4C2"
+          "color": "#00656872"
         },
         {
           "pos": 0.3,
-          "color": "#A0AFB4C2"
+          "color": "#A0656872"
         },
         {
           "pos": 1.0,
-          "color": "#E0AFB4C2"
+          "color": "#E0656872"
         }
       ],
       "dimmedOpacity": 0.5
@@ -824,15 +827,15 @@
       "hintGradient": [
         {
           "pos": 0.0,
-          "color": "#DFE2EC"
+          "color": "#8B8D95"
         },
         {
           "pos": 0.5,
-          "color": "#CACEDD"
+          "color": "#7A7D88"
         },
         {
           "pos": 1.0,
-          "color": "#B5BAC8"
+          "color": "#6A6D77"
         }
       ],
       "labelText": "Type your password",
@@ -872,15 +875,15 @@
     "headerGradient": [
       {
         "pos": 0.0,
-        "color": "#A2A7B6"
+        "color": "#5B5D68"
       },
       {
         "pos": 1.0,
-        "color": "#8F94A1"
+        "color": "#4C4E57"
       }
     ],
     "headerTextColor": "#FFFFFF",
-    "footerColor": "#969BAB",
+    "footerColor": "#52545F",
     "grayscaleFadeMs": 1500,
     "dimOverlayColor": "#80000000",
     "turnOff": {
@@ -889,15 +892,15 @@
       "bodyGradient": [
         {
           "pos": 0.0,
-          "color": "#CACEDA"
+          "color": "#7A7D86"
         },
         {
           "pos": 0.5,
-          "color": "#D6D9E4"
+          "color": "#84868E"
         },
         {
           "pos": 1.0,
-          "color": "#CACEDA"
+          "color": "#7A7D86"
         }
       ],
       "roundButtonSize": 33,
@@ -948,7 +951,9 @@
     "logOff": {
       "width": 314,
       "height": 200
-    }
+    },
+    "padding": 11,
+    "buttonSpacing": 6
   },
   "controls": {
     "button": {
@@ -956,7 +961,7 @@
       "minWidth": 75,
       "radius": 3,
       "paddingH": 8,
-      "borderColor": "#7E828F",
+      "borderColor": "#9398AB",
       "textColor": "#000000",
       "gradient": {
         "normal": [
@@ -1018,26 +1023,28 @@
         "#E59700"
       ],
       "defaultRingColors": [
-        "#F2F3F7",
-        "#DEE0E8",
-        "#DBDFEB"
+        "#F1F2F7",
+        "#E0E3EC",
+        "#DBDFEE"
       ],
       "focusRingInset": 3,
-      "disabledBorderColor": "#C9C7BA"
+      "disabledBorderColor": "#C9C7BA",
+      "ringWidth": 2
     },
     "textField": {
       "height": 21,
-      "borderColor": "#BCBDC3",
-      "focusBorderColor": "#B9BECC",
+      "borderColor": "#C8CAD1",
+      "focusBorderColor": "#6E7B97",
       "background": "#FFFFFF",
       "disabledBackground": "#F5F4EA",
       "textColor": "#000000",
-      "selectionColor": "#B9BECC",
-      "padding": 3
+      "selectionColor": "#6E7B97",
+      "padding": 3,
+      "defaultWidth": 150
     },
     "checkBox": {
       "size": 13,
-      "borderColor": "#8A8D98",
+      "borderColor": "#9EA2B2",
       "gradient": [
         {
           "pos": 0.0,
@@ -1055,30 +1062,32 @@
     "comboBox": {
       "height": 21,
       "buttonWidth": 17,
-      "borderColor": "#BCBDC3",
+      "borderColor": "#C8CAD1",
       "buttonGradient": [
         {
           "pos": 0.0,
-          "color": "#EEEFF4"
+          "color": "#F4F4F8"
         },
         {
           "pos": 1.0,
-          "color": "#E1E4EB"
+          "color": "#CBCDD8"
         }
       ],
       "buttonHoverGradient": [
         {
           "pos": 0.0,
-          "color": "#F3F4F7"
+          "color": "#FBFBFD"
         },
         {
           "pos": 1.0,
-          "color": "#EAECF2"
+          "color": "#DCDEE8"
         }
       ],
-      "arrowColor": "#94969C",
+      "arrowColor": "#4D5266",
       "popupBorderColor": "#000000",
-      "itemHeight": 18
+      "itemHeight": 18,
+      "defaultWidth": 150,
+      "popupMaxItems": 8
     },
     "scrollBar": {
       "width": 17,
@@ -1086,27 +1095,33 @@
       "thumbGradient": [
         {
           "pos": 0.0,
-          "color": "#EFF1F5"
+          "color": "#F4F4F8"
         },
         {
           "pos": 1.0,
-          "color": "#EAECF2"
+          "color": "#CBCDD8"
         }
       ],
       "thumbHoverGradient": [
         {
           "pos": 0.0,
-          "color": "#F2F3F7"
+          "color": "#FBFBFD"
         },
         {
           "pos": 1.0,
-          "color": "#EFF0F5"
+          "color": "#DCDEE8"
         }
       ],
-      "thumbBorderColor": "#DDDFE6",
+      "thumbBorderColor": "#9195A8",
       "thumbRadius": 3,
-      "gripColor": "#E5E9F2",
-      "arrowColor": "#94969C"
+      "gripColor": "#868B9E",
+      "arrowColor": "#4D5266",
+      "gripLines": 4,
+      "gripLength": 7,
+      "minThumbLength": 12,
+      "autoRepeatDelayMs": 300,
+      "autoRepeatMs": 50,
+      "arrowInset": 4
     },
     "tooltip": {
       "background": "#FFFFE1",
@@ -1114,7 +1129,8 @@
       "textColor": "#000000",
       "padding": 3,
       "delayMs": 500,
-      "timeoutMs": 5000
+      "timeoutMs": 5000,
+      "offsetY": 20
     },
     "balloon": {
       "background": "#FFFFE1",
@@ -1127,7 +1143,9 @@
       "padding": 8,
       "maxWidth": 300,
       "closeButtonSize": 14,
-      "timeoutMs": 10000
+      "timeoutMs": 10000,
+      "iconSize": 16,
+      "spacing": 6
     },
     "progressBar": {
       "height": 15,
@@ -1154,12 +1172,12 @@
       "borderColor": "#ACA899",
       "itemHeight": 18,
       "separatorColor": "#ACA899",
-      "hoverBackground": "#B9BECC",
+      "hoverBackground": "#6E7B97",
       "hoverText": "#FFFFFF"
     }
   },
   "desktop": {
-    "background": "#A6A9B4",
+    "background": "#B4B7C6",
     "wallpaper": "meadow-hills.svg",
     "wallpaperMode": "stretch",
     "iconGridWidth": 75,
@@ -1167,9 +1185,9 @@
     "iconSize": 32,
     "labelColor": "#FFFFFF",
     "labelShadowColor": "#C0000000",
-    "selectionColor": "#80B9BECC",
-    "rubberBandBorder": "#B9BECC",
-    "rubberBandFill": "#40B9BECC"
+    "selectionColor": "#80C1C5D7",
+    "rubberBandBorder": "#C1C5D7",
+    "rubberBandFill": "#40C1C5D7"
   },
   "lockScreen": {
     "reuseWelcome": true,

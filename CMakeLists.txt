@@ -63,6 +63,10 @@ add_subdirectory(common)
 if(MEADOW_BUILD_SHELL)
     add_subdirectory(shell)
 endif()
+option(MEADOW_BUILD_GALLERY "Build the control gallery and screenshot tools" ON)
+if(MEADOW_BUILD_GALLERY)
+    add_subdirectory(tools/gallery)
+endif()
 
 # --- Data-only components -------------------------------------------------
 if(MEADOW_BUILD_THEMES)
