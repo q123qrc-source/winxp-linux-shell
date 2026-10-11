@@ -24,6 +24,9 @@ Description: classic Luna-style Wayland desktop (metapackage)
  .
  Installing it does not change the display manager or PAM; meadow-setup
  does that on request.
+ .
+ Pre-alpha: lightly tested and only in containers so far. Not for
+ production use.
 
 Package: meadow-common
 Architecture: any

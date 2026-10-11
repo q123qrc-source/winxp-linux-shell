@@ -82,7 +82,7 @@ _license() {
 }
 
 package_meadow() {
-  pkgdesc="Classic Luna-style Wayland desktop (all components; changes no login settings)"
+  pkgdesc="Classic Luna-style Wayland desktop (pre-alpha, lightly tested; all components; changes no login settings)"
   arch=(any)
   depends=(meadow-shell sddm-theme-meadow meadow-themes)
   _license

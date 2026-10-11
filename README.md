@@ -1,5 +1,12 @@
 # Meadow
 
+> [!WARNING]
+> **Pre-alpha. Not tested well.** Meadow has so far only been run in
+> containers (headless labwc, software rendering, no GPU). It has never been
+> tried on real hardware, nor as a real SDDM login in a VM. Expect bugs and
+> missing pieces. Do not use it as your everyday desktop, and do not make it
+> the login screen of a machine you depend on.
+
 Meadow is a Wayland desktop for Linux that recreates the look and feel of the
 classic early-2000s "Luna" desktop with entirely original artwork. It includes:
 
@@ -16,8 +23,45 @@ classic early-2000s "Luna" desktop with entirely original artwork. It includes:
   GTK and Qt applications pick them up automatically; other sessions are not
   affected.
 
-Fedora is the primary target. Status: **phase 10 of 12 (installers, packaging, performance and crash resilience)**. See
+Fedora is the primary target. Status: **pre-alpha**, development phase 10 of 12 (installers, packaging,
+performance and crash resilience). See
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design and the roadmap.
+
+## Screenshots
+
+All captured headlessly in a container (see the warning above). Artwork is
+Meadow's own.
+
+<table>
+<tr>
+<td><a href="docs/screenshots/desktop.png"><img src="docs/screenshots/desktop.png" width="400" alt="Desktop (installed under /usr/local, real labwc session)"></a><br>Desktop (installed under /usr/local, real labwc session)</td>
+<td><a href="docs/screenshots/welcome-screen.png"><img src="docs/screenshots/welcome-screen.png" width="400" alt="SDDM Welcome screen"></a><br>SDDM Welcome screen</td>
+</tr>
+<tr>
+<td><a href="docs/screenshots/start-menu.png"><img src="docs/screenshots/start-menu.png" width="400" alt="Start menu"></a><br>Start menu</td>
+<td><a href="docs/screenshots/all-programs.png"><img src="docs/screenshots/all-programs.png" width="400" alt="All Programs"></a><br>All Programs</td>
+</tr>
+<tr>
+<td><a href="docs/screenshots/start-menu-olive.png"><img src="docs/screenshots/start-menu-olive.png" width="400" alt="Olive Green scheme"></a><br>Olive Green scheme</td>
+<td><a href="docs/screenshots/desktop-silver.png"><img src="docs/screenshots/desktop-silver.png" width="400" alt="Silver scheme"></a><br>Silver scheme</td>
+</tr>
+<tr>
+<td><a href="docs/screenshots/lock.png"><img src="docs/screenshots/lock.png" width="400" alt="Lock screen"></a><br>Lock screen</td>
+<td><a href="docs/screenshots/turn-off.png"><img src="docs/screenshots/turn-off.png" width="400" alt="Turn Off Computer"></a><br>Turn Off Computer</td>
+</tr>
+<tr>
+<td><a href="docs/screenshots/control-panel.png"><img src="docs/screenshots/control-panel.png" width="400" alt="Control Panel"></a><br>Control Panel</td>
+<td><a href="docs/screenshots/display-properties.png"><img src="docs/screenshots/display-properties.png" width="400" alt="Display Properties"></a><br>Display Properties</td>
+</tr>
+<tr>
+<td><a href="docs/screenshots/authenticate.png"><img src="docs/screenshots/authenticate.png" width="400" alt="Authentication (polkit) dialog"></a><br>Authentication (polkit) dialog</td>
+<td><a href="docs/screenshots/alt-tab.png"><img src="docs/screenshots/alt-tab.png" width="400" alt="Alt+Tab"></a><br>Alt+Tab</td>
+</tr>
+<tr>
+<td><a href="docs/screenshots/toolkit-gtk3.png"><img src="docs/screenshots/toolkit-gtk3.png" width="400" alt="GTK 3 application with the Meadow theme"></a><br>GTK 3 application with the Meadow theme</td>
+<td><a href="docs/screenshots/toolkit-qt.png"><img src="docs/screenshots/toolkit-qt.png" width="400" alt="Qt application with the Meadow theme"></a><br>Qt application with the Meadow theme</td>
+</tr>
+</table>
 
 ## Installing
 

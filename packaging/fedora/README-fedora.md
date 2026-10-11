@@ -1,5 +1,8 @@
 # Meadow on Fedora
 
+> **Pre-alpha, not tested well**: only run in containers so far. Do not enable
+> it as the login screen of a machine you depend on.
+
 Fedora (current stable and Rawhide; x86_64 and aarch64) is Meadow's primary
 platform.
 

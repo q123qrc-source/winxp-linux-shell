@@ -74,6 +74,9 @@ window decorations and matching GTK, Qt, icon, cursor and sound themes.
 This metapackage installs all Meadow components. It does not change the
 active display manager or PAM; run `meadow-setup` for that.
 
+Pre-alpha: lightly tested and only in containers so far. Not for production
+use.
+
 %package        common
 Summary:        Shared library and Luna QML controls for Meadow
 License:        GPL-3.0-or-later
