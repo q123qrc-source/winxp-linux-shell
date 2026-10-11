@@ -33,7 +33,7 @@ jobs:
       - name: Build
         run: cmake --build build
       - name: Unit, schema, lint, asset-policy and QML smoke tests
-        run: ctest --test-dir build --output-on-failure --label-exclude screenshot
+        run: ctest --test-dir build --output-on-failure --label-exclude 'screenshot|perf'
       - name: Screenshot tests (tests/golden)
         if: matrix.release == 'latest'
         run: python3 tools/screenshot-test.py --build-dir build

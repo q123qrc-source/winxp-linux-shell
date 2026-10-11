@@ -5,6 +5,7 @@
 
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QGuiApplication>
 #include <QLoggingCategory>
 #include <QSaveFile>
@@ -75,7 +76,9 @@ public:
     }
 
     bool isExposed() const override { return m_configured; }
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
     bool commitSurfaceRole() const override { return false; }
+#endif
     void applyConfigure() override { window()->resizeFromApplyConfigure(m_size); }
 
 protected:
@@ -86,7 +89,11 @@ protected:
         if (!m_configured) {
             m_configured = true;
             window()->resizeFromApplyConfigure(m_size);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
             window()->updateExposure();
+#else
+            window()->sendRecursiveExposeEvent();
+#endif
         } else {
             window()->applyConfigureWhenPossible();
         }
@@ -173,6 +180,20 @@ void SessionLock::removeSurface(QWindow *window)
     m_windows.removeAll(window);
 }
 
+bool SessionLock::unlockPossible()
+{
+    // A custom helper (tests, MEADOW_AUTH_HELPER) brings its own PAM setup.
+    if (qEnvironmentVariableIsSet("MEADOW_AUTH_HELPER"))
+        return true;
+    const QString service = qEnvironmentVariableIsSet("MEADOW_PAM_SERVICE")
+        ? qEnvironmentVariable("MEADOW_PAM_SERVICE") : QStringLiteral("meadow-lock");
+    for (const char *dir : {"/etc/pam.d/", "/usr/lib/pam.d/", "/lib/pam.d/", "/usr/share/pam.d/"}) {
+        if (QFileInfo::exists(QLatin1String(dir) + service))
+            return true;
+    }
+    return false;
+}
+
 bool SessionLock::lock()
 {
     if (m_state != Unlocked)
@@ -185,6 +206,12 @@ bool SessionLock::lock()
     }
     if (!m_wl->manager->isActive()) {
         qCWarning(lcLock) << "the compositor does not support ext-session-lock-v1; cannot lock";
+        Q_EMIT lockFailed();
+        return false;
+    }
+    if (!unlockPossible()) {
+        // A lock the user could never leave is worse than none.
+        qCWarning(lcLock) << "no meadow-lock PAM service is installed; not locking (sudo meadow-setup enable-lock)";
         Q_EMIT lockFailed();
         return false;
     }

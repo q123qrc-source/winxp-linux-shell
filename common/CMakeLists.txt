@@ -7,6 +7,7 @@ qt_add_library(meadow-common SHARED
     src/ThemeLoader.h src/ThemeLoader.cpp
     src/ThemeObject.h src/ThemeObject.cpp
     src/SoundPlayer.h src/SoundPlayer.cpp
+    src/Perf.h src/Perf.cpp
     src/GradientBox.h src/GradientBox.cpp
     src/LunaGlyph.h src/LunaGlyph.cpp
     src/BalloonShape.h src/BalloonShape.cpp

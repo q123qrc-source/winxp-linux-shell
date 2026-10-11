@@ -1,0 +1,10 @@
+#%PAM-1.0
+# meadow-lock: shipped by Meadow (password only)
+# PAM service of the Meadow lock screen (meadow-shell, through
+# meadow-auth-helper), Debian and Ubuntu variant. Nothing else uses it, so it
+# does not change how anyone logs in.
+# `meadow-setup enable-fingerprint` adds a marked fingerprint block here when
+# fingerprint login is wanted (unless the stack below already reaches
+# pam_fprintd); `meadow-setup disable-fingerprint` removes it again.
+@include common-auth
+@include common-account

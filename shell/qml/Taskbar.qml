@@ -119,6 +119,8 @@ Item {
                 taskbar.openingStartMenu = true
                 taskbar.startMenu = taskbar.popups.open(startMenuComponent, {}, 0, false)
                 taskbar.openingStartMenu = false
+                if (Perf.enabled)
+                    Perf.markNextFrame(taskbar.popups.Window.window, "shell", "start-menu-shown")
             } else if (!Shell.startMenuOpen && taskbar.startMenu) {
                 taskbar.popups.closeAll()
             }

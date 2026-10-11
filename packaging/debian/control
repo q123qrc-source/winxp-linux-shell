@@ -2,15 +2,67 @@ Source: meadow
 Section: x11
 Priority: optional
 Maintainer: Meadow contributors <q123qrc@gmail.com>
-Build-Depends: debhelper-compat (= 13), cmake, ninja-build, extra-cmake-modules,
- qt6-base-dev, qt6-declarative-dev, qt6-wayland-dev, qt6-multimedia-dev,
- liblayershellqtinterface-dev, libwayland-dev, wayland-protocols, python3
+Build-Depends: debhelper-compat (= 13), cmake, ninja-build, extra-cmake-modules, pkgconf, python3,
+ qt6-base-dev, qt6-base-private-dev, qt6-declarative-dev, qt6-wayland-dev, qt6-wayland-private-dev,
+ qt6-multimedia-dev, qt6-tools-dev, qt6-svg-dev, liblayershellqtinterface-dev, libpolkit-qt6-1-dev,
+ libpam0g-dev, libwayland-dev, wayland-protocols,
+ librsvg2-bin, x11-apps, dconf-cli
+Build-Depends-Indep: desktop-file-utils
 Standards-Version: 4.7.0
 Homepage: https://github.com/q123qrc-source/winxp-linux-shell
 Rules-Requires-Root: no
 
 Package: meadow
+Architecture: all
+Depends: meadow-shell (>= ${source:Version}), sddm-theme-meadow (= ${source:Version}),
+ meadow-themes (= ${source:Version}), ${misc:Depends}
+Description: classic Luna-style Wayland desktop (metapackage)
+ Meadow recreates the look and feel of a classic early-2000s "Luna" desktop
+ with entirely original artwork: a taskbar with a green start button, a
+ two-column Start menu, an SDDM Welcome screen, labwc window decorations and
+ matching GTK, Qt, icon, cursor and sound themes.
+ .
+ Installing it does not change the display manager or PAM; meadow-setup
+ does that on request.
+
+Package: meadow-common
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, labwc, sddm
-Description: Classic Luna-style Wayland desktop
- Secondary packaging target; completed in phase 10.
+Multi-Arch: same
+Depends: ${shlibs:Depends}, ${misc:Depends}, qml6-module-qtquick, qml6-module-qtquick-templates,
+ qml6-module-qtquick-window, qt6-svg-plugins
+Description: shared library and Luna QML controls for Meadow
+ The Meadow theme loader, sound player and the Meadow.Controls and
+ Meadow.Welcome QML modules, shared by the Meadow shell and SDDM theme.
+
+Package: meadow-shell
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, meadow-common (= ${binary:Version}),
+ meadow-themes (= ${source:Version}), labwc (>= 0.9), qt6-wayland, libpam-runtime, polkitd,
+ systemd, xwayland, xdg-desktop-portal-wlr, xdg-desktop-portal-gtk, pipewire, wireplumber,
+ network-manager, upower, xdg-utils, pcmanfm-qt, qt6-style-kvantum, python3
+Recommends: grim, network-manager-gnome
+Suggests: system-config-printer, yelp, qt6ct, pamtester
+Description: Meadow desktop shell, session files and setup tool
+ meadow-shell draws the taskbar, Start menu, notification area, desktop and
+ system dialogs as layer-shell surfaces on labwc. Also contains the Meadow
+ Wayland session entry, the lock screen's PAM service (password only) and the
+ opt-in meadow-setup system configuration tool.
+
+Package: sddm-theme-meadow
+Architecture: all
+Depends: ${misc:Depends}, sddm, qml6-module-qtquick, meadow-common (>= ${source:Version}),
+ meadow-themes (= ${source:Version})
+Recommends: fprintd, libpam-fprintd, qml6-module-qtquick-virtualkeyboard
+Description: Meadow Welcome screen theme for SDDM
+ A Luna-style Welcome screen for SDDM with user tiles, session and keyboard
+ layout switchers, fingerprint support and a Turn Off Computer dialog.
+ Installing it does not make it the active theme; see meadow-setup.
+
+Package: meadow-themes
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}, fontconfig
+Description: Meadow color schemes and toolkit, icon, cursor and sound themes
+ Luna Blue, Olive Green and Silver scheme definitions with matching GTK 3/4,
+ labwc and Kvantum themes, the original meadow-icons, meadow-cursors and
+ Meadow sound themes, and font aliases loaded by Meadow sessions only.

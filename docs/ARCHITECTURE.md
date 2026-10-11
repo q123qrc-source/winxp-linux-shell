@@ -34,7 +34,7 @@ This document is the high-level design. Exact metrics and colors live in
             ├─ XWayland (on demand)
             ├─ autostart
             │    ├─ xdg-desktop-portal (+ -wlr, -gtk per meadow-portals.conf)
-            │    └─ restart loop ─▶ meadow-shell
+            │    └─ meadow-shell-supervise ─▶ meadow-shell (restarted after a crash)
             └─ keybinds ─▶ meadow-shellctl ──session bus──▶ org.meadow.Shell
 
  meadow-shell (one process, several Wayland surfaces; shell/qml/Session.qml)
@@ -297,12 +297,17 @@ Main.qml                     SDDM context → scheme + scale from theme.conf; pr
 /usr/share/wayland-sessions/meadow.desktop   Exec=meadow-session, DesktopNames=Meadow
 meadow-session        exports XDG_CURRENT_DESKTOP=Meadow:X-Meadow and the toolkit theme variables; keyboard layout from
                       localectl's X11 keymap; builds the runtime overlay of ~/.config/meadow/labwc |
-                      /usr/share/meadow/labwc (see "Keyboard layouts") and execs labwc --config-dir <overlay>
+                      /usr/share/meadow/labwc (see "Keyboard layouts"), runs labwc --config-dir <overlay> and
+                      cleans up after it; its data directory is found next to it (<prefix>/share/meadow)
   rc.xml              generated from rc.xml.in (fonts and corner radius from tokens): server-side decorations,
                       click-to-focus with raise, automatic placement, icon:iconify,max,close, classic Alt+Tab OSD
-  menu.xml            window menu (title-bar right-click, window icon, Alt+Space); no root menu, the shell owns the desktop
-  autostart           exports the environment to D-Bus/systemd; meadow-shell in a crash loop with back-off
-                      (stops after 5 crashes in 60 s); MEADOW_NO_SHELL=1 for a bare compositor
+  menu.xml            window menu (title-bar right-click, window icon, Alt+Space); a recovery root menu
+                      (restart the desktop, log off), reachable only while the shell is down
+  autostart           exports the environment to D-Bus/systemd; starts meadow-shell-supervise;
+                      MEADOW_NO_SHELL=1 for a bare compositor
+meadow-shell-supervise  runs meadow-shell; restarts it after a crash (1, 2, 4 s back-off, MEADOW_RESTARTED=1),
+                      stops on a clean exit or SIGTERM, gives up after 5 crashes in 60 s with a notification;
+                      one per session (flock)
   environment         optional XKB overrides
 /usr/share/themes/Meadow-Luna{,-Olive,-Silver}/labwc/   generated decorations (see VISUAL_SPEC §3)
 ```
@@ -324,6 +329,18 @@ labwc has no show-desktop action, so Win+D goes to the shell, which
 minimizes through foreign-toplevel. `meadow-shellctl` exits 1 with "meadow-shell is not
 running" when no shell owns `org.meadow.Shell`. `lock` then falls back to
 `loginctl lock-session`.
+
+### Installation, packaging and resilience (phase 10)
+
+| Part | How |
+|---|---|
+| `install.sh` | Checks dependencies (prints the `dnf`/`pacman`/`apt` line), builds with `MEADOW_INSTALL_PAM=OFF`, stages `cmake --install --component Unspecified` into a temporary directory, refuses anything outside the prefix, then copies it in, backing up files it would replace (`*.meadow-bak`) and writing `<prefix>/share/meadow/install-manifest.txt` (files with SHA-256, links, created directories, backups, options). Default prefix `/usr/local` (`--prefix`, `--root`, `DESTDIR`, `--dry-run`, `--no-pam`, `--enable-greeter`). |
+| Changes outside the prefix | Only through `meadow-setup`, on every distribution: `link-prefix` (session entry with an absolute `Exec`, `/usr/share/sddm/themes/meadow` and the Qt QML directory's `Meadow` link, for a prefix other than `/usr`), `enable-lock` (the distribution's password-only `meadow-lock`), `enable-greeter` (only with `--enable-greeter`; never switches the display manager). Each is recorded in `/var/lib/meadow/setup-state.json` and reverted by its `disable-`/`unlink-` command. |
+| `uninstall.sh` | Runs those reverts first (and stops if one fails, e.g. fingerprint still enabled), then removes manifest files whose checksum still matches (changed files are kept with a warning), restores backups and removes the directories install.sh created. |
+| Packages | Fedora RPM, Arch `PKGBUILD` and `debian/`, all with the same split (`meadow`, `-common`, `-shell`, `sddm-theme-meadow`, `-themes`) and no install scripts. `MEADOW_PAM_FLAVOUR` picks the distribution's `meadow-lock` (password-auth / common-auth / system-auth). ctest `packaging` checks that every installed file belongs to exactly one package in all three. |
+| Lock without PAM service | `SessionLock` refuses to lock when no `meadow-lock` service exists (`--no-pam`), since nobody could unlock. |
+| Crash resilience | `meadow-shell-supervise` (above). The compositor holds a lock across a crash and the restarted shell re-locks. While the shell is down, a right-click on the desktop opens labwc's recovery menu. A Meadow QML error in the greeter makes SDDM fall back to its built-in theme; `meadow-setup disable-greeter` from a text console restores the previous theme setting. |
+| Performance | Opt-in `MEADOW_PERF_LOG=1` marks (`Perf`, `meadow.<component>.perf`); `tools/perf-bench.sh` measures the budget. Numbers and method: [PERFORMANCE.md](PERFORMANCE.md). |
 
 ## 5. Source layout and build
 
@@ -353,13 +370,16 @@ first uses them. The Fedora spec already BuildRequires all of them.
 | labwc config (user copy) | `~/.config/meadow/labwc/` | user |
 | MFU / pinned apps | `~/.local/share/meadow/` | shell |
 | SDDM drop-in | `/etc/sddm.conf.d/10-meadow.conf` | `meadow-setup` only |
+| meadow-setup's record of its changes | `/var/lib/meadow/setup-state.json` | `meadow-setup` only |
+| install.sh manifest | `<prefix>/share/meadow/install-manifest.txt` | `install.sh` (read by `uninstall.sh`) |
+| Prefix links (non-`/usr` installs) | `/usr/share/wayland-sessions/meadow.desktop`, `/usr/share/sddm/themes/meadow`, `<Qt QML dir>/Meadow` | `meadow-setup link-prefix` only |
 | Desktop icon positions | `~/.local/share/meadow/desktop-layout.json` | shell |
 | Lock flag | `$XDG_RUNTIME_DIR/meadow/locked` | shell |
 | labwc runtime rc.xml | `$XDG_RUNTIME_DIR/meadow/labwc-<pid>/rc.xml` | shell (overlay only) |
 | Kvantum theme for the scheme | `$XDG_RUNTIME_DIR/meadow/xdg-<pid>/Kvantum/kvantum.kvconfig` | shell (session only) |
 | Application defaults | `/usr/share/meadow/dconf/`, `/usr/share/meadow/xdg/`, `/usr/share/meadow/fontconfig/` | package (read-only; used only by Meadow sessions) |
 | PAM | `/etc/pam.d/sddm` (marked block) | `meadow-setup` only |
-| PAM, lock screen | `/etc/pam.d/meadow-lock` | package (password-only, `%config(noreplace)`); `meadow-setup` adds or removes the marked fingerprint block |
+| PAM, lock screen | `/etc/pam.d/meadow-lock` | package (password-only, `%config(noreplace)`) or `meadow-setup enable-lock` (install.sh); `meadow-setup` adds or removes the marked fingerprint block |
 
 ## 7. Security model
 
@@ -390,6 +410,8 @@ first uses them. The Fedora spec already BuildRequires all of them.
 | Headless CI can't show real Wayland | `--preview` + `QT_QPA_PLATFORM=offscreen`; labwc with `WLR_BACKENDS=headless` for screenshot tests. |
 | Fedora's Qt logs to journald, so test failures go unseen | ctest sets `QT_FORCE_STDERR_LOGGING=1`, and the smoke test fails on QML errors. |
 | Microsoft assets creep in | `tools/check-assets.sh` runs in ctest and CI; audio must be listed in the generated sound manifest. |
+| A generic install conflicts with distribution files | install.sh writes only into its prefix (checked before copying); outside it, `meadow-setup link-prefix` refuses to replace a session entry or theme it did not create. |
+| The shell crashes in a loop | `meadow-shell-supervise` gives up after 5 crashes in a minute and says so; the recovery root menu restarts it or logs off. |
 | Meadow's application defaults leak into other desktops | Session-scoped only (`DCONF_PROFILE`, `XDG_CONFIG_DIRS`, `FONTCONFIG_FILE`); unset from the systemd environment when the session ends (ctest `session_defaults`). |
 
 ## 9. Roadmap
@@ -405,6 +427,6 @@ first uses them. The Fedora spec already BuildRequires all of them.
 | 7 | Start menu, All Programs, Run, Log Off / Turn Off dialogs (done) |
 | 8 | Desktop, lock screen, Display Properties, Control Panel, Alt+Tab (done) |
 | 9 | GTK/Kvantum themes, icons, cursors, sounds, fontconfig (done) |
-| 10 | Generic installer, Arch/Debian packaging, performance, crash resilience |
+| 10 | Generic installer, Arch/Debian packaging, performance, crash resilience (done) |
 | 11 | Fedora RPM, `meadow-setup`, SELinux, COPR/Packit, test VM |
 | 12 | Verification and final report |

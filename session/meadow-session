@@ -6,7 +6,26 @@
 # Configuration lookup: ~/.config/meadow/labwc (user copy) wins over the
 # packaged defaults in $MEADOW_DATADIR/labwc.
 
-MEADOW_DATADIR="${MEADOW_DATADIR:-/usr/share/meadow}"
+# Data lives next to this script: <prefix>/bin/meadow-session ->
+# <prefix>/share/meadow (install.sh may use /usr/local or another prefix).
+if [ -z "${MEADOW_DATADIR:-}" ]; then
+    self=$(readlink -f "$0" 2>/dev/null || echo "$0")
+    meadow_prefix=$(cd "$(dirname "$self")/.." 2>/dev/null && pwd)
+    if [ -n "$meadow_prefix" ] && [ -d "$meadow_prefix/share/meadow" ]; then
+        MEADOW_DATADIR="$meadow_prefix/share/meadow"
+    else
+        MEADOW_DATADIR=/usr/share/meadow
+    fi
+fi
+meadow_share=$(dirname "$MEADOW_DATADIR")
+# A prefix other than /usr: make its themes, icons, cursors and sounds visible.
+if [ "$meadow_share" != /usr/share ]; then
+    case ":${XDG_DATA_DIRS:-/usr/local/share:/usr/share}:" in
+        *":$meadow_share:"*) ;;
+        *) export XDG_DATA_DIRS="$meadow_share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}" ;;
+    esac
+    export XCURSOR_PATH="$meadow_share/icons:${XCURSOR_PATH:-$HOME/.local/share/icons:$HOME/.icons:/usr/share/icons:/usr/share/pixmaps}"
+fi
 
 # "X-Meadow" for OnlyShowIn= in .desktop files: desktop-file-validate accepts
 # only registered names or X- extensions. "Meadow" stays first (portals.conf).
@@ -123,6 +142,10 @@ session_cleanup() {
     fi
     [ -n "${MEADOW_RUNTIME_XDG:-}" ] && rm -rf "$MEADOW_RUNTIME_XDG"
     [ -n "${MEADOW_LABWC_OVERLAY:-}" ] && rm -rf "$MEADOW_LABWC_OVERLAY"
+    # meadow-shell-supervise's single-instance lock; the directory itself goes
+    # once nothing else of Meadow's is left in it (the lock flag may be).
+    rm -f "${XDG_RUNTIME_DIR:-/nonexistent}/meadow/shell-supervise.lock"
+    rmdir "${XDG_RUNTIME_DIR:-/nonexistent}/meadow" 2>/dev/null
 }
 labwc --config-dir "$config_dir" "$@" &
 labwc_pid=$!

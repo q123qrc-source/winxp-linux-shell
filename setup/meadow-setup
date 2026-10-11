@@ -10,9 +10,18 @@ reverts exactly what was done.
 Commands:
   enable-fingerprint   Fingerprint login for the Welcome screen and lock screen.
   disable-fingerprint  Revert every change enable-fingerprint made.
+  enable-lock          Install the lock screen's PAM service (password only).
+  disable-lock         Remove it again (only if enable-lock installed it).
+  enable-greeter       Make the Meadow theme SDDM's login screen.
+  disable-greeter      Revert enable-greeter.
+  link-prefix PREFIX   Make a Meadow installed under PREFIX (e.g. /usr/local)
+                       visible to SDDM and Qt: session entry, theme and QML links.
+  unlink-prefix        Remove what link-prefix created.
   status               Show what Meadow has changed on this system.
-  enable-greeter       Make SDDM + the Meadow theme the login screen (phase 11).
-  disable-greeter      Revert enable-greeter (phase 11).
+
+install.sh uses enable-lock, link-prefix and (with --enable-greeter)
+enable-greeter for every change outside its install prefix; uninstall.sh
+undoes them with the disable-/unlink- commands.
 
 Recovery if login breaks: docs/PAM_FINGERPRINT.md, section "Recovery".
 """
@@ -76,6 +85,16 @@ STATE_PATH = "var/lib/meadow/setup-state.json"
 SDDM_PAM = "etc/pam.d/sddm"
 LOCK_PAM = "etc/pam.d/meadow-lock"
 POLKIT_PATH = "etc/polkit-1/rules.d/50-meadow.rules"
+GREETER_CONF = "etc/sddm.conf.d/10-meadow.conf"
+GREETER_MARKER = "# meadow-greeter: managed by meadow-setup"
+SDDM_THEME_LINK = "usr/share/sddm/themes/meadow"
+SESSION_ENTRY = "usr/share/wayland-sessions/meadow.desktop"
+SESSION_MARKER = "# meadow-session: linked by meadow-setup link-prefix"
+DM_LINK = "etc/systemd/system/display-manager.service"
+
+# The password-only lock service for each distribution family, shipped as
+# system/pam.d/meadow-lock[.<family>] (installed under <datadir>/meadow/pam.d).
+LOCK_FLAVOURS = {"fedora": "meadow-lock", "debian": "meadow-lock.debian", "arch": "meadow-lock.arch"}
 
 PAM_LINE = re.compile(r"^\s*(-?)(auth|account|password|session)\s+(\[[^\]]*\]|\S+)\s+(\S+)(.*)$")
 PAM_INCLUDE = re.compile(r"^\s*@include\s+(\S+)")
@@ -232,6 +251,32 @@ def distro_family(root):
     return "other"
 
 
+def data_dir():
+    """Meadow's data directory: <prefix>/share/meadow next to this script's
+    bin/, or system/ in a source tree (same pam.d/ and sddm.conf.d/ layout)."""
+    if os.environ.get("MEADOW_DATADIR"):
+        return Path(os.environ["MEADOW_DATADIR"])
+    here = Path(os.path.realpath(__file__)).parent
+    for cand in (here.parent / "share/meadow", here.parent / "system"):
+        if (cand / "pam.d").is_dir():
+            return cand
+    return Path("/usr/share/meadow")
+
+
+def lock_flavour(root):
+    """The shipped lock service matching root's PAM layout."""
+    family = distro_family(root)
+    if family not in LOCK_FLAVOURS:
+        pam = root / "etc/pam.d"
+        family = ("fedora" if (pam / "password-auth").exists() else
+                  "debian" if (pam / "common-auth").exists() else
+                  "arch" if (pam / "system-auth").exists() else None)
+    if family is None:
+        raise SetupError("unknown PAM layout (no password-auth, common-auth or system-auth); "
+                         "write /etc/pam.d/meadow-lock by hand, see docs/PAM_FINGERPRINT.md")
+    return LOCK_FLAVOURS[family]
+
+
 # --- Change plan & execution --------------------------------------------------
 
 class Plan:
@@ -289,6 +334,29 @@ class Plan:
         if not self.dry_run:
             shutil.copy2(src, bak)
         return bak_rel
+
+    def symlink(self, rel, target):
+        """Point rel at target (an absolute path on the target system)."""
+        path = self.root / rel
+        if path.is_symlink() and os.readlink(path) == target:
+            return False
+        if path.exists() or path.is_symlink():
+            raise SetupError(f"{rel} already exists and is not Meadow's; remove it or install Meadow to /usr")
+        self.say(f"link {rel} -> {target}")
+        if not self.dry_run:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            os.symlink(target, path)
+            self.changed.append(path)
+        return True
+
+    def unlink(self, rel):
+        path = self.root / rel
+        if not path.is_symlink():
+            return False
+        self.say(f"remove link {rel}")
+        if not self.dry_run:
+            path.unlink()
+        return True
 
     def run(self, cmd, check=True):
         self.say("run: " + " ".join(cmd))
@@ -502,6 +570,212 @@ def disable_fingerprint(args, plan):
     return 0
 
 
+def save_or_drop(plan, state, key):
+    """Drop state[key] and remove the state file once nothing is recorded."""
+    state.pop(key, None)
+    if plan.dry_run:
+        return
+    if len(state) <= 1:
+        plan.remove(STATE_PATH)
+        state_dir = plan.root / Path(STATE_PATH).parent
+        if state_dir.is_dir() and not any(state_dir.iterdir()):
+            state_dir.rmdir()
+    else:
+        save_state(plan, state)
+
+
+def enable_lock(args, plan):
+    """Install the password-only lock service unless one is already there."""
+    root = plan.root
+    state = load_state(root)
+    lines = read_lines(root / LOCK_PAM)
+    if SHIPPED_LOCK_MARKER in lines or LOCK_MARKER in lines:
+        plan.say(f"{LOCK_PAM}: Meadow's lock service is already installed; not changed")
+        return 0
+    flavour = lock_flavour(root)
+    src = data_dir() / "pam.d" / flavour
+    if not src.is_file():
+        raise SetupError(f"{src} not found")
+    entry = {"installed": True, "flavour": flavour}
+    if lines:
+        # Someone else's file with our name: keep it as the backup.
+        entry["backup"] = plan.backup(LOCK_PAM)
+    plan.write(LOCK_PAM, read_lines(src))
+    relabel(plan)
+    if not plan.dry_run:
+        state["lock"] = entry
+        save_state(plan, state)
+    plan.say("Dry run: nothing was changed." if plan.dry_run else
+             "Lock screen PAM service installed (password only). Fingerprint: meadow-setup enable-fingerprint")
+    return 0
+
+
+def disable_lock(args, plan):
+    root = plan.root
+    state = load_state(root)
+    if not state.get("lock", {}).get("installed"):
+        plan.say(f"{LOCK_PAM} was not installed by enable-lock; not changed")
+        return 0
+    lines = read_lines(root / LOCK_PAM)
+    if FPRINT_BEGIN in [l.strip() for l in lines]:
+        raise SetupError("fingerprint login is enabled for the lock screen; run disable-fingerprint first")
+    bak = root / (LOCK_PAM + ".meadow-bak")
+    if bak.exists():
+        plan.say(f"restore {LOCK_PAM} from backup")
+        plan.write(LOCK_PAM, read_lines(bak))
+        plan.remove(LOCK_PAM + ".meadow-bak")
+    else:
+        plan.remove(LOCK_PAM)
+    relabel(plan)
+    save_or_drop(plan, state, "lock")
+    plan.say("Dry run: nothing was changed." if plan.dry_run else "Lock screen PAM service removed.")
+    return 0
+
+
+def greeter_conf_lines(display_server):
+    lines = read_lines(data_dir() / "sddm.conf.d/10-meadow.conf.example")
+    if not lines:
+        raise SetupError(f"{data_dir() / 'sddm.conf.d/10-meadow.conf.example'} not found")
+    out = [GREETER_MARKER]
+    for line in lines:
+        if display_server and line.strip().startswith("#DisplayServer="):
+            line = f"DisplayServer={display_server}"
+        out.append(line)
+    return out
+
+
+def sddm_overrides(root):
+    """Config files SDDM reads after ours that pick another theme."""
+    found = []
+    later = sorted((root / "etc/sddm.conf.d").glob("*.conf")) if (root / "etc/sddm.conf.d").is_dir() else []
+    for f in later + [root / "etc/sddm.conf"]:
+        if f.name <= "10-meadow.conf" and f.parent.name == "sddm.conf.d":
+            continue
+        section = None
+        for line in read_lines(f):
+            line = line.strip()
+            if line.startswith("["):
+                section = line
+            elif section == "[Theme]" and re.match(r"Current\s*=\s*(\S+)", line) and not line.endswith("meadow"):
+                found.append(str(f.relative_to(root)))
+    return found
+
+
+def enable_greeter(args, plan):
+    root = plan.root
+    state = load_state(root)
+    if not os.path.lexists(root / SDDM_THEME_LINK):
+        raise SetupError(f"/{SDDM_THEME_LINK} not found; install the Meadow SDDM theme first "
+                         "(package sddm-theme-meadow, or install.sh)")
+    existing = read_lines(root / GREETER_CONF)
+    entry = state.get("greeter", {})
+    if not (root / GREETER_CONF).parent.exists():
+        entry["created_dir"] = True
+    if existing and GREETER_MARKER not in existing:
+        entry["backup"] = plan.backup(GREETER_CONF)
+    plan.write(GREETER_CONF, greeter_conf_lines(args.display_server))
+    relabel(plan)
+    if not plan.dry_run:
+        entry["enabled"] = True
+        state["greeter"] = entry
+        save_state(plan, state)
+    for f in sddm_overrides(root):
+        plan.say(f"warning: /{f} selects another SDDM theme and is read after /{GREETER_CONF}; "
+                 "remove its [Theme] Current= line")
+    dm = root / DM_LINK
+    active = os.path.basename(os.readlink(dm)) if dm.is_symlink() else None
+    if active != "sddm.service":
+        plan.say(f"SDDM is not the active display manager ({active or 'none set'}). Meadow never switches it; "
+                 "to do so yourself:  sudo systemctl enable --force sddm.service")
+    plan.say("Dry run: nothing was changed." if plan.dry_run else
+             "The Meadow Welcome screen is SDDM's theme from the next login. Undo: meadow-setup disable-greeter")
+    return 0
+
+
+def disable_greeter(args, plan):
+    root = plan.root
+    state = load_state(root)
+    lines = read_lines(root / GREETER_CONF)
+    if lines and GREETER_MARKER in lines:
+        bak = root / (GREETER_CONF + ".meadow-bak")
+        if bak.exists():
+            plan.say(f"restore {GREETER_CONF} from backup")
+            plan.write(GREETER_CONF, read_lines(bak))
+            plan.remove(GREETER_CONF + ".meadow-bak")
+        else:
+            plan.remove(GREETER_CONF)
+        conf_dir = root / "etc/sddm.conf.d"
+        if not plan.dry_run and state.get("greeter", {}).get("created_dir") and conf_dir.is_dir() \
+                and not any(conf_dir.iterdir()):
+            conf_dir.rmdir()
+    else:
+        plan.say(f"{GREETER_CONF} is not Meadow's; not changed")
+    relabel(plan)
+    save_or_drop(plan, state, "greeter")
+    plan.say("Dry run: nothing was changed." if plan.dry_run else "SDDM theme setting reverted.")
+    return 0
+
+
+def session_entry_lines(prefix):
+    exe = f"{prefix}/bin/meadow-session"
+    return ["[Desktop Entry]", SESSION_MARKER, "Type=Application", "Name=Meadow",
+            "Comment=Classic Luna-style desktop on Wayland", f"Exec={exe}", f"TryExec={exe}",
+            "DesktopNames=Meadow"]
+
+
+def link_prefix(args, plan):
+    root = plan.root
+    prefix = os.path.normpath(args.prefix)
+    if not os.path.isabs(prefix):
+        raise SetupError("PREFIX must be an absolute path")
+    if prefix == "/usr":
+        plan.say("PREFIX is /usr: SDDM and Qt already find everything; nothing to link")
+        return 0
+    qml_dir = args.qml_dir.strip("/")
+    system_qml = args.system_qml_dir.strip("/")
+    if not (root / prefix.lstrip("/") / "share/sddm/themes/meadow").is_dir():
+        raise SetupError(f"{prefix}/share/sddm/themes/meadow not found; run the CMake install first")
+    state = load_state(root)
+    entry = state.get("prefix", {})
+    if entry.get("prefix") not in (None, prefix):
+        raise SetupError(f"already linked to {entry['prefix']}; run unlink-prefix first")
+    links = {SDDM_THEME_LINK: f"{prefix}/share/sddm/themes/meadow"}
+    if (root / prefix.lstrip("/") / qml_dir / "Meadow").is_dir():
+        links[f"{system_qml}/Meadow"] = f"{prefix}/{qml_dir}/Meadow"
+    entry_lines = read_lines(root / SESSION_ENTRY)
+    if entry_lines and SESSION_MARKER not in entry_lines:
+        raise SetupError(f"/{SESSION_ENTRY} exists and is not Meadow's (a packaged Meadow?); "
+                         "remove the package or install to /usr")
+    for rel, target in links.items():
+        plan.symlink(rel, target)
+    plan.write(SESSION_ENTRY, session_entry_lines(prefix))
+    relabel(plan)
+    if not plan.dry_run:
+        state["prefix"] = {"prefix": prefix, "links": sorted(links), "entry": SESSION_ENTRY}
+        save_state(plan, state)
+    plan.say("Dry run: nothing was changed." if plan.dry_run else
+             f"Meadow under {prefix} is visible to SDDM and Qt. Undo: meadow-setup unlink-prefix")
+    return 0
+
+
+def unlink_prefix(args, plan):
+    root = plan.root
+    state = load_state(root)
+    entry = state.get("prefix")
+    if not entry:
+        plan.say("no prefix is linked; nothing to do")
+        return 0
+    for rel in entry.get("links", []):
+        target = root / rel
+        if target.is_symlink() and os.readlink(target).startswith(entry["prefix"] + "/"):
+            plan.unlink(rel)
+    if SESSION_MARKER in read_lines(root / entry["entry"]):
+        plan.remove(entry["entry"])
+    save_or_drop(plan, state, "prefix")
+    plan.say("Dry run: nothing was changed." if plan.dry_run else "Prefix links removed.")
+    return 0
+
+
 def status(args, plan):
     root = plan.root
     pam_dir = root / "etc/pam.d"
@@ -532,17 +806,13 @@ def status(args, plan):
         features, profile = authselect_features()
         if features is not None:
             plan.say(f"authselect: {profile} ({', '.join(features) or 'no features'})")
+    greeter = read_lines(root / GREETER_CONF)
+    plan.say(f"{GREETER_CONF}: " + ("Meadow theme selected" if GREETER_MARKER in greeter else
+                                    "present (not Meadow)" if greeter else "absent"))
+    dm = root / DM_LINK
+    plan.say(f"display manager: {os.path.basename(os.readlink(dm)) if dm.is_symlink() else 'not set'}")
     plan.say(f"recorded changes: {json.dumps({k: v for k, v in state.items() if k != 'version'}, sort_keys=True)}")
     return 0
-
-
-def greeter_not_yet(args, plan):
-    plan.say("enable-greeter / disable-greeter arrive in phase 11. They will:")
-    plan.say("  - back up and write /etc/sddm.conf.d/10-meadow.conf from /usr/share/meadow/sddm.conf.d/10-meadow.conf.example")
-    plan.say("  - pick [General] DisplayServer from the installed sddm-wayland-* / sddm-x11 package")
-    plan.say("  - after confirmation, record the current display-manager.service and enable sddm.service")
-    plan.say("Nothing was changed.")
-    return 3
 
 
 def main(argv=None, out=sys.stdout):
@@ -559,8 +829,17 @@ def main(argv=None, out=sys.stdout):
                     help="also install a polkit rule letting the greeter see who has enrolled fingers")
     sub.add_parser("disable-fingerprint", help="revert fingerprint login changes")
     sub.add_parser("status", help="show Meadow's changes")
-    sub.add_parser("enable-greeter", help="(phase 11)")
-    sub.add_parser("disable-greeter", help="(phase 11)")
+    sub.add_parser("enable-lock", help="install the lock screen's PAM service (password only)")
+    sub.add_parser("disable-lock", help="remove the lock service enable-lock installed")
+    eg = sub.add_parser("enable-greeter", help="make the Meadow theme SDDM's login screen")
+    eg.add_argument("--display-server", choices=("wayland", "x11"),
+                    help="also set SDDM's [General] DisplayServer (default: the distribution's choice)")
+    sub.add_parser("disable-greeter", help="revert enable-greeter")
+    lp = sub.add_parser("link-prefix", help="make a Meadow installed under PREFIX visible to SDDM and Qt")
+    lp.add_argument("prefix")
+    lp.add_argument("--qml-dir", default="lib64/qt6/qml", help="Meadow's QML directory, relative to PREFIX")
+    lp.add_argument("--system-qml-dir", default="/usr/lib64/qt6/qml", help="Qt's own QML import directory")
+    sub.add_parser("unlink-prefix", help="remove what link-prefix created")
     args = parser.parse_args(argv)
 
     root = Path(args.root)
@@ -569,12 +848,13 @@ def main(argv=None, out=sys.stdout):
     if live_system(root) and not read_only and os.geteuid() != 0:
         print("meadow-setup: this command changes system files; run it as root (or use --dry-run)", file=sys.stderr)
         return 1
-    if args.command in ("enable-fingerprint", "disable-fingerprint") and not read_only and not args.yes:
+    if args.command in ("enable-fingerprint", "disable-fingerprint", "enable-lock", "disable-lock",
+                        "enable-greeter", "disable-greeter") and not read_only and not args.yes:
         if not sys.stdin.isatty():
             print("meadow-setup: refusing to change PAM without confirmation; pass --yes", file=sys.stderr)
             return 1
-        print("This changes how users log in (PAM). A dry run shows the exact changes: meadow-setup --dry-run "
-              + args.command)
+        what = "the login screen (SDDM)" if "greeter" in args.command else "PAM"
+        print(f"This changes {what}. A dry run shows the exact changes: meadow-setup --dry-run " + args.command)
         if input("Continue? [y/N] ").strip().lower() not in ("y", "yes"):
             print("Nothing was changed.")
             return 1
@@ -583,15 +863,19 @@ def main(argv=None, out=sys.stdout):
         "enable-fingerprint": enable_fingerprint,
         "disable-fingerprint": disable_fingerprint,
         "status": status,
-        "enable-greeter": greeter_not_yet,
-        "disable-greeter": greeter_not_yet,
+        "enable-lock": enable_lock,
+        "disable-lock": disable_lock,
+        "enable-greeter": enable_greeter,
+        "disable-greeter": disable_greeter,
+        "link-prefix": link_prefix,
+        "unlink-prefix": unlink_prefix,
     }
     try:
         return handlers[args.command](args, plan)
     except SetupError as e:
         print(f"meadow-setup: {e}", file=sys.stderr)
         print("Nothing further was changed." if not plan.changed else
-              "Some files were already changed; run `meadow-setup disable-fingerprint` to revert.", file=sys.stderr)
+              "Some files were already changed; the matching disable-/unlink- command reverts them.", file=sys.stderr)
         return 2
     except subprocess.CalledProcessError as e:
         print(f"meadow-setup: command failed: {' '.join(e.cmd)}\n{e.stderr}", file=sys.stderr)

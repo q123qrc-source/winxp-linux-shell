@@ -30,7 +30,7 @@ WAYLAND_DISPLAY="$(basename "$socket")"
 export WAYLAND_DISPLAY
 wlr-randr --output HEADLESS-1 --custom-mode "${w}x${h}" --scale "$scale"
 
-QT_QPA_PLATFORM=wayland QT_FORCE_STDERR_LOGGING=1 MEADOW_MUTE=1 \
+QT_QPA_PLATFORM=wayland QT_FORCE_STDERR_LOGGING=1 MEADOW_MUTE=1 LD_LIBRARY_PATH="$build/common" \
 MEADOW_THEME_DIR="$src/theme" MEADOW_ASSET_DIR="$src/theme/assets" QML_IMPORT_PATH="$build/qml" \
     sddm-greeter-qt6 --test-mode --theme "$src/greeter" >"$runtime/greeter.log" 2>&1 &
 greeter=$!

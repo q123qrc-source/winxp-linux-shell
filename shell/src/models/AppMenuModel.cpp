@@ -26,10 +26,18 @@ AppMenuModel::AppMenuModel(QObject *parent)
 }
 
 AppMenuModel::AppMenuModel(AppRegistry *apps, UsageStore *usage, QObject *parent)
+    : AppMenuModel(apps, usage, 7, QString(), parent)
+{
+}
+
+AppMenuModel::AppMenuModel(AppRegistry *apps, UsageStore *usage, int newProgramDays, const QString &menuFile,
+                           QObject *parent)
     : QObject(parent)
     , m_apps(apps)
     , m_usage(usage)
     , m_watcher(new QFileSystemWatcher(this))
+    , m_menuFile(menuFile)
+    , m_newDays(newProgramDays)
 {
     connect(m_apps, &AppRegistry::changed, this, &AppMenuModel::rebuild);
     connect(m_usage, &UsageStore::changed, this, &AppMenuModel::rebuild);

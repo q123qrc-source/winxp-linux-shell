@@ -62,8 +62,11 @@ void ShellSurface::push()
     m_layer->setExclusiveZone(m_exclusiveZone);
     m_layer->setMargins(QMargins(m_marginLeft, m_marginTop, m_marginRight, m_marginBottom));
     m_layer->setKeyboardInteractivity(LayerShellQt::Window::KeyboardInteractivity(m_keyboard));
-    // A taskbar or balloon must not steal focus when it appears.
+    // A taskbar or balloon must not steal focus when it appears (LayerShellQt
+    // 6.4 and newer; older versions never activate layer surfaces on show).
+#if MEADOW_LAYERSHELLQT_ACTIVATE_ON_SHOW
     m_layer->setActivateOnShow(m_keyboard != KeyboardNone);
+#endif
 }
 
 #define MEADOW_SURFACE_SETTER(name, member, type) \

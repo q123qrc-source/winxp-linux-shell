@@ -16,8 +16,39 @@ classic early-2000s "Luna" desktop with entirely original artwork. It includes:
   GTK and Qt applications pick them up automatically; other sessions are not
   affected.
 
-Fedora is the primary target. Status: **phase 9 of 12 (toolkit, icon, cursor and sound themes)**. See
+Fedora is the primary target. Status: **phase 10 of 12 (installers, packaging, performance and crash resilience)**. See
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design and the roadmap.
+
+## Installing
+
+**Fedora**: use the RPM packages ([packaging/fedora](packaging/fedora/README-fedora.md)).
+
+**Arch Linux**: `makepkg -s` in [packaging/arch](packaging/arch/PKGBUILD) with a
+release tarball (`tools/make-tarball.sh packaging/arch`).
+
+**Debian / Ubuntu**: `cp -r packaging/debian . && dpkg-buildpackage -b -us -uc`.
+Meadow needs labwc 0.9 or newer, which Debian 13 does not have yet.
+
+**Anything else** (or to try Meadow from a checkout), the generic installer:
+
+```sh
+./install.sh --dry-run          # show every step, change nothing
+./install.sh                    # build, then install to /usr/local (asks for sudo)
+./install.sh --enable-greeter   # also make the Meadow Welcome screen SDDM's theme
+./uninstall.sh                  # undo all of it
+```
+
+It checks dependencies first and prints the `dnf`/`pacman`/`apt` line for
+anything missing. Options: `--prefix DIR`, `--no-pam`, `--build-dir DIR`,
+`--root DIR` (image builds) and `DESTDIR=` (staging). It installs only into
+the prefix; the few changes outside it (the session entry, links that let
+SDDM and Qt find a `/usr/local` install, the lock screen's PAM service and,
+with `--enable-greeter`, SDDM's theme setting) are made by `meadow-setup`,
+which backs up and records each one. `uninstall.sh` reverts them and removes
+exactly the files listed in the install manifest, keeping any you changed.
+The display manager is never switched: `meadow-setup enable-greeter` prints
+the command for that. On Fedora the installer works too, but the RPMs are
+the supported way.
 
 ## Building
 
@@ -66,7 +97,8 @@ RPM builds, COPR and mock: [packaging/fedora/README-fedora.md](packaging/fedora/
 ## Safe by default
 
 Installing Meadow never changes how your computer logs in. The display manager,
-PAM and authselect change only when you run `sudo meadow-setup …`. The package
+PAM and authselect change only when you run `sudo meadow-setup …` (or
+`install.sh --enable-greeter`). The package
 adds one PAM file, `/etc/pam.d/meadow-lock`: a password-only service that only
 Meadow's lock screen reads. Application defaults
 (icon, cursor, font and sound themes) are applied per session only: nothing is

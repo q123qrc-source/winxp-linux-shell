@@ -2,7 +2,9 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later
      labwc menus for Meadow (labwc-menu(5)). The window menu opens from the
      title bar (right-click or the window icon) and Alt+Space. The desktop
-     menu belongs to meadow-shell, so there is no root-menu here. -->
+     menu belongs to meadow-shell; the root-menu below is only reachable when
+     the shell is not running (its desktop surface covers the root window),
+     as a way back after it crashed. -->
 <openbox_menu>
   <menu id="client-menu">
     <item label="Minimize"><action name="Iconify" /></item>
@@ -12,5 +14,12 @@
     <item label="Always on Top"><action name="ToggleAlwaysOnTop" /></item>
     <separator />
     <item label="Close    Alt+F4"><action name="Close" /></item>
+  </menu>
+  <menu id="root-menu">
+    <item label="Restart the Meadow desktop">
+      <action name="Execute" command="env MEADOW_RESTARTED=1 meadow-shell-supervise" />
+    </item>
+    <separator />
+    <item label="Log Off"><action name="Exit" /></item>
   </menu>
 </openbox_menu>

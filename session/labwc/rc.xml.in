@@ -94,10 +94,12 @@
       <mousebind button="Left" action="DoubleClick"><action name="ToggleMaximize" /></mousebind>
       <mousebind button="Right" action="Click"><action name="ShowMenu" menu="client-menu" /></mousebind>
     </context>
-    <!-- The shell draws the desktop and its menu; labwc's root menu stays off. -->
+    <!-- The shell draws the desktop and its menu over the root window, so
+         clicks reach labwc's root only while the shell is down: then a
+         right-click offers to restart it or to log off. -->
     <context name="Root">
       <mousebind button="Left" action="Press"><action name="None" /></mousebind>
-      <mousebind button="Right" action="Press"><action name="None" /></mousebind>
+      <mousebind button="Right" action="Press"><action name="ShowMenu" menu="root-menu" /></mousebind>
       <mousebind button="Middle" action="Press"><action name="None" /></mousebind>
     </context>
   </mouse>

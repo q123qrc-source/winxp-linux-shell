@@ -1,0 +1,77 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Runs meadow-shell for the session and restarts it when it crashes.
+# Started by labwc's autostart; the desktop's recovery menu (right-click the
+# desktop while the shell is down) starts it again.
+#
+#   exit status 0          clean exit: stop
+#   SIGTERM / SIGINT       stopped on purpose (log off, labwc exiting): stop
+#   anything else          a crash: restart after 1, 2, 4, 4... s
+#
+# More than MEADOW_SHELL_MAX_RESTARTS (5) crashes within 60 s stops the
+# restarts, so a shell that cannot start does not spin forever; the user is
+# told how to restart it or log off. A restarted shell gets MEADOW_RESTARTED=1
+# and skips the logon sound.
+#
+# For tests: MEADOW_SHELL (the program), MEADOW_SHELL_RESTART_DELAY (first
+# delay in seconds, default 1).
+shell=${MEADOW_SHELL:-meadow-shell}
+max=${MEADOW_SHELL_MAX_RESTARTS:-5}
+base=${MEADOW_SHELL_RESTART_DELAY:-1}
+window=60
+
+log() {
+    logger -t meadow-session "$*" 2>/dev/null || echo "meadow-session: $*" >&2
+}
+
+compositor_gone() {
+    [ -n "${WAYLAND_DISPLAY:-}" ] || return 1
+    case $WAYLAND_DISPLAY in
+        /*) sock=$WAYLAND_DISPLAY ;;
+        *) sock=${XDG_RUNTIME_DIR:-/nonexistent}/$WAYLAND_DISPLAY ;;
+    esac
+    [ ! -S "$sock" ]
+}
+
+# One supervisor per session: the recovery menu may start a second one.
+lock_dir=${XDG_RUNTIME_DIR:-/tmp}/meadow
+mkdir -p "$lock_dir" 2>/dev/null
+if command -v flock >/dev/null 2>&1; then
+    exec 9>"$lock_dir/shell-supervise.lock"
+    flock -n 9 || { log "meadow-shell is already supervised"; exit 0; }
+fi
+
+restarts=0
+window_start=$(date +%s)
+step=0
+while :; do
+    started=$(date +%s)
+    "$shell"
+    status=$?
+    case $status in
+        0) exit 0 ;;
+        130|143) log "meadow-shell stopped (status $status)"; exit 0 ;;
+    esac
+    if compositor_gone; then
+        exit 0
+    fi
+    now=$(date +%s)
+    if [ $((now - window_start)) -gt "$window" ]; then
+        restarts=0
+        window_start=$now
+    fi
+    # A shell that ran for a while gets the short delay again.
+    [ $((now - started)) -gt 30 ] && step=0
+    restarts=$((restarts + 1))
+    if [ "$restarts" -gt "$max" ]; then
+        log "meadow-shell crashed $restarts times within a minute (last status $status); not restarting"
+        notify-send --urgency=critical --app-name=Meadow "The Meadow desktop stopped" \
+            "It failed $restarts times in a row. Right-click the desktop to restart it or to log off." \
+            >/dev/null 2>&1 &
+        exit 1
+    fi
+    log "meadow-shell exited with status $status; restarting ($restarts)"
+    export MEADOW_RESTARTED=1
+    sleep "$(awk -v b="$base" -v s="$step" 'BEGIN { d = b * 2 ^ s; if (d > 4 * b) d = 4 * b; print d }')"
+    step=$((step + 1))
+done

@@ -75,6 +75,18 @@ if(MEADOW_BUILD_SHELL)
         set_tests_properties(alttab_session PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 120)
     endif()
 
+    # Crash resilience: meadow-shell-supervise with a fake shell, then the
+    # real shell killed with SIGSEGV in labwc.
+    add_test(NAME shell_restart
+             COMMAND ${PROJECT_SOURCE_DIR}/tools/shell-restart-test.sh ${CMAKE_BINARY_DIR})
+    set_tests_properties(shell_restart PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 120)
+
+    # Performance budget (docs/PERFORMANCE.md) with 1.5x headroom for slow
+    # or busy machines. Labelled "perf": packages exclude it, like screenshots.
+    add_test(NAME perf_budget
+             COMMAND ${PROJECT_SOURCE_DIR}/tools/perf-bench.sh ${CMAKE_BINARY_DIR} --check --headroom 1.5)
+    set_tests_properties(perf_budget PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 300 LABELS perf RUN_SERIAL TRUE)
+
     # The PAM helper over its protocol (pam_wrapper; skips without it).
     add_test(NAME test_auth_helper COMMAND Python3::Interpreter ${CMAKE_CURRENT_SOURCE_DIR}/test_auth_helper.py
                                            $<TARGET_FILE:meadow-auth-helper>)
@@ -130,6 +142,12 @@ add_test(NAME wallpaper_sync COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/
 
 # meadow-setup against sandbox PAM trees (never the real /etc).
 add_test(NAME meadow_setup COMMAND Python3::Interpreter ${CMAKE_CURRENT_SOURCE_DIR}/test_meadow_setup.py)
+# install.sh / uninstall.sh round trips into a sandbox root, from this build.
+add_test(NAME install COMMAND Python3::Interpreter ${CMAKE_CURRENT_SOURCE_DIR}/test_install.py)
+set_tests_properties(install PROPERTIES ENVIRONMENT "MEADOW_BUILD_DIR=${CMAKE_BINARY_DIR}" TIMEOUT 300)
+# Fedora, Arch and Debian file lists cover exactly what CMake installs.
+add_test(NAME packaging COMMAND Python3::Interpreter ${CMAKE_CURRENT_SOURCE_DIR}/test_packaging.py)
+set_tests_properties(packaging PROPERTIES ENVIRONMENT "MEADOW_BUILD_DIR=${CMAKE_BINARY_DIR}")
 
 # labwc session: generated theme/rc.xml up to date, config statically valid,
 # and accepted by a real (headless) labwc.

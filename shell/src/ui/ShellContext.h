@@ -71,9 +71,10 @@ class VolumeService;
 class ShellContext : public QObject
 {
     Q_OBJECT
+    // No QML_UNCREATABLE: since Qt 6.12 it also stops create() from
+    // providing the singleton.
     QML_NAMED_ELEMENT(Shell)
     QML_SINGLETON
-    QML_UNCREATABLE("Created by meadow-shell")
 
     Q_PROPERTY(bool preview READ preview CONSTANT)
     Q_PROPERTY(ToplevelModel *windows READ windows CONSTANT)

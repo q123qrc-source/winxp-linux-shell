@@ -120,6 +120,7 @@ bool ThemeLoader::loadFile(const QString &path)
         return false;
     }
     m_tokens = doc.object().toVariantMap();
+    m_familyCache.clear();
     m_schemeId = m_tokens.value(QStringLiteral("meta")).toMap().value(QStringLiteral("id")).toString();
     m_filePath = QFileInfo(path).absoluteFilePath();
     m_error.clear();
@@ -186,6 +187,16 @@ int ThemeLoader::px(qreal value) const
 }
 
 QString ThemeLoader::fontFamily(const QString &role) const
+{
+    const auto cached = m_familyCache.constFind(role);
+    if (cached != m_familyCache.cend())
+        return *cached;
+    const QString family = resolveFontFamily(role);
+    m_familyCache.insert(role, family);
+    return family;
+}
+
+QString ThemeLoader::resolveFontFamily(const QString &role) const
 {
     const QStringList families = token(QStringLiteral("fonts.%1.families").arg(role)).toStringList();
     if (families.isEmpty())

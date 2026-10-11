@@ -6,5 +6,6 @@ Current=meadow
 CursorTheme=meadow-cursors
 
 [General]
-# meadow-setup sets this to match the installed sddm-wayland-* / sddm-x11 package.
+# Left to the distribution's default; `meadow-setup enable-greeter --display-server
+# wayland|x11` sets it.
 #DisplayServer=wayland

@@ -61,6 +61,19 @@ Item {
         applyScale()
         console.info(lcGreeter, "welcome screen ready on", isPrimary ? "primary" : "secondary", "screen; scheme",
                      Theme.schemeId, "scale", Theme.scale)
+        if (Perf.enabled && isPrimary)
+            Perf.mark("greeter", "ready")
+    }
+
+    // MEADOW_PERF_LOG: the first frame on screen (the window is attached
+    // only after onCompleted in SDDM's view).
+    Connections {
+        id: firstFrame
+        target: Perf.enabled && root.isPrimary ? root.Window.window : null
+        function onFrameSwapped() {
+            Perf.mark("greeter", "first-frame")
+            firstFrame.enabled = false
+        }
     }
 
     WelcomeLayout {

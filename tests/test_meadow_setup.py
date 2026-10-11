@@ -347,5 +347,194 @@ class ShippedLockServiceTests(unittest.TestCase):
             self.assertEqual(code, 0)
             self.assertIn("shipped by Meadow, password only", out)
 
+
+def tree_state(root):
+    """Files and symlinks under root (directories are ignored)."""
+    state = {}
+    for p in sorted(root.rglob("*")):
+        rel = str(p.relative_to(root))
+        if p.is_symlink():
+            state[rel] = "-> " + os.readlink(p)
+        elif p.is_file():
+            state[rel] = hashlib.sha256(p.read_bytes()).hexdigest()
+    return state
+
+
+class LockServiceTests(unittest.TestCase):
+    """enable-lock installs the shipped password-only service for the family."""
+
+    def test_each_family_round_trip(self):
+        for files, flavour in ((FEDORA, "meadow-lock"), (DEBIAN, "meadow-lock.debian"), (ARCH, "meadow-lock.arch")):
+            tmp, root = make_root(files)
+            with tmp, self.subTest(flavour=flavour):
+                before = tree_state(root)
+                code, out = run(root, "enable-lock")
+                self.assertEqual(code, 0, out)
+                self.assertEqual((root / ms.LOCK_PAM).read_text(), (ROOT / "system/pam.d" / flavour).read_text())
+                # The shipped service authenticates with the family's password stack.
+                self.assertFalse(ms.auth_reaches(root / "etc/pam.d", "meadow-lock"))
+                once = tree_state(root)
+                self.assertEqual(run(root, "enable-lock")[0], 0)
+                self.assertEqual(tree_state(root), once)
+                # Fingerprint on top of it, then everything off again.
+                self.assertEqual(run(root, "enable-fingerprint")[0], 0)
+                self.assertIn(ms.FPRINT_BEGIN, (root / ms.LOCK_PAM).read_text())
+                self.assertEqual(run(root, "disable-lock")[0], 2, "disable-lock must refuse while fingerprint is on")
+                self.assertEqual(run(root, "disable-fingerprint")[0], 0)
+                code, out = run(root, "disable-lock")
+                self.assertEqual(code, 0, out)
+                self.assertEqual(tree_state(root), before)
+
+    def test_foreign_file_is_backed_up_and_restored(self):
+        files = dict(FEDORA)
+        files["etc/pam.d/meadow-lock"] = "auth required pam_unix.so\n"
+        tmp, root = make_root(files)
+        with tmp:
+            before = tree_state(root)
+            self.assertEqual(run(root, "enable-lock")[0], 0)
+            self.assertTrue((root / (ms.LOCK_PAM + ".meadow-bak")).exists())
+            self.assertEqual(run(root, "disable-lock")[0], 0)
+            self.assertEqual(tree_state(root), before)
+
+    def test_packaged_file_is_left_alone(self):
+        files = dict(FEDORA)
+        files["etc/pam.d/meadow-lock"] = (ROOT / "system/pam.d/meadow-lock").read_text()
+        tmp, root = make_root(files)
+        with tmp:
+            before = tree_state(root)
+            code, out = run(root, "enable-lock")
+            self.assertIn("already installed", out)
+            code, out = run(root, "disable-lock")
+            self.assertEqual(code, 0)
+            self.assertEqual(tree_state(root), before, "disable-lock removed a packaged file")
+
+    def test_unknown_layout_fails(self):
+        tmp, root = make_root({"etc/os-release": "ID=gentoo\n", "etc/pam.d/other": "auth required pam_deny.so\n"})
+        with tmp:
+            self.assertEqual(run(root, "enable-lock")[0], 2)
+
+    def test_variants_are_password_only(self):
+        for f in ("meadow-lock", "meadow-lock.debian", "meadow-lock.arch"):
+            text = (ROOT / "system/pam.d" / f).read_text()
+            self.assertIn(ms.SHIPPED_LOCK_MARKER, text.splitlines(), f)
+            rules = [l for l in text.splitlines() if l.strip() and not l.startswith("#")]
+            self.assertFalse([l for l in rules if "pam_fprintd" in l], f)
+
+
+class GreeterTests(unittest.TestCase):
+    def files(self, **extra):
+        files = dict(FEDORA)
+        files["usr/share/sddm/themes/meadow/Main.qml"] = "Item {}\n"
+        files.update(extra)
+        return files
+
+    def test_round_trip(self):
+        tmp, root = make_root(self.files())
+        with tmp:
+            before = tree_state(root)
+            code, out = run(root, "enable-greeter")
+            self.assertEqual(code, 0, out)
+            conf = (root / ms.GREETER_CONF).read_text()
+            self.assertIn(ms.GREETER_MARKER, conf)
+            self.assertIn("Current=meadow", conf)
+            self.assertIn("#DisplayServer=wayland", conf)
+            self.assertIn("systemctl enable --force sddm.service", out, "should say how to switch, not do it")
+            self.assertEqual(run(root, "enable-greeter")[0], 0)
+            code, out = run(root, "disable-greeter")
+            self.assertEqual(code, 0, out)
+            self.assertEqual(tree_state(root), before)
+            self.assertFalse((root / "etc/sddm.conf.d").exists())
+
+    def test_display_server_and_foreign_file(self):
+        tmp, root = make_root(self.files(**{"etc/sddm.conf.d/10-meadow.conf": "[Theme]\nCurrent=breeze\n"}))
+        with tmp:
+            before = tree_state(root)
+            self.assertEqual(run(root, "enable-greeter", "--display-server", "wayland")[0], 0)
+            self.assertIn("\nDisplayServer=wayland", (root / ms.GREETER_CONF).read_text())
+            self.assertEqual(run(root, "disable-greeter")[0], 0)
+            self.assertEqual(tree_state(root), before)
+
+    def test_warns_about_overrides_and_reports_dm(self):
+        tmp, root = make_root(self.files(**{"etc/sddm.conf": "[Theme]\nCurrent=breeze\n",
+                                            "etc/sddm.conf.d/kde_settings.conf": "[Theme]\nCurrent=breeze\n"}))
+        with tmp:
+            (root / "etc/systemd/system").mkdir(parents=True)
+            os.symlink("/usr/lib/systemd/system/sddm.service", root / ms.DM_LINK)
+            code, out = run(root, "enable-greeter")
+            self.assertEqual(code, 0)
+            self.assertIn("etc/sddm.conf selects another", out)
+            self.assertIn("kde_settings.conf selects another", out)
+            self.assertNotIn("systemctl enable", out)
+            code, out = run(root, "status")
+            self.assertIn("Meadow theme selected", out)
+            self.assertIn("display manager: sddm.service", out)
+
+    def test_dry_run_and_missing_theme(self):
+        tmp, root = make_root(self.files())
+        with tmp:
+            before = tree_state(root)
+            out = io.StringIO()
+            self.assertEqual(ms.main(["--root", str(root), "--dry-run", "enable-greeter"], out=out), 0)
+            self.assertIn("+Current=meadow", out.getvalue())
+            self.assertEqual(tree_state(root), before)
+        tmp, root = make_root(FEDORA)
+        with tmp:
+            self.assertEqual(run(root, "enable-greeter")[0], 2)
+
+
+class PrefixLinkTests(unittest.TestCase):
+    PREFIX = "/usr/local"
+
+    def files(self):
+        files = dict(FEDORA)
+        files["usr/local/share/sddm/themes/meadow/Main.qml"] = "Item {}\n"
+        files["usr/local/lib64/qt6/qml/Meadow/Controls/qmldir"] = "module Meadow.Controls\n"
+        return files
+
+    def test_round_trip(self):
+        tmp, root = make_root(self.files())
+        with tmp:
+            before = tree_state(root)
+            code, out = run(root, "link-prefix", self.PREFIX)
+            self.assertEqual(code, 0, out)
+            self.assertEqual(os.readlink(root / ms.SDDM_THEME_LINK), "/usr/local/share/sddm/themes/meadow")
+            self.assertEqual(os.readlink(root / "usr/lib64/qt6/qml/Meadow"), "/usr/local/lib64/qt6/qml/Meadow")
+            entry = (root / ms.SESSION_ENTRY).read_text()
+            self.assertIn("Exec=/usr/local/bin/meadow-session", entry)
+            # The greeter can now be enabled for the linked theme.
+            self.assertEqual(run(root, "enable-greeter")[0], 0)
+            self.assertEqual(run(root, "link-prefix", self.PREFIX)[0], 0, "not idempotent")
+            self.assertEqual(run(root, "link-prefix", "/opt/meadow")[0], 2, "second prefix must be refused")
+            self.assertEqual(run(root, "disable-greeter")[0], 0)
+            code, out = run(root, "unlink-prefix")
+            self.assertEqual(code, 0, out)
+            self.assertEqual(tree_state(root), before)
+
+    def test_refuses_to_shadow_packaged_files(self):
+        files = self.files()
+        files["usr/share/wayland-sessions/meadow.desktop"] = "[Desktop Entry]\nExec=meadow-session\n"
+        tmp, root = make_root(files)
+        with tmp:
+            before = tree_state(root)
+            self.assertEqual(run(root, "link-prefix", self.PREFIX)[0], 2)
+            self.assertEqual(tree_state(root), before)
+
+    def test_usr_prefix_needs_nothing(self):
+        tmp, root = make_root(FEDORA)
+        with tmp:
+            before = tree_state(root)
+            code, out = run(root, "link-prefix", "/usr")
+            self.assertEqual(code, 0)
+            self.assertEqual(tree_state(root), before)
+
+
+class ShippedGreeterConfTests(unittest.TestCase):
+    def test_example_has_theme_and_cursor(self):
+        lines = ms.greeter_conf_lines(None)
+        self.assertEqual(lines[0], ms.GREETER_MARKER)
+        self.assertIn("Current=meadow", lines)
+        self.assertIn("CursorTheme=meadow-cursors", lines)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

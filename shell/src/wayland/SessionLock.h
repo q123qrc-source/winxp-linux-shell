@@ -54,6 +54,9 @@ public:
     // Starts locking (no-op while locking or locked). Returns false if the
     // compositor cannot lock.
     Q_INVOKABLE bool lock();
+    // False when no PAM service for the lock screen is installed (install.sh
+    // --no-pam): locking would leave the user no way back in.
+    static bool unlockPossible();
     // Unlocks. Only called after authentication succeeded.
     Q_INVOKABLE void unlock();
 

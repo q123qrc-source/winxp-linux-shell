@@ -176,8 +176,9 @@ The font aliases are not enabled system-wide: Meadow sessions load them.
 tools/validate-session-desktop.sh %{buildroot}%{_datadir}/wayland-sessions/meadow.desktop
 desktop-file-validate %{buildroot}%{_datadir}/applications/meadow-control-panel.desktop
 desktop-file-validate %{buildroot}%{_datadir}/applications/meadow-display-properties.desktop
-# Screenshot comparisons depend on the exact fonts installed; they run in CI only.
-%ctest --label-exclude screenshot
+# Screenshot comparisons depend on the exact fonts installed (CI runs them);
+# the timing budget depends on the machine's load (run by hand: ctest -L perf).
+%ctest --label-exclude 'screenshot|perf'
 
 %files
 # Metapackage: no files of its own besides the license and README.
@@ -200,6 +201,7 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/meadow-display-proper
 %{_bindir}/meadow-shell
 %{_bindir}/meadow-shellctl
 %{_bindir}/meadow-session
+%{_bindir}/meadow-shell-supervise
 %{_bindir}/meadow-setup
 %{_bindir}/meadow-control-panel
 %dir %{_libexecdir}/meadow
@@ -252,6 +254,11 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/meadow-display-proper
 
 %changelog
 * Sun Oct 11 2026 Meadow contributors <q123qrc@gmail.com> - 0.1.0-1
+- Phase 10: meadow-shell-supervise restarts the shell after a crash (with a
+  recovery menu when it gives up); the shell renders in software by default
+  (shell.conf [Performance]); meadow-setup enable-/disable-greeter,
+  enable-/disable-lock and link-/unlink-prefix for install.sh; Arch and
+  Debian packaging; performance marks (MEADOW_PERF_LOG) and budget test
 - Phase 9: GTK 3/4 and Kvantum themes generated from theme.json for every
   scheme, original icon, cursor and sound themes, font aliases, and
   session-scoped application defaults (dconf profile, XDG config dirs)

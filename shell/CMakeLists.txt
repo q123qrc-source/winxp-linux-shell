@@ -50,19 +50,23 @@ target_compile_definitions(meadow-shell-core PRIVATE MEADOW_DATADIR="${CMAKE_INS
                                                    MEADOW_LIBEXECDIR="${CMAKE_INSTALL_FULL_LIBEXECDIR}/meadow")
 
 # Window list: wlr-foreign-toplevel-management client code from the protocol
-# XML shipped by wlr-protocols (Fedora: wlr-protocols-devel).
+# XML shipped by wlr-protocols (Fedora: wlr-protocols-devel). Distributions
+# without that package (Debian 13) use the copies in protocols/.
 find_package(PkgConfig REQUIRED)
 pkg_get_variable(WLR_PROTOCOLS_DIR wlr-protocols pkgdatadir)
-if(NOT WLR_PROTOCOLS_DIR)
-    message(FATAL_ERROR "wlr-protocols not found (dnf install wlr-protocols-devel)")
+if(WLR_PROTOCOLS_DIR)
+    set(WLR_PROTOCOLS_XML ${WLR_PROTOCOLS_DIR}/unstable)
+else()
+    message(STATUS "wlr-protocols not found; using the bundled copies in shell/protocols")
+    set(WLR_PROTOCOLS_XML ${CMAKE_CURRENT_SOURCE_DIR}/protocols)
 endif()
 pkg_get_variable(WAYLAND_PROTOCOLS_DIR wayland-protocols pkgdatadir)
 if(NOT WAYLAND_PROTOCOLS_DIR)
     message(FATAL_ERROR "wayland-protocols not found (dnf install wayland-protocols-devel)")
 endif()
 qt6_generate_wayland_protocol_client_sources(meadow-shell-core
-    FILES ${WLR_PROTOCOLS_DIR}/unstable/wlr-foreign-toplevel-management-unstable-v1.xml
-          ${WLR_PROTOCOLS_DIR}/unstable/wlr-output-management-unstable-v1.xml
+    FILES ${WLR_PROTOCOLS_XML}/wlr-foreign-toplevel-management-unstable-v1.xml
+          ${WLR_PROTOCOLS_XML}/wlr-output-management-unstable-v1.xml
           ${WAYLAND_PROTOCOLS_DIR}/staging/ext-session-lock/ext-session-lock-v1.xml
           ${WAYLAND_PROTOCOLS_DIR}/staging/ext-idle-notify/ext-idle-notify-v1.xml)
 # Lock surfaces need a per-window shell integration, which only Qt's private
@@ -79,6 +83,9 @@ qt_add_library(meadow-shell-ui STATIC
     src/ui/ScreenGrabber.h src/ui/ScreenGrabber.cpp
 )
 target_link_libraries(meadow-shell-ui PUBLIC meadow-shell-core meadow-common Qt6::Quick LayerShellQt::Interface)
+if(LayerShellQt_VERSION VERSION_GREATER_EQUAL 6.4)
+    target_compile_definitions(meadow-shell-ui PRIVATE MEADOW_LAYERSHELLQT_ACTIVATE_ON_SHOW=1)
+endif()
 # The generated QML type registrations include the headers by file name.
 target_include_directories(meadow-shell-ui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/ui)
 
@@ -126,6 +133,18 @@ install(PROGRAMS meadow-shellctl meadow-control-panel DESTINATION ${CMAKE_INSTAL
 install(FILES data/applications/meadow-control-panel.desktop data/applications/meadow-display-properties.desktop
         DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
 # The lock screen's PAM service (password only; meadow-setup adds fingerprint).
-install(FILES ${PROJECT_SOURCE_DIR}/system/pam.d/meadow-lock DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/pam.d)
+if(MEADOW_INSTALL_PAM)
+    if(MEADOW_PAM_FLAVOUR STREQUAL "fedora")
+        set(lock_pam meadow-lock)
+    elseif(MEADOW_PAM_FLAVOUR MATCHES "^(debian|arch)$")
+        set(lock_pam meadow-lock.${MEADOW_PAM_FLAVOUR})
+    else()
+        message(FATAL_ERROR "MEADOW_PAM_FLAVOUR must be fedora, debian or arch")
+    endif()
+    # Its own component: install.sh installs only "Unspecified" and leaves the
+    # PAM directory to `meadow-setup enable-lock`.
+    install(FILES ${PROJECT_SOURCE_DIR}/system/pam.d/${lock_pam} RENAME meadow-lock
+            DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/pam.d COMPONENT pam)
+endif()
 install(FILES dbus/org.meadow.Shell.xml DESTINATION ${CMAKE_INSTALL_DATADIR}/dbus-1/interfaces)
 install(FILES data/shell.conf DESTINATION ${MEADOW_DATADIR})

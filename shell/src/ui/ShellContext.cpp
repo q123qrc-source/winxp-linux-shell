@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "ShellContext.h"
 
+#include "Perf.h"
+
 #include <QFileInfo>
 #include <QGuiApplication>
 
@@ -75,6 +77,8 @@ void ShellContext::setStartMenuOpen(bool open)
     if (open == m_startMenuOpen)
         return;
     m_startMenuOpen = open;
+    if (open)
+        Perf::mark("shell", QStringLiteral("start-menu-requested"));
     Q_EMIT startMenuOpenChanged();
 }
 

@@ -30,6 +30,9 @@ class AppMenuModel : public QObject
 
 public:
     AppMenuModel(AppRegistry *apps, UsageStore *usage, QObject *parent = nullptr);
+    // With the settings known up front, so the tree is built once at startup.
+    AppMenuModel(AppRegistry *apps, UsageStore *usage, int newProgramDays, const QString &menuFile,
+                 QObject *parent = nullptr);
     explicit AppMenuModel(QObject *parent = nullptr); // empty, for tests of the wiring
 
     QVariantList tree() const { return m_tree; }

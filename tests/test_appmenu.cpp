@@ -76,6 +76,10 @@ private Q_SLOTS:
     {
         qputenv("XDG_DATA_HOME", m_tmp.filePath(QStringLiteral("home-data")).toUtf8());
         qputenv("XDG_DATA_DIRS", FIXTURE "/data");
+        // Qt built without its own MIME database (Arch) reads the system one
+        // from the data directories, which the fixtures replace.
+        QDir().mkpath(m_tmp.filePath(QStringLiteral("home-data")));
+        QFile::link(QStringLiteral("/usr/share/mime"), m_tmp.filePath(QStringLiteral("home-data/mime")));
         qputenv("XDG_CONFIG_HOME", m_tmp.filePath(QStringLiteral("home-config")).toUtf8());
         qputenv("XDG_CONFIG_DIRS", FIXTURE "/config");
         qputenv("XDG_CURRENT_DESKTOP", "Meadow");
@@ -312,6 +316,8 @@ private Q_SLOTS:
         for (const char *name : {"older.txt", "newer doc.odt"}) {
             QFile f(dir + QLatin1Char('/') + QLatin1String(name));
             QVERIFY(f.open(QIODevice::WriteOnly));
+            // Not empty: newer MIME databases call empty files application/x-zerosize.
+            f.write("text\n");
         }
         QFile in(QStringLiteral(FIXTURE "/recently-used.xbel"));
         QVERIFY(in.open(QIODevice::ReadOnly));

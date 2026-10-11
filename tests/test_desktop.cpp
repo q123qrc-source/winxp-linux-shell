@@ -52,6 +52,10 @@ private Q_SLOTS:
     {
         qputenv("XDG_DATA_HOME", m_dir.filePath(QStringLiteral("data")).toUtf8());
         qputenv("XDG_DATA_DIRS", m_dir.filePath(QStringLiteral("nodata")).toUtf8());
+        // Qt built without its own MIME database (Arch) reads the system one
+        // from the data directories, which the fixtures replace.
+        QDir().mkpath(m_dir.filePath(QStringLiteral("data")));
+        QFile::link(QStringLiteral("/usr/share/mime"), m_dir.filePath(QStringLiteral("data/mime")));
         qputenv("MEADOW_LAUNCH_LOG", m_dir.filePath(QStringLiteral("launches.log")).toUtf8());
     }
     void init()
@@ -69,7 +73,8 @@ private Q_SLOTS:
 
     void specialsAndFiles()
     {
-        touch(QStringLiteral("b.txt"));
+        // Not empty: newer MIME databases call empty files application/x-zerosize.
+        touch(QStringLiteral("b.txt"), false, "text\n");
         QDir(m_desk).mkdir(QStringLiteral("a folder"));
         auto m = model();
         QCOMPARE(m->rowCount(), 5);

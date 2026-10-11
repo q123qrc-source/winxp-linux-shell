@@ -4,6 +4,7 @@
 #include "Logging.h"
 
 #include <QFont>
+#include <QHash>
 #include <QObject>
 #include <QStringList>
 #include <QVariantMap>
@@ -77,11 +78,15 @@ Q_SIGNALS:
 
 private:
     void applyScaleDefault();
+    QString resolveFontFamily(const QString &role) const;
     void rewatch();
 
     QString m_schemeId;
     QString m_filePath;
     QVariantMap m_tokens;
+    // fontFamily() per role for the loaded scheme: every Text asks, and the
+    // installed-families list is expensive to build.
+    mutable QHash<QString, QString> m_familyCache;
     QString m_error;
     qreal m_scale = 1.0;
     bool m_scaleFromUser = false;

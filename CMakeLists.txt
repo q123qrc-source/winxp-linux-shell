@@ -45,10 +45,21 @@ else()
 endif()
 # qt_standard_project_setup() adds $ORIGIN-relative RPATHs. Meadow installs its
 # library into the system libdir, so packaged binaries need none (Fedora forbids them).
-option(MEADOW_INSTALL_RPATH "Keep Qt's \$ORIGIN install RPATH" OFF)
+# install.sh sets MEADOW_INSTALL_RPATH for prefixes outside the loader path
+# (/usr/local/lib64 is not in it on every distribution); it also adds the
+# absolute libdir, because the QML plugins are reached through a symlink there.
+option(MEADOW_INSTALL_RPATH "Keep Qt's \$ORIGIN install RPATH and add the install libdir" OFF)
 if(NOT MEADOW_INSTALL_RPATH)
     set(CMAKE_INSTALL_RPATH "")
+else()
+    include(GNUInstallDirs)
+    list(APPEND CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
 endif()
+# The lock screen's PAM service goes to <sysconfdir>/pam.d. Packages install
+# it; install.sh turns this off and lets `meadow-setup enable-lock` place it.
+option(MEADOW_INSTALL_PAM "Install the lock screen's PAM service (meadow-lock)" ON)
+set(MEADOW_PAM_FLAVOUR "fedora" CACHE STRING "Which shipped meadow-lock to install: fedora, debian or arch")
+set_property(CACHE MEADOW_PAM_FLAVOUR PROPERTY STRINGS fedora debian arch)
 # Newer Qt policies we already comply with (silences dev warnings on Qt >= 6.8).
 if(QT_KNOWN_POLICY_QTP0004)
     qt_policy(SET QTP0004 NEW)
@@ -63,7 +74,12 @@ add_subdirectory(common)
 if(MEADOW_BUILD_SHELL)
     # The shell needs Wayland and layer-shell (taskbar, popups).
     # WaylandClientPrivate: the lock screen's ext-session-lock surfaces.
-    find_package(Qt6 ${MEADOW_QT_MIN_VERSION} REQUIRED COMPONENTS WaylandClient WaylandClientPrivate Xml)
+    # Qt 6.9 split it into its own package; before, Qt6WaylandClient provided
+    # the Qt6::WaylandClientPrivate target itself (Debian 13: Qt 6.8).
+    find_package(Qt6 ${MEADOW_QT_MIN_VERSION} REQUIRED COMPONENTS WaylandClient Xml)
+    if(Qt6_VERSION VERSION_GREATER_EQUAL 6.9)
+        find_package(Qt6 ${MEADOW_QT_MIN_VERSION} REQUIRED COMPONENTS WaylandClientPrivate)
+    endif()
     find_package(LayerShellQt 6.0 REQUIRED)
     # The session's polkit authentication agent.
     find_package(PolkitQt6-1 REQUIRED)
@@ -107,7 +123,8 @@ endif()
 
 if(MEADOW_BUILD_SHELL)
     install(FILES session/meadow.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/wayland-sessions)
-    install(PROGRAMS session/meadow-session setup/meadow-setup DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(PROGRAMS session/meadow-session session/meadow-shell-supervise setup/meadow-setup
+            DESTINATION ${CMAKE_INSTALL_BINDIR})
     install(FILES session/labwc/rc.xml session/labwc/menu.xml session/labwc/environment DESTINATION ${MEADOW_DATADIR}/labwc)
     install(PROGRAMS session/labwc/autostart DESTINATION ${MEADOW_DATADIR}/labwc)
     install(FILES session/xdg/meadow-portals.conf DESTINATION ${CMAKE_INSTALL_DATADIR}/xdg-desktop-portal)
@@ -148,7 +165,8 @@ if(MEADOW_BUILD_SHELL)
     # System integration files are installed as examples only. meadow-setup
     # copies them into /etc on explicit request; packages never touch /etc.
     install(FILES system/sddm.conf.d/10-meadow.conf.example DESTINATION ${MEADOW_DATADIR}/sddm.conf.d)
-    install(FILES system/pam.d/sddm.meadow-snippet system/pam.d/meadow-lock DESTINATION ${MEADOW_DATADIR}/pam.d)
+    install(FILES system/pam.d/sddm.meadow-snippet system/pam.d/meadow-lock system/pam.d/meadow-lock.debian
+                  system/pam.d/meadow-lock.arch DESTINATION ${MEADOW_DATADIR}/pam.d)
     install(FILES system/polkit/50-meadow.rules DESTINATION ${MEADOW_DATADIR}/polkit)
 endif()
 

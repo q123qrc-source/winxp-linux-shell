@@ -1,26 +1,134 @@
-# Maintainer: Meadow contributors
-# Secondary target; completed in phase 10.
-pkgname=meadow
+# Maintainer: Meadow contributors <q123qrc@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Split packages mirroring the Fedora RPMs. Like them, no package changes how
+# the system logs in: there are no install scripts, sddm.conf is not touched,
+# and the only file in /etc is the lock screen's own PAM service
+# (password only). `meadow-setup` makes the opt-in changes.
+#
+# Build from a release tarball (tools/make-tarball.sh) next to this file:
+#   makepkg -s
+pkgbase=meadow
+pkgname=(meadow meadow-common meadow-shell sddm-theme-meadow meadow-themes)
 pkgver=0.1.0
 pkgrel=1
-pkgdesc="Classic Luna-style Wayland desktop: shell, SDDM theme and themes"
+pkgdesc="Classic Luna-style Wayland desktop: shell, SDDM Welcome screen and themes"
 arch=(x86_64 aarch64)
 url="https://github.com/q123qrc-source/winxp-linux-shell"
 license=('GPL-3.0-or-later' 'CC-BY-SA-4.0')
-depends=(qt6-base qt6-declarative qt6-wayland qt6-multimedia layer-shell-qt labwc sddm)
-makedepends=(cmake ninja extra-cmake-modules qt6-tools wayland-protocols python)
-source=("$pkgname-$pkgver.tar.gz")
+makedepends=(cmake ninja extra-cmake-modules python
+             qt6-base qt6-declarative qt6-wayland qt6-multimedia qt6-svg qt6-tools
+             layer-shell-qt polkit-qt6 pam wayland wayland-protocols wlr-protocols
+             librsvg xorg-xcursorgen dconf)
+checkdepends=(dbus pam_wrapper desktop-file-utils shared-mime-info ttf-dejavu)
+source=("$pkgbase-$pkgver.tar.gz")
 sha256sums=('SKIP')
 
+# What each package owns, relative to the install root. test_packaging.py
+# checks that every installed file belongs to exactly one of them.
+_files_common=(usr/lib/libmeadow-common.so.* usr/lib/qt6/qml/Meadow)
+_files_shell=(usr/bin/meadow-shell usr/bin/meadow-shellctl usr/bin/meadow-session usr/bin/meadow-shell-supervise usr/bin/meadow-setup
+              usr/bin/meadow-control-panel usr/lib/meadow etc/pam.d/meadow-lock
+              usr/share/applications/meadow-control-panel.desktop
+              usr/share/applications/meadow-display-properties.desktop
+              usr/share/wayland-sessions/meadow.desktop usr/share/xdg-desktop-portal/meadow-portals.conf
+              usr/share/dbus-1/interfaces/org.meadow.Shell.xml
+              usr/share/meadow/labwc usr/share/meadow/shell.conf usr/share/meadow/menus
+              usr/share/meadow/desktop-directories usr/share/meadow/sddm.conf.d usr/share/meadow/pam.d
+              usr/share/meadow/polkit usr/share/meadow/dconf usr/share/meadow/xdg)
+_files_greeter=(usr/share/sddm/themes/meadow)
+_files_themes=(usr/share/meadow/themes usr/share/meadow/assets
+               usr/share/themes/Meadow-Luna usr/share/themes/Meadow-Luna-Olive usr/share/themes/Meadow-Luna-Silver
+               usr/share/Kvantum/MeadowLuna usr/share/Kvantum/MeadowLunaOlive usr/share/Kvantum/MeadowLunaSilver
+               usr/share/icons/meadow-icons usr/share/icons/meadow-cursors usr/share/sounds/meadow
+               usr/share/fontconfig/conf.avail/50-meadow.conf usr/share/meadow/fontconfig)
+
 build() {
-  cmake -B build -S "$pkgname-$pkgver" -G Ninja -DCMAKE_INSTALL_PREFIX=/usr
+  cmake -B build -S "$pkgbase-$pkgver" -G Ninja \
+    -DCMAKE_BUILD_TYPE=None \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_INSTALL_LIBEXECDIR=lib \
+    -DMEADOW_PAM_FLAVOUR=arch \
+    -DMEADOW_BUILD_TESTS=ON \
+    -DMEADOW_BUILD_GALLERY=OFF
   cmake --build build
 }
 
 check() {
-  ctest --test-dir build --output-on-failure
+  # Screenshot and timing tests depend on fonts and machine speed.
+  ctest --test-dir build --output-on-failure --label-exclude 'screenshot|perf'
 }
 
-package() {
-  DESTDIR="$pkgdir" cmake --install build
+# Install once, then move each package's files out of the staging tree.
+_stage() {
+  [ -d "$srcdir/stage" ] || DESTDIR="$srcdir/stage" cmake --install build
+}
+
+_pick() {
+  local pattern f
+  for pattern in "$@"; do
+    for f in "$srcdir"/stage/$pattern; do
+      [ -e "$f" ] || [ -L "$f" ] || { echo "missing: $pattern" >&2; return 1; }
+      f=${f#"$srcdir"/stage/}
+      install -d "$pkgdir/$(dirname "$f")"
+      mv "$srcdir/stage/$f" "$pkgdir/$f"
+    done
+  done
+}
+
+_license() {
+  install -Dm644 "$srcdir/$pkgbase-$pkgver/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  cp -r "$srcdir/$pkgbase-$pkgver/LICENSES" "$pkgdir/usr/share/licenses/$pkgname/"
+}
+
+package_meadow() {
+  pkgdesc="Classic Luna-style Wayland desktop (all components; changes no login settings)"
+  arch=(any)
+  depends=(meadow-shell sddm-theme-meadow meadow-themes)
+  _license
+}
+
+package_meadow-common() {
+  pkgdesc="Shared library and Luna QML controls for Meadow"
+  depends=(qt6-base qt6-declarative qt6-svg qt6-multimedia)
+  _stage
+  _pick "${_files_common[@]}"
+  _license
+}
+
+package_meadow-shell() {
+  pkgdesc="Meadow desktop shell, session files and the opt-in meadow-setup tool"
+  depends=("meadow-common=$pkgver" "meadow-themes=$pkgver" 'labwc>=0.9' qt6-wayland layer-shell-qt polkit-qt6
+           pam polkit systemd xorg-xwayland xdg-desktop-portal-wlr xdg-desktop-portal-gtk pipewire wireplumber
+           networkmanager upower xdg-utils pcmanfm-qt kvantum python)
+  optdepends=('grim: gray fade behind Log Off and Turn Off'
+              'nm-connection-editor: Open Network Connections'
+              'system-config-printer: Printers and Faxes'
+              'yelp: Help and Support'
+              'qt6ct: Meadow icons in all Qt applications'
+              'pamtester: checking the lock screen PAM service')
+  backup=(etc/pam.d/meadow-lock)
+  _stage
+  _pick "${_files_shell[@]}"
+  _license
+}
+
+package_sddm-theme-meadow() {
+  pkgdesc="Meadow Welcome screen theme for SDDM (not activated on install)"
+  arch=(any)
+  depends=(sddm qt6-declarative qt6-svg "meadow-common=$pkgver" "meadow-themes=$pkgver")
+  optdepends=('fprintd: fingerprint login (meadow-setup enable-fingerprint)'
+              'qt6-virtualkeyboard: on-screen keyboard')
+  _stage
+  _pick "${_files_greeter[@]}"
+  _license
+}
+
+package_meadow-themes() {
+  pkgdesc="Meadow color schemes and GTK, Kvantum, labwc, icon, cursor and sound themes"
+  arch=(any)
+  depends=(fontconfig)
+  _stage
+  _pick "${_files_themes[@]}"
+  _license
 }

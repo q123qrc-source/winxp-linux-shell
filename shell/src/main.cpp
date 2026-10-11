@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+#include "Perf.h"
 #include "SoundPlayer.h"
 #include "ThemeLoader.h"
 #include "auth/LockAuthenticator.h"
@@ -40,6 +41,7 @@
 #include <QLoggingCategory>
 #include <QQmlApplicationEngine>
 #include <QQuickWindow>
+#include <QSGRendererInterface>
 #include <QStyleHints>
 #include <QTimer>
 #include <QtQml/qqmlextensionplugin.h>
@@ -139,6 +141,18 @@ int main(int argc, char *argv[])
 
     Settings settings;
 
+    // The shell's 2D surfaces render in software unless configured otherwise
+    // ([Performance] renderer): an OpenGL context per surface would cost more
+    // than the whole memory budget (docs/PERFORMANCE.md). Applications are
+    // not affected.
+    if (qEnvironmentVariableIsEmpty("QT_QUICK_BACKEND")) {
+        const QString renderer = settings.stringValue(QStringLiteral("Performance/renderer"), QStringLiteral("software"));
+        if (renderer == QLatin1String("software"))
+            QQuickWindow::setGraphicsApi(QSGRendererInterface::Software);
+        else if (renderer != QLatin1String("opengl"))
+            qCWarning(lcShell) << "unknown [Performance] renderer" << renderer << "- using the default";
+    }
+
     // Appearance: the saved color scheme and font size, unless a scheme was
     // forced (--theme, or MEADOW_THEME as the tests do).
     if (!parser.isSet(themeOpt) && qEnvironmentVariableIsEmpty("MEADOW_THEME")) {
@@ -178,9 +192,8 @@ int main(int argc, char *argv[])
     // Start menu. Power and session actions are simulated in --preview so a
     // preview can never log out or power off the machine it runs on.
     UsageStore usage;
-    AppMenuModel appMenu(&apps, &usage);
-    appMenu.setNewProgramDays(theme->token(QStringLiteral("startMenu.allPrograms.newProgramDays")).toInt());
-    appMenu.setMenuFile(settings.stringValue(QStringLiteral("StartMenu/menuFile")));
+    AppMenuModel appMenu(&apps, &usage, theme->token(QStringLiteral("startMenu.allPrograms.newProgramDays")).toInt(),
+                         settings.stringValue(QStringLiteral("StartMenu/menuFile")));
     RecentAppsModel startApps(&apps, &usage, &settings);
     startApps.setFrequentCount(theme->token(QStringLiteral("startMenu.left.mfuCount")).toInt());
     PlacesModel places(&settings);
@@ -282,6 +295,7 @@ int main(int argc, char *argv[])
     services.lockAuth = &lockAuth;
     services.sounds = &sounds;
     ShellContext shell(services, preview);
+    Perf::mark("shell", QStringLiteral("services-ready"));
     QObject::connect(&ipc, &ShellIpc::toggleStartMenuRequested, &shell,
                      [&shell] { shell.setStartMenuOpen(!shell.startMenuOpen()); });
 
@@ -304,6 +318,16 @@ int main(int argc, char *argv[])
     }
     if (engine.rootObjects().isEmpty())
         return 1;
+    if (Perf::enabled()) {
+        Perf::mark("shell", QStringLiteral("qml-loaded"));
+        const QString first = preview ? QString() : QStringLiteral("meadow-taskbar");
+        for (QWindow *w : QGuiApplication::topLevelWindows()) {
+            if (auto *qw = qobject_cast<QQuickWindow *>(w); qw && (first.isEmpty() || w->title() == first)) {
+                Perf::markNextFrame(qw, "shell", QStringLiteral("first-frame"));
+                break;
+            }
+        }
+    }
     // The lock windows exist now; lock again if a crashed shell left the
     // session locked.
     if (!preview) {
