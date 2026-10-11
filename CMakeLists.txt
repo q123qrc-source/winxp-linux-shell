@@ -74,6 +74,7 @@ if(MEADOW_BUILD_GALLERY)
     add_subdirectory(tools/gallery)
     add_subdirectory(tools/greeter-preview)
     add_subdirectory(tools/decor-test)
+    add_subdirectory(tools/toolkit-demo)
 endif()
 
 # --- Data-only components -------------------------------------------------
@@ -90,8 +91,13 @@ if(MEADOW_BUILD_THEMES)
         install(DIRECTORY decorations/labwc/${theme}/labwc
                 DESTINATION ${CMAKE_INSTALL_DATADIR}/themes/${theme})
     endforeach()
+    # Font aliases: in conf.avail only (not enabled system-wide); Meadow
+    # sessions load them through FONTCONFIG_FILE=.../meadow/fontconfig/fonts.conf.
     install(FILES system/fontconfig/50-meadow.conf
             DESTINATION ${CMAKE_INSTALL_DATADIR}/fontconfig/conf.avail)
+    set(MEADOW_FONT_ALIASES ${CMAKE_INSTALL_FULL_DATADIR}/fontconfig/conf.avail/50-meadow.conf)
+    configure_file(system/fontconfig/fonts.conf.in ${CMAKE_BINARY_DIR}/fontconfig/fonts.conf @ONLY)
+    install(FILES ${CMAKE_BINARY_DIR}/fontconfig/fonts.conf DESTINATION ${MEADOW_DATADIR}/fontconfig)
 endif()
 
 if(MEADOW_BUILD_GREETER)
@@ -105,6 +111,37 @@ if(MEADOW_BUILD_SHELL)
     install(FILES session/labwc/rc.xml session/labwc/menu.xml session/labwc/environment DESTINATION ${MEADOW_DATADIR}/labwc)
     install(PROGRAMS session/labwc/autostart DESTINATION ${MEADOW_DATADIR}/labwc)
     install(FILES session/xdg/meadow-portals.conf DESTINATION ${CMAKE_INSTALL_DATADIR}/xdg-desktop-portal)
+    # Session-scoped defaults for third-party applications (icon, cursor,
+    # font, sound and toolkit themes), generated from theme.json. meadow-session
+    # points DCONF_PROFILE and XDG_CONFIG_DIRS at them; nothing in ~ or /etc.
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    find_program(DCONF_EXECUTABLE dconf)
+    set(defaults_out ${CMAKE_BINARY_DIR}/session-defaults)
+    set(defaults_commands
+        COMMAND ${CMAKE_COMMAND} -E rm -rf ${defaults_out}
+        COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/tools/gen-toolkit-themes.py
+                --defaults ${defaults_out} --theme-root ${PROJECT_SOURCE_DIR}/theme)
+    if(DCONF_EXECUTABLE)
+        list(APPEND defaults_commands
+             COMMAND ${DCONF_EXECUTABLE} compile ${defaults_out}/dconf/meadow.db ${defaults_out}/dconf/meadow.d)
+    else()
+        message(WARNING "dconf not found: GTK applications in Meadow sessions keep their own defaults")
+    endif()
+    add_custom_command(
+        OUTPUT ${CMAKE_BINARY_DIR}/session-defaults.stamp
+        ${defaults_commands}
+        COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_BINARY_DIR}/session-defaults.stamp
+        DEPENDS ${PROJECT_SOURCE_DIR}/tools/gen-toolkit-themes.py ${PROJECT_SOURCE_DIR}/theme/luna-blue/theme.json
+        COMMENT "Generating session defaults for applications"
+        VERBATIM)
+    add_custom_target(meadow-session-defaults ALL DEPENDS ${CMAKE_BINARY_DIR}/session-defaults.stamp)
+    install(DIRECTORY ${defaults_out}/xdg DESTINATION ${MEADOW_DATADIR})
+    if(DCONF_EXECUTABLE)
+        set(MEADOW_DCONF_DB ${CMAKE_INSTALL_PREFIX}/${MEADOW_DATADIR}/dconf/meadow.db)
+        configure_file(session/dconf/profile.in ${CMAKE_BINARY_DIR}/dconf/profile @ONLY)
+        install(FILES ${defaults_out}/dconf/meadow.db ${CMAKE_BINARY_DIR}/dconf/profile
+                DESTINATION ${MEADOW_DATADIR}/dconf)
+    endif()
     # All Programs layout (shell.conf [StartMenu] menuFile overrides it).
     install(FILES session/menus/meadow-applications.menu DESTINATION ${MEADOW_DATADIR}/menus)
     install(DIRECTORY session/desktop-directories/ DESTINATION ${MEADOW_DATADIR}/desktop-directories)

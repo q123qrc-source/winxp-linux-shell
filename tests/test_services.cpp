@@ -10,6 +10,8 @@
 #include "services/PowerService.h"
 #include "services/RunService.h"
 #include "services/SessionService.h"
+#include "services/ShellSounds.h"
+#include "ThemeLoader.h"
 #include "services/VolumeService.h"
 #include "services/PolkitAgent.h"
 #include "services/Settings.h"
@@ -41,6 +43,29 @@ static QDBusMessage call(QDBusInterface &iface, const QString &method, const QVa
     done.wait(5000);
     return pending.reply();
 }
+
+// ShellSounds with the playback replaced: records what would play and
+// whether a sound "starts" (as if muted or the file were missing when not).
+class FakeSounds : public ShellSounds
+{
+public:
+    using ShellSounds::ShellSounds;
+    bool plays = true;
+    QStringList played;
+    void finish() { soundFinished(); }
+
+protected:
+    bool startSound(const QString &event) override
+    {
+        played << event;
+        return plays && !event.isEmpty();
+    }
+    bool startSoundFile(const QString &path) override
+    {
+        played << QStringLiteral("file:") + path;
+        return plays;
+    }
+};
 
 class TestServices : public QObject
 {
@@ -407,6 +432,93 @@ private Q_SLOTS:
             run.run(QStringLiteral("true %1").arg(i));
         QCOMPARE(run.history().size(), RunService::kMaxHistory);
         qunsetenv("MEADOW_LAUNCH_LOG");
+    }
+
+    void shellSoundsWaitForTheSound()
+    {
+        QVERIFY(ThemeLoader::instance()->loadScheme(QStringLiteral("luna-blue")));
+        SessionService session(true);
+        PowerService power(QDBusConnection::sessionBus(), true);
+        QSignalSpy loggedOff(&session, &SessionService::simulated);
+        QSignalSpy powered(&power, &PowerService::simulated);
+        FakeSounds sounds(&session, &power);
+        QVERIFY(sounds.maxWaitMs() > 0);
+
+        // Log off: the sound first; the session ends when it has played.
+        sounds.logOff();
+        QCOMPARE(sounds.played, QStringList{QStringLiteral("logoff")});
+        QCOMPARE(loggedOff.size(), 0);
+        sounds.logOff(); // a second click while it plays is ignored
+        QCOMPARE(sounds.played.size(), 1);
+        sounds.finish();
+        QCOMPARE(loggedOff.size(), 1);
+        QCOMPARE(loggedOff.at(0).at(0).toString(), QStringLiteral("LogOff"));
+
+        // Turn off: the shutdown sound, then logind's PowerOff.
+        sounds.played.clear();
+        sounds.powerAction(QStringLiteral("powerOff"));
+        QCOMPARE(sounds.played, QStringList{QStringLiteral("shutdown")});
+        QCOMPARE(powered.size(), 0);
+        sounds.finish();
+        QCOMPARE(powered.size(), 1);
+        QCOMPARE(powered.at(0).at(0).toString(), QStringLiteral("PowerOff"));
+
+        // Stand By makes no sound and goes at once.
+        sounds.powerAction(QStringLiteral("suspend"));
+        QCOMPARE(powered.size(), 2);
+        QCOMPARE(powered.at(1).at(0).toString(), QStringLiteral("Suspend"));
+
+        // A sound that never reports its end is cut off after maxWaitMs.
+        sounds.powerAction(QStringLiteral("reboot"));
+        QCOMPARE(powered.size(), 2);
+        QTRY_COMPARE_WITH_TIMEOUT(powered.size(), 3, sounds.maxWaitMs() + 2000);
+        QCOMPARE(powered.at(2).at(0).toString(), QStringLiteral("Reboot"));
+
+        // Sounds off: the action runs immediately.
+        sounds.plays = false;
+        sounds.logOff();
+        QCOMPARE(loggedOff.size(), 2);
+
+        // Unknown actions do nothing.
+        sounds.powerAction(QStringLiteral("selfDestruct"));
+        QCOMPARE(powered.size(), 3);
+    }
+
+    void shellSoundsSessionAndNotifications()
+    {
+        QVERIFY(ThemeLoader::instance()->loadScheme(QStringLiteral("luna-blue")));
+        FakeSounds sounds(nullptr, nullptr);
+        sounds.sessionStarted();
+        QCOMPARE(sounds.played, QStringList{QStringLiteral("logon")});
+        qputenv("MEADOW_RESTARTED", "1");
+        sounds.sessionStarted();
+        QCOMPARE(sounds.played.size(), 1); // a restarted shell stays quiet
+        qunsetenv("MEADOW_RESTARTED");
+
+        sounds.played.clear();
+        sounds.notify(1, QString(), QString());
+        sounds.notify(2, QString(), QString());
+        sounds.notify(0, QString(), QString());
+        QCOMPARE(sounds.played, (QStringList{QStringLiteral("balloon"), QStringLiteral("exclamation")}));
+
+        // sound-file wins; a relative path is ignored.
+        sounds.played.clear();
+        sounds.notify(1, QString(), QStringLiteral("/tmp/ding.oga"));
+        sounds.notify(1, QString(), QStringLiteral("ding.oga"));
+        QCOMPARE(sounds.played, (QStringList{QStringLiteral("file:/tmp/ding.oga"), QStringLiteral("balloon")}));
+
+        // The notification server asks for sounds for new notifications
+        // only, and never with suppress-sound.
+        NotificationServer server;
+        QSignalSpy wants(&server, &NotificationServer::soundRequested);
+        const uint id = server.notify(QStringLiteral("app"), 0, QString(), QStringLiteral("One"), QString(), {},
+                                      {{QStringLiteral("sound-name"), QStringLiteral("message-new-email")}}, -1);
+        QCOMPARE(wants.size(), 1);
+        QCOMPARE(wants.at(0).at(1).toString(), QStringLiteral("message-new-email"));
+        server.notify(QStringLiteral("app"), id, QString(), QStringLiteral("One again"), QString(), {}, {}, -1);
+        server.notify(QStringLiteral("app"), 0, QString(), QStringLiteral("Quiet"), QString(), {},
+                      {{QStringLiteral("suppress-sound"), true}}, -1);
+        QCOMPARE(wants.size(), 1);
     }
 
     void notificationsQueueBounded()

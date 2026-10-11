@@ -15,6 +15,9 @@ PowerDialogFrame {
     // debugPowerButtons, for SDDM test mode).
     property bool showAll: false
     property bool shiftHeld: false
+    // Optional function(action) that performs the action instead of calling
+    // power[action]() directly (the shell plays the shutdown sound first).
+    property var actionHandler: null
 
     readonly property bool canSuspend: showAll || (power && power.canSuspend)
     readonly property bool canHibernate: showAll || (power && power.canHibernate)
@@ -37,6 +40,10 @@ PowerDialogFrame {
         close()
         shiftHeld = false
         actionRequested(action)
+        if (typeof actionHandler === "function") {
+            actionHandler(action)
+            return
+        }
         if (!power || typeof power[action] !== "function") {
             console.warn(lcPower, "cannot", action)
             return

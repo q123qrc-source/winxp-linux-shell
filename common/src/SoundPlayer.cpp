@@ -2,14 +2,40 @@
 #include "SoundPlayer.h"
 #include "ThemeLoader.h"
 
+#include <QFile>
 #include <QUrl>
 
 #include <algorithm>
+#include <atomic>
 
 #ifdef MEADOW_WITH_MULTIMEDIA
 #include <QAudioOutput>
 #include <QMediaPlayer>
 #endif
+
+namespace {
+std::atomic_bool g_allMuted{false};
+}
+
+void SoundPlayer::setAllMuted(bool muted)
+{
+    g_allMuted = muted;
+}
+
+bool SoundPlayer::allMuted()
+{
+    return g_allMuted;
+}
+
+double SoundPlayer::secondsSinceBoot()
+{
+    QFile f(QStringLiteral("/proc/uptime"));
+    if (!f.open(QIODevice::ReadOnly))
+        return -1;
+    bool ok = false;
+    const double up = QString::fromLatin1(f.readLine()).section(QLatin1Char(' '), 0, 0).toDouble(&ok);
+    return ok ? up : -1;
+}
 
 SoundPlayer::SoundPlayer(QObject *parent)
     : QObject(parent)
@@ -69,30 +95,60 @@ QString SoundPlayer::resolve(const QString &event) const
 
 bool SoundPlayer::play(const QString &event)
 {
-    if (m_muted)
+    if (m_muted || g_allMuted)
         return false;
     const QString url = resolve(event);
     if (url.isEmpty()) {
         qCDebug(lcSound) << "no sound file for event" << event;
         return false;
     }
+    return startPlayback(url, event);
+}
+
+bool SoundPlayer::playFile(const QString &pathOrUrl)
+{
+    if (m_muted || g_allMuted || pathOrUrl.isEmpty())
+        return false;
+    const QUrl url = pathOrUrl.startsWith(QLatin1Char('/')) ? QUrl::fromLocalFile(pathOrUrl) : QUrl(pathOrUrl);
+    if (!url.isLocalFile() || !QFile::exists(url.toLocalFile())) {
+        qCDebug(lcSound) << "not a local sound file:" << pathOrUrl;
+        return false;
+    }
+    return startPlayback(url.toString(), QStringLiteral("file"));
+}
+
+void SoundPlayer::stop()
+{
+#ifdef MEADOW_WITH_MULTIMEDIA
+    if (m_player)
+        m_player->stop();
+#endif
+}
+
+bool SoundPlayer::startPlayback(const QString &url, const QString &what)
+{
 #ifdef MEADOW_WITH_MULTIMEDIA
     if (!m_player) {
         m_player = new QMediaPlayer(this);
         m_output = new QAudioOutput(this);
         m_output->setVolume(float(m_volume));
         m_player->setAudioOutput(m_output);
-        connect(m_player, &QMediaPlayer::errorOccurred, this, [](QMediaPlayer::Error, const QString &message) {
+        connect(m_player, &QMediaPlayer::errorOccurred, this, [this](QMediaPlayer::Error, const QString &message) {
             qCWarning(lcSound).noquote() << "playback failed:" << message;
+            Q_EMIT finished();
+        });
+        connect(m_player, &QMediaPlayer::mediaStatusChanged, this, [this](QMediaPlayer::MediaStatus status) {
+            if (status == QMediaPlayer::EndOfMedia || status == QMediaPlayer::InvalidMedia)
+                Q_EMIT finished();
         });
     }
     m_player->stop();
     m_player->setSource(QUrl(url));
     m_player->play();
-    qCDebug(lcSound) << "playing" << event << url;
+    qCDebug(lcSound) << "playing" << what << url;
     return true;
 #else
-    qCDebug(lcSound) << "built without QtMultimedia; would play" << event << url;
+    qCDebug(lcSound) << "built without QtMultimedia; would play" << what << url;
     return false;
 #endif
 }

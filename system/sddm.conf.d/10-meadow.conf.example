@@ -2,6 +2,8 @@
 # Never installed into /etc by a package.
 [Theme]
 Current=meadow
+# Meadow's own cursors on the Welcome screen (package meadow-themes).
+CursorTheme=meadow-cursors
 
 [General]
 # meadow-setup sets this to match the installed sddm-wayland-* / sddm-x11 package.

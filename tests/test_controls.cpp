@@ -34,20 +34,31 @@ private Q_SLOTS:
         QVERIFY(player.resolve(QStringLiteral("logon")).isEmpty()); // no file yet
         QVERIFY(player.resolve(QStringLiteral("no-such-event")).isEmpty());
 
-        QFile bundled(dir.filePath(QStringLiteral("logon.oga")));
+        QFile bundled(dir.filePath(QStringLiteral("desktop-login.oga")));
         QVERIFY(bundled.open(QIODevice::WriteOnly));
         bundled.close();
         QCOMPARE(player.resolve(QStringLiteral("logon")), QUrl::fromLocalFile(bundled.fileName()).toString());
 
         // A user override with the same name wins.
         QVERIFY(QDir().mkpath(dir.filePath(QStringLiteral("home/meadow/assets-override"))));
-        QFile override(dir.filePath(QStringLiteral("home/meadow/assets-override/logon.oga")));
+        QFile override(dir.filePath(QStringLiteral("home/meadow/assets-override/desktop-login.oga")));
         QVERIFY(override.open(QIODevice::WriteOnly));
         override.close();
         QCOMPARE(player.resolve(QStringLiteral("logon")), QUrl::fromLocalFile(override.fileName()).toString());
 
         player.setMuted(true);
         QVERIFY(!player.play(QStringLiteral("logon")));
+        player.setMuted(false);
+
+        // "[Sounds] enabled=false" mutes every player, live.
+        SoundPlayer::setAllMuted(true);
+        QVERIFY(!player.play(QStringLiteral("logon")));
+        QVERIFY(!player.playFile(override.fileName()));
+        SoundPlayer::setAllMuted(false);
+
+        // playFile accepts local files only.
+        QVERIFY(!player.playFile(QStringLiteral("https://example.org/a.oga")));
+        QVERIFY(!player.playFile(dir.filePath(QStringLiteral("missing.oga"))));
 
         qunsetenv("MEADOW_SOUND_DIR");
         qunsetenv("XDG_DATA_HOME");

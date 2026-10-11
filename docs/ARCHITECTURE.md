@@ -170,8 +170,29 @@ theme/<scheme>/theme.json ──▶ ThemeLoader (C++) ──▶ QML singleton `T
          │                       ├─ search: $MEADOW_THEME_DIR, ~/.local/share/meadow/themes, /usr/share/meadow/themes
          │                       └─ resolveAsset(): ~/.local/share/meadow/assets-override → /usr/share/meadow/assets-override → bundled
          └──▶ generators: labwc themerc + button SVGs + rc.xml (tools/gen-labwc-theme.py, committed, sync-tested);
-              GTK CSS variables and Kvantum colors (phase 9)
+              GTK 3/4 CSS + images and Kvantum kvconfig + SVG for every scheme, and the
+              session's application defaults (tools/gen-toolkit-themes.py, at build time)
+
+tools/gen-icons.py ───▶ meadow-icons (SVG, 48-unit + 16 px, committed, icons_sync)
+tools/gen-cursors.py ─▶ cursor SVG sources (committed, cursors_sync) ─▶ gen-cursors.sh (rsvg-convert +
+                        xcursorgen, at build time) ─▶ meadow-cursors
+tools/gen-sounds.py ──▶ meadow sound theme (.oga, committed; PCM hashes in pcm.sha256, sounds_sync)
 ```
+
+### Toolkit themes and application defaults (phase 9)
+
+| Part | How |
+|---|---|
+| GTK 3 / GTK 4 | `toolkit-themes/gtk.css.in` imports the toolkit's own default theme, then restyles the common controls as Luna ones. Placeholders such as `@{g:controls.button.gradient.normal}` are filled from the scheme's tokens; `--lint` (ctest `toolkit_themes`) rejects literal colors and pixel sizes. Check boxes, radio buttons, arrows, grips and expanders are SVGs drawn from the same tokens into `assets/`. One theme per scheme (`toolkit.gtkThemeName`). |
+| Kvantum (Qt) | `toolkit-themes/kvantum/MeadowLuna.kvconfig.in` plus an SVG drawn element by element (nine-patch frames, indicators, the green progress block pattern). One theme per scheme (`toolkit.kvantumThemeName`). |
+| Icons | `meadow-icons`: about 170 original icons and 220 alias symlinks (places, devices, mimetypes, apps and categories, actions, status), each in a full 48-unit drawing and a simplified 16 px one. `Inherits=Adwaita,hicolor`. The shell uses it through `assets.iconTheme`. |
+| Cursors | `meadow-cursors`: 26 cursors (animated wait and progress) at 24/32/48 px with the X11, CSS and legacy hash names as symlinks. |
+| Sounds | `meadow`: 13 synthesized sounds named after the freedesktop sound-naming spec, so libcanberra applications use them too. |
+| Fonts | `50-meadow.conf` aliases the classic UI font names to open fonts. It is not linked into `/etc/fonts/conf.d`; Meadow sessions load it through `FONTCONFIG_FILE` (`/usr/share/meadow/fontconfig/fonts.conf`, which loads the aliases and then the system configuration). |
+| Defaults | `meadow-session` sets `DCONF_PROFILE` (`user-db:user` then a read-only Meadow database: GTK theme, icons, cursors, fonts, sound theme), puts `$XDG_RUNTIME_DIR/meadow/xdg-<pid>` and `/usr/share/meadow/xdg` (Kvantum theme choice, PCManFM-Qt and GTK `settings.ini` defaults) in front of `XDG_CONFIG_DIRS`, and exports both to the D-Bus/systemd activation environment so portals see them (GTK 4 reads its settings through xdg-desktop-portal-gtk). The user's own settings always win. |
+| Leak guard | `meadow-session` runs labwc as a child instead of `exec`. When labwc exits it unsets Meadow's variables from the user's systemd environment, stops xdg-desktop-portal-gtk (which read Meadow's defaults) and removes the per-session directories, so a later GNOME or KDE session of the same user is not affected. SIGTERM is forwarded to labwc. |
+| Scheme switch | `ToolkitThemeSync` (shell) follows the loaded scheme: it sets `GTK_THEME` in the shell's environment, so applications it starts inherit it, and writes the scheme's Kvantum theme to the per-session config directory. Running applications keep their theme until restarted. |
+| Sound events | `ShellSounds` (shell): logon when the session starts (not after a crash restart, `MEADOW_RESTARTED`), log-off and shutdown sounds before those actions (waiting at most `sounds.maxWaitMs`), notification sounds (`sound-name`, `sound-file`, `suppress-sound`; normal and critical urgency), Run errors and emptying the Recycle Bin. The greeter plays the startup sound when it appears within `welcome.startupSoundUptimeSec` of boot; unlocking is silent. `[Sounds] enabled` mutes every player live. |
 
 - `theme/schema.json` lists every token path and its type. It is generated from
   `luna-blue`, and `tools/theme-schema.py check` (a ctest) makes every scheme
@@ -335,6 +356,8 @@ first uses them. The Fedora spec already BuildRequires all of them.
 | Desktop icon positions | `~/.local/share/meadow/desktop-layout.json` | shell |
 | Lock flag | `$XDG_RUNTIME_DIR/meadow/locked` | shell |
 | labwc runtime rc.xml | `$XDG_RUNTIME_DIR/meadow/labwc-<pid>/rc.xml` | shell (overlay only) |
+| Kvantum theme for the scheme | `$XDG_RUNTIME_DIR/meadow/xdg-<pid>/Kvantum/kvantum.kvconfig` | shell (session only) |
+| Application defaults | `/usr/share/meadow/dconf/`, `/usr/share/meadow/xdg/`, `/usr/share/meadow/fontconfig/` | package (read-only; used only by Meadow sessions) |
 | PAM | `/etc/pam.d/sddm` (marked block) | `meadow-setup` only |
 | PAM, lock screen | `/etc/pam.d/meadow-lock` | package (password-only, `%config(noreplace)`); `meadow-setup` adds or removes the marked fingerprint block |
 
@@ -366,7 +389,8 @@ first uses them. The Fedora spec already BuildRequires all of them.
 | The labwc / LayerShellQt API changes | Wrap it in a small helper and pin minimum versions in the spec. |
 | Headless CI can't show real Wayland | `--preview` + `QT_QPA_PLATFORM=offscreen`; labwc with `WLR_BACKENDS=headless` for screenshot tests. |
 | Fedora's Qt logs to journald, so test failures go unseen | ctest sets `QT_FORCE_STDERR_LOGGING=1`, and the smoke test fails on QML errors. |
-| Microsoft assets creep in | `tools/check-assets.sh` runs in ctest and CI. |
+| Microsoft assets creep in | `tools/check-assets.sh` runs in ctest and CI; audio must be listed in the generated sound manifest. |
+| Meadow's application defaults leak into other desktops | Session-scoped only (`DCONF_PROFILE`, `XDG_CONFIG_DIRS`, `FONTCONFIG_FILE`); unset from the systemd environment when the session ends (ctest `session_defaults`). |
 
 ## 9. Roadmap
 
@@ -380,7 +404,7 @@ first uses them. The Fedora spec already BuildRequires all of them.
 | 6 | Taskbar, tray, notifications, clock, volume/network/battery (done) |
 | 7 | Start menu, All Programs, Run, Log Off / Turn Off dialogs (done) |
 | 8 | Desktop, lock screen, Display Properties, Control Panel, Alt+Tab (done) |
-| 9 | GTK/Kvantum themes, icons, cursors, sounds, fontconfig |
+| 9 | GTK/Kvantum themes, icons, cursors, sounds, fontconfig (done) |
 | 10 | Generic installer, Arch/Debian packaging, performance, crash resilience |
 | 11 | Fedora RPM, `meadow-setup`, SELinux, COPR/Packit, test VM |
 | 12 | Verification and final report |

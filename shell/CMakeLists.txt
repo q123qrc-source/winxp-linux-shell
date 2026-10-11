@@ -20,6 +20,8 @@ qt_add_library(meadow-shell-core STATIC
     src/services/RunService.h src/services/RunService.cpp
     src/services/PowerService.h src/services/PowerService.cpp
     src/services/SessionService.h src/services/SessionService.cpp
+    src/services/ShellSounds.h src/services/ShellSounds.cpp
+    src/services/ToolkitThemeSync.h src/services/ToolkitThemeSync.cpp
     src/services/VolumeService.h src/services/VolumeService.cpp
     src/services/NetworkService.h src/services/NetworkService.cpp
     src/services/BatteryService.h src/services/BatteryService.cpp

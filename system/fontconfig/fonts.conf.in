@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+<!-- SPDX-License-Identifier: GPL-3.0-or-later
+     Meadow sessions' fontconfig configuration (FONTCONFIG_FILE, set by
+     meadow-session): Meadow's font aliases, then the system configuration,
+     unchanged. The aliases come first so that their generic family (for
+     example monospace for Lucida Console) is in place before the system's
+     "no generic family, add sans-serif" rule runs. Outside a Meadow session
+     nothing changes. -->
+<fontconfig>
+  <include ignore_missing="yes">@MEADOW_FONT_ALIASES@</include>
+  <include ignore_missing="no">/etc/fonts/fonts.conf</include>
+</fontconfig>

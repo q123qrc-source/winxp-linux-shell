@@ -31,6 +31,7 @@ Q_MOC_INCLUDE("services/LabwcConfig.h")
 Q_MOC_INCLUDE("models/DesktopModel.h")
 Q_MOC_INCLUDE("auth/LockAuthenticator.h")
 Q_MOC_INCLUDE("wayland/SessionLock.h")
+Q_MOC_INCLUDE("services/ShellSounds.h")
 
 class AppMenuModel;
 class RecentAppsModel;
@@ -48,6 +49,7 @@ class LabwcConfig;
 class DesktopModel;
 class LockAuthenticator;
 class SessionLock;
+class ShellSounds;
 
 class AppRegistry;
 class BatteryService;
@@ -100,6 +102,7 @@ class ShellContext : public QObject
     Q_PROPERTY(DesktopModel *desktop READ desktop CONSTANT)
     Q_PROPERTY(LockAuthenticator *lockAuth READ lockAuth CONSTANT)
     Q_PROPERTY(SessionLock *lock READ lock CONSTANT)
+    Q_PROPERTY(ShellSounds *sounds READ sounds CONSTANT)
     // Login name, for the Start menu header.
     Q_PROPERTY(QString userName READ userName CONSTANT)
     // Wall clock, updated at each minute boundary; fixed when
@@ -136,6 +139,7 @@ public:
         DesktopModel *desktop = nullptr;
         LockAuthenticator *lockAuth = nullptr;
         SessionLock *lock = nullptr;
+        ShellSounds *sounds = nullptr;
     };
 
     ShellContext(const Services &services, bool preview, QObject *parent = nullptr);
@@ -171,6 +175,7 @@ public:
     DesktopModel *desktop() const { return m_s.desktop; }
     LockAuthenticator *lockAuth() const { return m_s.lockAuth; }
     SessionLock *lock() const { return m_s.lock; }
+    ShellSounds *sounds() const { return m_s.sounds; }
     static QString userName();
 
     // Modifiers held right now (Alt+Tab checks whether Alt is still down

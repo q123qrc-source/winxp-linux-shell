@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "IconProvider.h"
 
+#include <QDir>
 #include <QFileInfo>
 #include <QIcon>
 #include <QLinearGradient>
@@ -11,6 +12,16 @@
 IconProvider::IconProvider()
     : QQuickImageProvider(QQuickImageProvider::Pixmap)
 {
+}
+
+void IconProvider::useIconTheme(const QString &name)
+{
+    const QString extra = qEnvironmentVariable("MEADOW_ICON_DIRS");
+    if (!extra.isEmpty())
+        QIcon::setThemeSearchPaths(extra.split(QDir::listSeparator(), Qt::SkipEmptyParts) + QIcon::themeSearchPaths());
+    if (!name.isEmpty())
+        QIcon::setThemeName(name);
+    QIcon::setFallbackThemeName(QStringLiteral("hicolor"));
 }
 
 QPixmap IconProvider::genericIcon(int s)

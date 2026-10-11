@@ -139,6 +139,36 @@ add_test(NAME labwc_config COMMAND Python3::Interpreter ${CMAKE_CURRENT_SOURCE_D
 add_test(NAME labwc_config_smoke COMMAND ${PROJECT_SOURCE_DIR}/tools/labwc-config-smoke.sh)
 set_tests_properties(labwc_config_smoke PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 60)
 
+# Icon theme: committed SVGs match tools/gen-icons.py and all render.
+add_test(NAME icons_sync COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/tools/gen-icons.py --check)
+add_test(NAME icons_render COMMAND ${PROJECT_SOURCE_DIR}/tools/render-icons.sh)
+set_tests_properties(icons_render PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 300)
+
+# Cursor theme: committed SVG sources match tools/gen-cursors.py; the built
+# XCursor files are complete.
+add_test(NAME cursors_sync COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/tools/gen-cursors.py --check)
+if(TARGET meadow-cursors)
+    add_test(NAME cursors_build COMMAND Python3::Interpreter ${CMAKE_CURRENT_SOURCE_DIR}/test_cursors.py
+                                        ${CMAKE_BINARY_DIR}/toolkit-themes/meadow-cursors/cursors
+                                        ${PROJECT_SOURCE_DIR}/toolkit-themes/cursors/src)
+endif()
+
+# Sound theme: the committed sounds match tools/gen-sounds.py's PCM.
+add_test(NAME sounds_sync COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/tools/gen-sounds.py --check)
+set_tests_properties(sounds_sync PROPERTIES TIMEOUT 120)
+
+# Font aliases, applied through the session's fonts.conf.
+add_test(NAME fontconfig COMMAND Python3::Interpreter ${CMAKE_CURRENT_SOURCE_DIR}/test_fontconfig.py)
+set_tests_properties(fontconfig PROPERTIES SKIP_RETURN_CODE 77)
+
+# meadow-session's session-scoped application defaults and their cleanup.
+add_test(NAME session_defaults COMMAND Python3::Interpreter ${CMAKE_CURRENT_SOURCE_DIR}/test_session_defaults.py
+                                       ${CMAKE_BINARY_DIR})
+set_tests_properties(session_defaults PROPERTIES TIMEOUT 120)
+
+# GTK/Kvantum themes generated from theme.json: lint, completeness.
+add_test(NAME toolkit_themes COMMAND Python3::Interpreter ${CMAKE_CURRENT_SOURCE_DIR}/test_toolkit_themes.py)
+
 add_test(NAME qml_literals
          COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/tools/check-qml-literals.py ${PROJECT_SOURCE_DIR})
 

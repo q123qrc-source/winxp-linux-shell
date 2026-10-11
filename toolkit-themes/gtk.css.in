@@ -1,0 +1,700 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later
+ * Meadow Luna GTK theme template, shared by GTK 3 and GTK 4.
+ * tools/gen-toolkit-themes.py expands it per scheme from theme.json; edit the
+ * tokens, not the generated gtk.css. Colors and sizes come from token
+ * placeholders only (checked by `gen-toolkit-themes.py --lint`).
+ *
+ * The toolkit's own default theme is imported first, so widgets this file
+ * does not restyle still look complete; the rules below turn the common
+ * controls into Luna ones. */
+@if gtk3
+@import url("resource:///org/gtk/libgtk/theme/Adwaita/gtk-contained.css");
+@endif
+@if gtk4
+@import url("resource:///org/gtk/libgtk/theme/Default/Default-light.css");
+@endif
+
+@define-color theme_bg_color @{c:colors.windowBackground};
+@define-color theme_fg_color @{c:colors.windowText};
+@define-color theme_base_color @{c:controls.list.background};
+@define-color theme_text_color @{c:colors.windowText};
+@define-color theme_selected_bg_color @{c:colors.selection};
+@define-color theme_selected_fg_color @{c:colors.selectionText};
+@define-color insensitive_fg_color @{c:colors.disabledText};
+@define-color borders @{c:toolkit.gtk.frameBorderColor};
+@define-color accent_bg_color @{c:colors.selection};
+@define-color accent_color @{c:colors.accent};
+@define-color window_bg_color @{c:colors.windowBackground};
+@define-color window_fg_color @{c:colors.windowText};
+@define-color view_bg_color @{c:controls.list.background};
+@define-color view_fg_color @{c:colors.windowText};
+
+/* --- Base ----------------------------------------------------------------- */
+
+window, dialog, .background {
+  background-color: @{c:colors.windowBackground};
+  color: @{c:colors.windowText};
+}
+
+window {
+  font-family: @{ff:fonts.ui.families};
+  font-size: @{fs:fonts.ui.pixelSize};
+}
+
+*:disabled { color: @{c:colors.disabledText}; }
+
+*:selected, *:selected:focus {
+  background-color: @{c:colors.selection};
+  color: @{c:colors.selectionText};
+}
+
+link, *:link, button.link { color: @{c:toolkit.linkColor}; }
+link:visited, *:visited { color: @{c:toolkit.visitedLinkColor}; }
+
+separator {
+  background-color: @{c:toolkit.gtk.separatorColor};
+  min-width: 1px;
+  min-height: 1px;
+}
+
+/* --- Buttons --------------------------------------------------------------- */
+
+button {
+  min-height: @{px:controls.button.height};
+  padding: 0 @{px:controls.button.paddingH};
+  border: 1px solid @{c:controls.button.borderColor};
+  border-radius: @{px:controls.button.radius};
+  background-color: transparent;
+  background-image: @{g:controls.button.gradient.normal};
+  box-shadow: none;
+  text-shadow: none;
+  color: @{c:controls.button.textColor};
+  outline: 1px dotted transparent;
+  outline-offset: -@{px:controls.button.focusRingInset};
+@if gtk3
+  -gtk-outline-radius: 0;
+@endif
+}
+
+/* The dotted focus rectangle, only while focused from the keyboard. */
+@if gtk3
+button:focus, checkbutton:focus, radiobutton:focus, link:focus, button.link:focus {
+@endif
+@if gtk4
+button:focus-visible, checkbutton:focus-visible, link:focus-visible, button.link:focus-visible {
+@endif
+  outline-color: @{c:colors.focusRing};
+}
+
+button:hover {
+  background-image: @{g:controls.button.gradient.hover};
+  box-shadow: inset 0 @{px:controls.button.ringWidth} @{c:controls.button.hoverRingColors.0},
+              inset 0 -@{px:controls.button.ringWidth} @{c:controls.button.hoverRingColors.2},
+              inset @{px:controls.button.ringWidth} 0 @{c:controls.button.hoverRingColors.1},
+              inset -@{px:controls.button.ringWidth} 0 @{c:controls.button.hoverRingColors.1};
+}
+
+button.default, button.suggested-action {
+  box-shadow: inset 0 @{px:controls.button.ringWidth} @{c:controls.button.defaultRingColors.0},
+              inset 0 -@{px:controls.button.ringWidth} @{c:controls.button.defaultRingColors.2},
+              inset @{px:controls.button.ringWidth} 0 @{c:controls.button.defaultRingColors.1},
+              inset -@{px:controls.button.ringWidth} 0 @{c:controls.button.defaultRingColors.1};
+  color: @{c:controls.button.textColor};
+  background-color: transparent;
+}
+
+button.destructive-action { color: @{c:controls.button.textColor}; background-color: transparent; }
+
+button:active, button:checked, button.default:active, button.suggested-action:active {
+  background-image: @{g:controls.button.gradient.pressed};
+  box-shadow: none;
+}
+
+button:disabled {
+  border-color: @{c:controls.button.disabledBorderColor};
+  background-image: @{g:controls.button.gradient.disabled};
+  box-shadow: none;
+  color: @{c:colors.disabledText};
+}
+
+button.flat, button.image-button.flat, headerbar button.flat {
+  border-color: transparent;
+  background-image: none;
+  box-shadow: none;
+}
+
+button.flat:hover {
+  border-color: @{c:controls.button.borderColor};
+  background-image: @{g:controls.button.gradient.hover};
+}
+
+/* --- Check boxes and radio buttons ------------------------------------------ */
+
+check, radio {
+  min-width: @{px:controls.checkBox.size};
+  min-height: @{px:controls.checkBox.size};
+  margin: 0 @{px:controls.checkBox.spacing} 0 0;
+  padding: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
+  -gtk-icon-source: url("assets/check-unchecked.svg");
+@if gtk3
+  -gtk-icon-shadow: none;
+@endif
+}
+
+check:hover { -gtk-icon-source: url("assets/check-unchecked-hover.svg"); }
+check:active { -gtk-icon-source: url("assets/check-unchecked-active.svg"); }
+check:disabled { -gtk-icon-source: url("assets/check-unchecked-disabled.svg"); }
+check:checked { -gtk-icon-source: url("assets/check-checked.svg"); }
+check:checked:hover { -gtk-icon-source: url("assets/check-checked-hover.svg"); }
+check:checked:active { -gtk-icon-source: url("assets/check-checked-active.svg"); }
+check:checked:disabled { -gtk-icon-source: url("assets/check-checked-disabled.svg"); }
+check:indeterminate { -gtk-icon-source: url("assets/check-mixed.svg"); }
+check:indeterminate:hover { -gtk-icon-source: url("assets/check-mixed-hover.svg"); }
+check:indeterminate:disabled { -gtk-icon-source: url("assets/check-mixed-disabled.svg"); }
+
+radio { -gtk-icon-source: url("assets/radio-unchecked.svg"); }
+radio:hover { -gtk-icon-source: url("assets/radio-unchecked-hover.svg"); }
+radio:active { -gtk-icon-source: url("assets/radio-unchecked-active.svg"); }
+radio:disabled { -gtk-icon-source: url("assets/radio-unchecked-disabled.svg"); }
+radio:checked { -gtk-icon-source: url("assets/radio-checked.svg"); }
+radio:checked:hover { -gtk-icon-source: url("assets/radio-checked-hover.svg"); }
+radio:checked:active { -gtk-icon-source: url("assets/radio-checked-active.svg"); }
+radio:checked:disabled { -gtk-icon-source: url("assets/radio-checked-disabled.svg"); }
+
+checkbutton, radiobutton, link, button.link { outline: 1px dotted transparent; }
+
+/* --- Text entries --------------------------------------------------------------- */
+
+entry, spinbutton:not(.vertical), textview border {
+  min-height: @{px:controls.textField.height};
+  padding: 0 @{px:controls.textField.padding};
+  border: 1px solid @{c:controls.textField.borderColor};
+  border-radius: 0;
+  background-color: @{c:controls.textField.background};
+  background-image: none;
+  box-shadow: none;
+  color: @{c:controls.textField.textColor};
+  outline: none;
+}
+
+entry:focus, entry:focus-within, spinbutton:focus-within {
+  border-color: @{c:controls.textField.focusBorderColor};
+  box-shadow: none;
+}
+
+entry:disabled, spinbutton:disabled {
+  background-color: @{c:controls.textField.disabledBackground};
+  color: @{c:colors.disabledText};
+}
+
+entry selection, text selection, entry > text > selection, textview text selection, label selection {
+  background-color: @{c:controls.textField.selectionColor};
+  color: @{c:colors.selectionText};
+}
+
+/* --- Spin buttons: blue arrow buttons --------------------------------------------- */
+
+spinbutton button, spinbutton:not(.vertical) > button, spinbutton:not(.vertical) > button.image-button {
+  min-width: @{px:controls.spinBox.buttonWidth};
+  min-height: 0;
+  padding: 0;
+  border: 1px solid @{c:controls.textField.background};
+  border-radius: @{px:controls.spinBox.buttonRadius};
+  background-image: @{g:controls.spinBox.buttonGradient};
+  box-shadow: none;
+  color: @{c:controls.spinBox.arrowColor};
+}
+
+spinbutton button:hover, spinbutton:not(.vertical) > button:hover { background-image: @{g:controls.spinBox.buttonHoverGradient}; box-shadow: none; }
+spinbutton button:active, spinbutton:not(.vertical) > button:active { background-image: @{g:controls.spinBox.buttonPressedGradient}; }
+
+/* --- Combo boxes: a white field and a blue drop-down button ------------------------ */
+
+@if gtk3
+combobox button.combo, combobox box.linked > button.combo {
+@endif
+@if gtk4
+dropdown > button, combobox button.combo {
+@endif
+  padding: 0 0 0 @{px:controls.textField.padding};
+  border: 1px solid @{c:controls.comboBox.borderColor};
+  border-radius: 0;
+  background-image: none;
+  background-color: @{c:controls.textField.background};
+  box-shadow: none;
+}
+
+@if gtk3
+combobox button.combo arrow {
+@endif
+@if gtk4
+dropdown > button arrow, combobox button.combo arrow {
+@endif
+  min-width: @{px:controls.comboBox.buttonWidth};
+  min-height: @{px:controls.comboBox.buttonWidth};
+  margin: 0;
+  border: 1px solid @{c:controls.textField.background};
+  border-radius: @{px:controls.spinBox.buttonRadius};
+  background-image: @{g:controls.comboBox.buttonGradient};
+  -gtk-icon-source: url("assets/combo-arrow.svg");
+}
+
+@if gtk3
+combobox button.combo:hover arrow {
+@endif
+@if gtk4
+dropdown > button:hover arrow, combobox button.combo:hover arrow {
+@endif
+  background-image: @{g:controls.comboBox.buttonHoverGradient};
+}
+
+/* --- Scrollbars ------------------------------------------------------------------------ */
+
+@if gtk3
+scrollbar {
+  -GtkScrollbar-has-backward-stepper: true;
+  -GtkScrollbar-has-forward-stepper: true;
+}
+@endif
+
+scrollbar, scrollbar > range > trough {
+  padding: 0;
+  background-color: @{c:controls.scrollBar.trackColor};
+  background-image: none;
+  border: none;
+  transition: none;
+}
+
+scrollbar slider, scrollbar > range > trough > slider {
+  min-width: @{px:controls.scrollBar.width};
+  min-height: @{px:controls.scrollBar.minThumbLength};
+  margin: 0;
+  border: 1px solid @{c:controls.scrollBar.thumbBorderColor};
+  border-radius: @{px:controls.scrollBar.thumbRadius};
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-image: url("assets/grip-v.svg"), @{gh:controls.scrollBar.thumbGradient};
+  box-shadow: inset 1px 1px @{c:colors.white};
+}
+
+scrollbar.horizontal slider, scrollbar.horizontal > range > trough > slider {
+  min-width: @{px:controls.scrollBar.minThumbLength};
+  min-height: @{px:controls.scrollBar.width};
+  background-image: url("assets/grip-h.svg"), @{g:controls.scrollBar.thumbGradient};
+}
+
+scrollbar slider:hover, scrollbar > range > trough > slider:hover {
+  background-image: url("assets/grip-v.svg"), @{gh:controls.scrollBar.thumbHoverGradient};
+}
+
+scrollbar.horizontal slider:hover, scrollbar.horizontal > range > trough > slider:hover {
+  background-image: url("assets/grip-h.svg"), @{g:controls.scrollBar.thumbHoverGradient};
+}
+
+scrollbar button {
+  min-width: @{px:controls.scrollBar.width};
+  min-height: @{px:controls.scrollBar.width};
+  padding: 0;
+  border: 1px solid @{c:controls.scrollBar.thumbBorderColor};
+  border-radius: @{px:controls.scrollBar.thumbRadius};
+  background-image: @{gh:controls.scrollBar.thumbGradient};
+  box-shadow: inset 1px 1px @{c:colors.white};
+}
+
+scrollbar button:hover { background-image: @{gh:controls.scrollBar.thumbHoverGradient}; }
+scrollbar.vertical button.down { -gtk-icon-source: url("assets/arrow-down.svg"); }
+scrollbar.vertical button.up { -gtk-icon-source: url("assets/arrow-up.svg"); }
+scrollbar.horizontal button.down { -gtk-icon-source: url("assets/arrow-right.svg"); }
+scrollbar.horizontal button.up { -gtk-icon-source: url("assets/arrow-left.svg"); }
+
+/* --- Progress bars: green blocks ------------------------------------------------------- */
+
+progressbar trough, progressbar.horizontal > trough {
+  min-height: @{px:controls.progressBar.height};
+  padding: 1px;
+  border: 1px solid @{c:controls.progressBar.borderColor};
+  border-radius: @{px:controls.button.radius};
+  background-color: @{c:colors.white};
+  background-image: none;
+  box-shadow: none;
+}
+
+progressbar progress, progressbar.horizontal > trough > progress {
+  min-height: @{px:controls.progressBar.height};
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  background-image: repeating-linear-gradient(to right,
+                      transparent 0, transparent @{px:controls.progressBar.blockWidth},
+                      @{c:colors.white} @{px:controls.progressBar.blockWidth},
+                      @{c:colors.white} @{px:derived.progressBlockPeriod}),
+                    @{g:controls.progressBar.blockGradient};
+  box-shadow: none;
+}
+
+progressbar.vertical progress {
+  background-image: repeating-linear-gradient(to top,
+                      transparent 0, transparent @{px:controls.progressBar.blockWidth},
+                      @{c:colors.white} @{px:controls.progressBar.blockWidth},
+                      @{c:colors.white} @{px:derived.progressBlockPeriod}),
+                    @{gh:controls.progressBar.blockGradient};
+}
+
+progressbar text { color: @{c:colors.windowText}; }
+
+@if gtk3
+levelbar block.filled { background-image: @{g:controls.progressBar.blockGradient}; border-color: @{c:controls.progressBar.borderColor}; }
+@endif
+
+/* --- Notebooks (tabs) ----------------------------------------------------------------- */
+
+notebook > header {
+  background-color: transparent;
+  background-image: none;
+  border: none;
+  box-shadow: none;
+}
+
+notebook > header tab, notebook > header > tabs > tab {
+  min-height: @{px:controls.tab.height};
+  padding: 0 @{px:controls.tab.paddingH};
+  margin: @{px:controls.tab.selectedRaise} 0 0 0;
+  border: 1px solid @{c:controls.tab.borderColor};
+  border-bottom: none;
+  border-radius: @{px:controls.tab.radius} @{px:controls.tab.radius} 0 0;
+  background-color: transparent;
+  background-image: @{g:controls.tab.gradient};
+  box-shadow: none;
+  outline: none;
+  color: @{c:colors.windowText};
+}
+
+notebook > header tab:hover, notebook > header tab:checked,
+notebook > header > tabs > tab:hover, notebook > header > tabs > tab:checked {
+  background-image: linear-gradient(to bottom, @{c:controls.tab.hotLineGradient.0.color} 0,
+                                    @{c:controls.tab.hotLineGradient.1.color} @{px:controls.tab.hotLineHeight},
+                                    transparent @{px:controls.tab.hotLineHeight}),
+                    @{g:controls.tab.gradient};
+}
+
+notebook > header tab:checked, notebook > header > tabs > tab:checked {
+  margin-top: 0;
+  background-image: linear-gradient(to bottom, @{c:controls.tab.hotLineGradient.0.color} 0,
+                                    @{c:controls.tab.hotLineGradient.1.color} @{px:controls.tab.hotLineHeight},
+                                    transparent @{px:controls.tab.hotLineHeight}),
+                    linear-gradient(to bottom, @{c:controls.tab.paneBackground}, @{c:controls.tab.paneBackground});
+}
+
+notebook > stack:not(:only-child) {
+  border: 1px solid @{c:controls.tab.borderColor};
+  background-image: @{g:controls.tab.paneGradient};
+}
+
+/* --- Menus ------------------------------------------------------------------------------- */
+
+@if gtk3
+menubar {
+  padding: 0;
+  background-color: @{c:colors.windowBackground};
+  background-image: none;
+  box-shadow: none;
+  border: none;
+}
+
+menubar > menuitem { padding: @{px:controls.menu.paddingY} @{px:controls.menu.paddingX}; }
+
+menubar > menuitem:hover, menu menuitem:hover {
+  background-color: @{c:controls.menu.hoverBackground};
+  color: @{c:controls.menu.hoverText};
+  box-shadow: none;
+}
+
+menu, .menu, .context-menu {
+  padding: @{px:toolkit.gtk.spacingSmall};
+  border: 1px solid @{c:controls.menu.borderColor};
+  border-radius: 0;
+  background-color: @{c:controls.menu.background};
+  color: @{c:colors.windowText};
+}
+
+menu menuitem {
+  min-height: @{px:controls.menu.itemHeight};
+  padding: 0 @{px:controls.menu.paddingX};
+  text-shadow: none;
+}
+
+menu menuitem:disabled { color: @{c:colors.disabledText}; }
+
+menu separator { margin: @{px:controls.menu.separatorPadding} 0; }
+
+menu menuitem check, menu menuitem radio {
+  min-width: @{px:controls.menu.glyphSize};
+  min-height: @{px:controls.menu.glyphSize};
+  margin: 0 @{px:toolkit.gtk.spacingMedium} 0 0;
+  -gtk-icon-source: none;
+}
+
+menu menuitem check:checked { -gtk-icon-source: url("assets/menu-check.svg"); }
+menu menuitem:hover check:checked { -gtk-icon-source: url("assets/menu-check-hover.svg"); }
+menu menuitem radio:checked { -gtk-icon-source: url("assets/menu-radio.svg"); }
+menu menuitem:hover radio:checked { -gtk-icon-source: url("assets/menu-radio-hover.svg"); }
+menu menuitem arrow { -gtk-icon-source: url("assets/menu-arrow.svg"); min-width: @{px:controls.menu.glyphSize}; }
+menu menuitem:hover arrow { -gtk-icon-source: url("assets/menu-arrow-hover.svg"); }
+@endif
+
+@if gtk4
+popover.menu > contents, popover > contents {
+  padding: @{px:toolkit.gtk.spacingSmall};
+  border: 1px solid @{c:controls.menu.borderColor};
+  border-radius: 0;
+  background-color: @{c:controls.menu.background};
+  box-shadow: @{px:controls.menu.shadowOffset} @{px:controls.menu.shadowOffset} 0 @{c:controls.menu.shadowColor};
+  color: @{c:colors.windowText};
+}
+
+popover > arrow { background-color: @{c:controls.menu.background}; border: 1px solid @{c:controls.menu.borderColor}; }
+
+popover.menu modelbutton {
+  min-height: @{px:controls.menu.itemHeight};
+  padding: 0 @{px:controls.menu.paddingX};
+  border-radius: 0;
+}
+
+popover.menu modelbutton:hover, popover.menu modelbutton:selected, popover.menu modelbutton:focus {
+  background-color: @{c:controls.menu.hoverBackground};
+  color: @{c:controls.menu.hoverText};
+}
+
+popover.menu check, popover.menu radio {
+  min-width: @{px:controls.menu.glyphSize};
+  min-height: @{px:controls.menu.glyphSize};
+  -gtk-icon-source: none;
+}
+
+popover.menu check:checked { -gtk-icon-source: url("assets/menu-check.svg"); }
+popover.menu modelbutton:hover check:checked { -gtk-icon-source: url("assets/menu-check-hover.svg"); }
+popover.menu radio:checked { -gtk-icon-source: url("assets/menu-radio.svg"); }
+popover.menu modelbutton:hover radio:checked { -gtk-icon-source: url("assets/menu-radio-hover.svg"); }
+
+popovermenubar {
+  background-color: @{c:colors.windowBackground};
+  box-shadow: none;
+}
+
+popovermenubar > item { padding: @{px:controls.menu.paddingY} @{px:controls.menu.paddingX}; border-radius: 0; }
+
+popovermenubar > item:selected {
+  background-color: @{c:controls.menu.hoverBackground};
+  color: @{c:controls.menu.hoverText};
+}
+@endif
+
+/* --- Tooltips ------------------------------------------------------------------------- */
+
+tooltip, tooltip.background {
+  padding: @{px:controls.tooltip.padding};
+  border: 1px solid @{c:controls.tooltip.borderColor};
+  border-radius: 0;
+  background-color: @{c:controls.tooltip.background};
+  background-image: none;
+  box-shadow: none;
+  color: @{c:controls.tooltip.textColor};
+  text-shadow: none;
+}
+
+tooltip * { color: @{c:controls.tooltip.textColor}; }
+
+/* --- Lists and trees ------------------------------------------------------------------ */
+
+treeview.view, list, listview, columnview, iconview, .view {
+  background-color: @{c:controls.list.background};
+  color: @{c:colors.windowText};
+}
+
+treeview.view:selected, list row:selected, listview > row:selected, columnview row:selected,
+iconview:selected, .view:selected {
+  background-color: @{c:controls.list.selectionColor};
+  color: @{c:controls.list.selectionTextColor};
+}
+
+treeview.view:selected:backdrop, list row:selected:backdrop, listview > row:selected:backdrop,
+columnview row:selected:backdrop {
+  background-color: @{c:controls.list.inactiveSelectionColor};
+  color: @{c:colors.windowText};
+}
+
+treeview.view header button, columnview > header > button, columnview listview > header button {
+  min-height: @{px:controls.menu.itemHeight};
+  padding: 0 @{px:toolkit.gtk.spacingMedium};
+  border: none;
+  border-right: 1px solid @{c:toolkit.gtk.listHeaderBorderColor};
+  border-bottom: 1px solid @{c:toolkit.gtk.listHeaderBorderColor};
+  border-radius: 0;
+  background-image: @{g:toolkit.gtk.listHeaderGradient};
+  box-shadow: none;
+}
+
+treeview.view header button:hover, columnview > header > button:hover {
+  box-shadow: inset 0 -@{px:controls.tab.hotLineHeight} @{c:toolkit.gtk.listHeaderHotColor};
+}
+
+@if gtk3
+treeview.view.expander { -gtk-icon-source: url("assets/expander-closed.svg"); color: @{c:colors.windowText}; }
+treeview.view.expander:checked { -gtk-icon-source: url("assets/expander-open.svg"); }
+@endif
+@if gtk4
+expander-widget > box > title > expander, treeexpander > expander, expander {
+  -gtk-icon-source: url("assets/expander-closed.svg");
+}
+expander-widget > box > title > expander:checked, treeexpander > expander:checked, expander:checked {
+  -gtk-icon-source: url("assets/expander-open.svg");
+}
+@endif
+
+/* --- Frames ---------------------------------------------------------------------------- */
+
+frame > border, .frame, scrolledwindow.frame {
+  border: 1px solid @{c:controls.list.borderColor};
+  border-radius: 0;
+  box-shadow: none;
+}
+
+frame > label { color: @{c:controls.groupBox.titleColor}; }
+
+/* --- Scales (sliders) ------------------------------------------------------------------- */
+
+scale trough {
+  min-height: @{px:controls.slider.trackWidth};
+  border: 1px solid @{c:controls.slider.trackBorderColor};
+  border-radius: 0;
+  background-color: @{c:controls.slider.trackColor};
+  background-image: none;
+  box-shadow: none;
+}
+
+scale.vertical trough { min-width: @{px:controls.slider.trackWidth}; }
+
+scale highlight, scale fill { background-image: none; background-color: transparent; border: none; }
+
+scale slider {
+  min-width: @{px:controls.slider.thumbWidth};
+  min-height: @{px:controls.slider.thumbLength};
+  margin: -@{px:controls.slider.thumbWidth} 0;
+  border: 1px solid @{c:controls.slider.thumbBorderColor};
+  border-radius: @{px:controls.slider.thumbRadius};
+  background-image: @{g:controls.slider.thumbGradient};
+  box-shadow: none;
+}
+
+scale.vertical slider {
+  min-width: @{px:controls.slider.thumbLength};
+  min-height: @{px:controls.slider.thumbWidth};
+  margin: 0 -@{px:controls.slider.thumbWidth};
+}
+
+scale slider:hover { border-color: @{c:controls.slider.thumbHoverBorderColor}; }
+
+/* --- Switches: a sunken track with a Luna button thumb ------------------------------------ */
+
+switch {
+  min-width: @{px:toolkit.gtk.switchWidth};
+  min-height: @{px:toolkit.gtk.switchHeight};
+  border: 1px solid @{c:controls.textField.borderColor};
+  border-radius: @{px:controls.button.radius};
+  background-color: @{c:controls.textField.background};
+  background-image: none;
+  box-shadow: none;
+}
+
+switch:checked { background-color: @{c:colors.selection}; }
+
+switch slider {
+  min-width: @{px:controls.slider.thumbLength};
+  border: 1px solid @{c:controls.button.borderColor};
+  border-radius: @{px:controls.button.radius};
+  background-image: @{g:controls.button.gradient.normal};
+  box-shadow: none;
+}
+
+/* --- Header bars (client-side decorations) -------------------------------------------------- */
+
+headerbar, .titlebar:not(headerbar) {
+  min-height: @{px:toolkit.gtk.headerbarHeight};
+  padding: 0 @{px:toolkit.gtk.headerbarPadding};
+  border: none;
+  border-radius: @{px:window.titlebar.radiusTop} @{px:window.titlebar.radiusTop} 0 0;
+  background-color: transparent;
+  background-image: @{g:window.titlebar.gradient.active};
+  box-shadow: none;
+  color: @{c:window.titlebar.textColor};
+}
+
+headerbar:backdrop, .titlebar:backdrop {
+  background-image: @{g:window.titlebar.gradient.inactive};
+  color: @{c:window.titlebar.inactiveTextColor};
+}
+
+headerbar .title, .titlebar .title, headerbar label.title {
+  font-family: @{ff:fonts.title.families};
+  font-size: @{fs:fonts.title.pixelSize};
+  font-weight: bold;
+  color: @{c:window.titlebar.textColor};
+  text-shadow: @{px:window.titlebar.textShadowOffset} @{px:window.titlebar.textShadowOffset} @{c:window.titlebar.textShadowColor};
+}
+
+headerbar button:not(.titlebutton) {
+  color: @{c:window.titlebar.textColor};
+  border-color: transparent;
+  background-image: none;
+  box-shadow: none;
+}
+
+headerbar button:not(.titlebutton):hover {
+  border-color: @{c:window.titlebar.textColor};
+  background-image: none;
+}
+
+@if gtk3
+headerbar button.titlebutton {
+@endif
+@if gtk4
+windowcontrols > button {
+@endif
+  min-width: @{px:window.buttons.size};
+  min-height: @{px:window.buttons.size};
+  padding: 0;
+  margin: 0 0 0 @{px:window.buttons.spacing};
+  border: 1px solid @{c:window.buttons.borderColor};
+  border-radius: @{px:window.buttons.radius};
+  background-image: @{g:window.buttons.normal.normal};
+  box-shadow: none;
+  color: @{c:window.buttons.glyphColor};
+}
+
+@if gtk3
+headerbar button.titlebutton.close {
+@endif
+@if gtk4
+windowcontrols > button.close {
+@endif
+  background-image: @{g:window.buttons.close.normal};
+}
+
+/* --- Info bars, status bars, tool bars ------------------------------------------------------ */
+
+infobar.info > revealer > box, infobar.info { background-color: @{c:toolkit.gtk.infoBackground}; color: @{c:colors.windowText}; }
+infobar.warning > revealer > box, infobar.warning { background-color: @{c:toolkit.gtk.warningBackground}; color: @{c:colors.windowText}; }
+infobar.error > revealer > box, infobar.error { background-color: @{c:toolkit.gtk.errorBackground}; color: @{c:colors.windowText}; }
+infobar.question > revealer > box, infobar.question { background-color: @{c:toolkit.gtk.questionBackground}; color: @{c:colors.windowText}; }
+
+statusbar { padding: @{px:toolkit.gtk.statusbarPadding}; border-top: 1px solid @{c:toolkit.gtk.separatorColor}; }
+
+toolbar, .toolbar {
+  padding: @{px:toolkit.gtk.toolbarPadding};
+  background-color: @{c:colors.windowBackground};
+  background-image: none;
+}

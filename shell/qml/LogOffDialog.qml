@@ -33,7 +33,8 @@ PowerDialogFrame {
         label: qsTr("Log Off")
         stops: root.lk.logOffGradient
         glyph: LunaGlyph.LogOff
-        onTriggered: { root.close(); Shell.session.logOff() }
+        // The log-off sound plays first (ShellSounds).
+        onTriggered: { root.close(); Shell.sounds.logOff() }
         KeyNavigation.left: switchUser
         KeyNavigation.right: root.cancelButton
     }

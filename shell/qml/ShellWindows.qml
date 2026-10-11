@@ -97,7 +97,7 @@ Item {
         function onEmptyTrashRequested() {
             windows.confirm(qsTr("Confirm Multiple File Delete"),
                             qsTr("Are you sure you want to delete all items in the Recycle Bin? This cannot be undone."),
-                            () => Shell.desktop.emptyTrash())
+                            () => { Shell.desktop.emptyTrash(); Shell.sounds.play("emptyTrash") })
         }
     }
     Connections {

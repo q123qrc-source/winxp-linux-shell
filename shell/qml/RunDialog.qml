@@ -38,6 +38,7 @@ FocusScope {
         const message = Shell.run.run(field.text)
         if (message.length > 0) {
             error = message
+            Shell.sounds.play("criticalStop")
             field.selectAll()
             field.forceActiveFocus()
             return

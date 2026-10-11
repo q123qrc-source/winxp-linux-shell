@@ -313,7 +313,64 @@ combo when several accounts may authorize, a password field, and the
 every duration is treated as 0 (except the "needs attention" color state, which
 stays visible without pulsing).
 
-## 9. Schemes
+## 9. Third-party applications (`toolkit.*`, phase 9)
+
+### GTK 3/4 and Kvantum
+Generated from each scheme's tokens; the screenshot goldens
+`toolkit-gtk3*`, `toolkit-gtk4*` and `toolkit-qt*` show the result.
+
+| Control | Look | Tokens |
+|---|---|---|
+| Buttons | 1px dark-blue border, radius 3, white→beige gradient; hover adds the orange inner ring, default buttons the blue one; pressed uses the reversed gradient; dotted focus rectangle inset 3px | `controls.button.*` |
+| Check boxes, radio buttons | 13px, blue border, light diagonal gradient, green tick / green dot, orange hover ring | `controls.checkBox.*`, `controls.radio.*` |
+| Text fields, combo boxes, spin boxes | white with a `#7F9DB9`-style border; blue drop-down and spin buttons (GTK) | `controls.textField.*`, `controls.comboBox.*`, `controls.spinBox.*` |
+| Scrollbars | 17px; light-blue thumb with grip lines; arrow buttons in the same style (GTK 4 has no arrow buttons) | `controls.scrollBar.*` |
+| Progress bars | white trough, green blocks 8px wide with 2px gaps | `controls.progressBar.*` |
+| Tabs | grey border, rounded top, orange hot line on the selected and hovered tab, light pane | `controls.tab.*` |
+| Menus | white, grey border, blue highlight with white text | `controls.menu.*` |
+| Lists | blue selection (beige when the window is inactive); column headers with an orange line on hover | `controls.list.*`, `toolkit.gtk.listHeader*` |
+| Header bars (client-side decorations) | the Luna title bar gradient and title font; blue caption buttons, red close | `window.titlebar.*`, `window.buttons.*` |
+| Tooltips | pale yellow, black border | `controls.tooltip.*` |
+| Other | link colors, info bar colors, switch size, spacing | `toolkit.*` |
+
+libadwaita applications draw most of their widgets themselves and follow GTK
+themes only partly. Kvantum draws the combo box arrow without the blue
+button.
+
+### Icons (`meadow-icons`)
+Original drawings in one style: saturated colours, light from the top left,
+a darker outline, a soft elliptical shadow, glossy highlights on round
+badges. Manila folders carry emblems (pictures, music, videos, downloads,
+...), documents are white sheets with a folded corner, actions are glossy
+round buttons (green go/add, red stop/remove, blue information). Every icon
+has a 48-unit design and a simplified 16 px drawing with thicker outlines.
+Goldens: `icons-48`, `icons-16`.
+
+### Cursors (`meadow-cursors`)
+White shapes with a black outline and a soft shadow: arrow, I-beam, hand,
+open and closed hands, help/copy/alias/context-menu badges on the arrow, an
+hourglass that runs and turns over (`toolkit.cursors.frames` frames,
+`toolkit.cursors.frameMs` each), crosshair, cell, not-allowed, move and the
+resize arrows, pencil, up arrow and zoom. 24, 32 and 48 px. Golden: `cursors`.
+
+### Sounds (`meadow` sound theme, `sounds.*`)
+Synthesized from sine partials and envelopes (`tools/gen-sounds.py`):
+startup (a rising major-ninth arpeggio over a soft pad, ~4 s), logon and
+log off (rising / falling chimes), shutdown (a falling arpeggio), short
+chimes and bells for information, warning, error, question, new message
+and device added/removed, a bell, and paper noise for emptying the Recycle
+Bin. `sounds.maxWaitMs` caps how long Log Off and Turn Off wait for their
+sound.
+
+### Fonts
+Inside Meadow sessions Tahoma, Verdana, Microsoft Sans Serif, MS Sans Serif,
+MS Shell Dlg (2), Trebuchet MS, Franklin Gothic Medium and Segoe UI map to
+Noto Sans / DejaVu Sans / Liberation Sans, Lucida Console to the matching
+monospaced fonts and Palatino Linotype / Book Antiqua to the serif ones. GTK's
+default font is `fonts.ui` (Tahoma 8), the monospace font
+`toolkit.monospaceFamily`.
+
+## 10. Schemes
 - **luna-blue**: reference values above.
 - **luna-olive**: the same keys, with blue-range colors mapped to olive. The
   green start button, red close button and yellow/green dialog buttons are unchanged.

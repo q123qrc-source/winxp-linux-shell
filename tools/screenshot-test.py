@@ -31,6 +31,8 @@ SESSION = ("tools/session-screenshot.sh", "source")
 BUTTONS = ("tools/gen-labwc-theme.py", "source")
 SHELL = ("tools/shell-preview.sh", "source")
 SHELL_SESSION = ("tools/shell-session-screenshot.sh", "source")
+TOOLKIT = ("tools/toolkit-screenshot.sh", "source")
+SHEET = ("tools/theme-sheet.sh", "source")
 
 
 def theme(scheme):
@@ -114,6 +116,16 @@ CASES = [
     ("shell-session-start-menu", SHELL_SESSION, ["--windows", "2", "--open", "start"]),
     ("shell-session-desktop", SHELL_SESSION, ["--windows", "0"]),
     ("shell-session-desktop-olive", SHELL_SESSION, ["--windows", "0", "--scheme", "luna-olive"]),
+    # Third-party applications with the generated toolkit themes (phase 9).
+    ("toolkit-gtk3", TOOLKIT, ["--app", "gtk3"]),
+    ("toolkit-gtk3-menu-olive", TOOLKIT, ["--app", "gtk3", "--menu", "--scheme", "luna-olive"]),
+    ("toolkit-gtk4", TOOLKIT, ["--app", "gtk4"]),
+    ("toolkit-gtk4-silver", TOOLKIT, ["--app", "gtk4", "--scheme", "luna-silver"]),
+    ("toolkit-qt", TOOLKIT, ["--app", "qt"]),
+    ("toolkit-qt-silver", TOOLKIT, ["--app", "qt", "--scheme", "luna-silver"]),
+    ("icons-48", SHEET, ["--kind", "icons-48"]),
+    ("icons-16", SHEET, ["--kind", "icons-16"]),
+    ("cursors", SHEET, ["--kind", "cursors"]),
     ("greeter-fingerprint-failed", GREETER, ["--fingerprint", "enrolled:alice", "--fp-result", "fail", "--select", "0", "--delay", "1500"]),
 ]
 

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+#include "SoundPlayer.h"
 #include "ThemeLoader.h"
 #include "auth/LockAuthenticator.h"
 #include "ipc/ShellIpc.h"
@@ -20,6 +21,8 @@
 #include "services/PowerService.h"
 #include "services/RunService.h"
 #include "services/SessionService.h"
+#include "services/ShellSounds.h"
+#include "services/ToolkitThemeSync.h"
 #include "services/Settings.h"
 #include "services/TrayModel.h"
 #include "services/VolumeService.h"
@@ -114,6 +117,7 @@ int main(int argc, char *argv[])
         qCCritical(lcShell).noquote() << "no theme loaded:" << theme->errorString();
         return 1;
     }
+    IconProvider::useIconTheme(theme->token(QStringLiteral("assets.iconTheme")).toString());
     if (parser.isSet(grabOpt)) {
         theme->setReducedMotion(true);
         QGuiApplication::styleHints()->setCursorFlashTime(0);
@@ -148,12 +152,9 @@ int main(int argc, char *argv[])
     };
     if (!parser.isSet(grabOpt))
         applyFontSize();
-    // Sounds: the lock screen's sound players read MEADOW_MUTE when created.
+    // Sounds on or off ([Sounds] enabled), for every sound player at once.
     auto applySounds = [&] {
-        if (settings.boolSetting(QStringLiteral("Sounds/enabled"), true))
-            qunsetenv("MEADOW_MUTE");
-        else
-            qputenv("MEADOW_MUTE", "1");
+        SoundPlayer::setAllMuted(!settings.boolSetting(QStringLiteral("Sounds/enabled"), true));
     };
     if (!parser.isSet(grabOpt))
         applySounds();
@@ -187,14 +188,22 @@ int main(int argc, char *argv[])
     PowerService power(systemServices, preview);
     SessionService session(systemServices, preview);
     RunService run(&apps);
+    ShellSounds sounds(&session, &power);
+    QObject::connect(&notifications, &NotificationServer::soundRequested, &sounds, &ShellSounds::notify);
     ScreenGrabber screen;
 
     // Compositor-side settings (decoration theme, mouse, keyboard) through
     // the session's labwc overlay; written once at startup so the saved
     // color scheme's decorations come back.
     LabwcConfig labwc(&settings);
-    if (!preview)
+    // GTK and Kvantum themes for the applications the session starts (not
+    // in a preview, which must not touch the real session).
+    std::unique_ptr<ToolkitThemeSync> toolkitThemes;
+    if (!preview) {
         labwc.apply();
+        toolkitThemes = std::make_unique<ToolkitThemeSync>();
+        toolkitThemes->apply();
+    }
     QObject::connect(&settings, &Settings::changed, &app, [&] {
         if (!parser.isSet(grabOpt)) {
             applyFontSize();
@@ -271,6 +280,7 @@ int main(int argc, char *argv[])
     services.accounts = &accounts;
     services.desktop = &desktop;
     services.lockAuth = &lockAuth;
+    services.sounds = &sounds;
     ShellContext shell(services, preview);
     QObject::connect(&ipc, &ShellIpc::toggleStartMenuRequested, &shell,
                      [&shell] { shell.setStartMenuOpen(!shell.startMenuOpen()); });
@@ -296,8 +306,10 @@ int main(int argc, char *argv[])
         return 1;
     // The lock windows exist now; lock again if a crashed shell left the
     // session locked.
-    if (!preview)
+    if (!preview) {
         lock.relockIfNeeded();
+        sounds.sessionStarted();
+    }
 
     if (parser.isSet(grabOpt)) {
         auto *window = qobject_cast<QQuickWindow *>(engine.rootObjects().constFirst());

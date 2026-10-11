@@ -1,8 +1,0 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
-# Kvantum theme for Qt applications. Full element set lands in phase 9.
-[%General]
-author=Meadow contributors
-comment=Luna-inspired Qt theme for the Meadow desktop
-composite=true
-menu_shadow_depth=4
-tooltip_shadow_depth=2

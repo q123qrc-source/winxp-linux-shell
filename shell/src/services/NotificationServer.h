@@ -86,6 +86,9 @@ Q_SIGNALS:
     void currentChanged();
     void NotificationClosed(uint id, uint reason);
     void ActionInvoked(uint id, const QString &actionKey);
+    // A new notification wants its sound (hints sound-name / sound-file;
+    // not emitted with suppress-sound). Played by ShellSounds.
+    void soundRequested(int urgency, const QString &soundName, const QString &soundFile);
 
 private:
     struct Notification {

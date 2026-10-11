@@ -73,7 +73,7 @@ public Q_SLOTS:
     QStringList GetCapabilities()
     {
         return {QStringLiteral("actions"), QStringLiteral("body"), QStringLiteral("body-markup"),
-                QStringLiteral("icon-static")};
+                QStringLiteral("icon-static"), QStringLiteral("sound")};
     }
     uint Notify(const QString &appName, uint replacesId, const QString &appIcon, const QString &summary,
                 const QString &body, const QStringList &actions, const QVariantMap &hints, int expireTimeout)
@@ -213,6 +213,11 @@ uint NotificationServer::notify(const QString &appName, uint replacesId, const Q
         Q_EMIT countChanged();
         if (m_items.size() == 1)
             Q_EMIT currentChanged();
+        // A new notification makes a sound unless it asks not to (updates
+        // of an existing one are silent).
+        if (!hints.value(QStringLiteral("suppress-sound")).toBool())
+            Q_EMIT soundRequested(n.urgency, hints.value(QStringLiteral("sound-name")).toString(),
+                                  hints.value(QStringLiteral("sound-file")).toString());
     }
     qCDebug(lcNotify) << "notification" << n.id << "from" << appName;
     return n.id;

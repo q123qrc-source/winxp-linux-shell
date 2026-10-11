@@ -26,6 +26,30 @@ export XCURSOR_THEME=meadow-cursors
 export XCURSOR_SIZE="${XCURSOR_SIZE:-24}"
 export MOZ_ENABLE_WAYLAND=1
 
+# Defaults for third-party applications, for this session only (nothing is
+# written to ~ or /etc, and whatever the user set explicitly still wins):
+#  - GTK/GNOME settings (icon, cursor, font and sound themes) from a read-only
+#    dconf database layered under the user's own (DCONF_PROFILE);
+#  - Kvantum's theme choice, PCManFM-Qt and GTK settings.ini defaults from
+#    $MEADOW_DATADIR/xdg, after a per-session directory where meadow-shell
+#    writes the color scheme's Kvantum theme (MEADOW_RUNTIME_XDG);
+#  - the classic font-name aliases (FONTCONFIG_FILE loads the system
+#    configuration plus Meadow's aliases).
+# On exit they are removed from the user's systemd/D-Bus environment again.
+if [ -z "${DCONF_PROFILE:-}" ] && [ -r "$MEADOW_DATADIR/dconf/profile" ]; then
+    export DCONF_PROFILE="$MEADOW_DATADIR/dconf/profile"
+fi
+if [ -z "${FONTCONFIG_FILE:-}" ] && [ -r "$MEADOW_DATADIR/fontconfig/fonts.conf" ]; then
+    export FONTCONFIG_FILE="$MEADOW_DATADIR/fontconfig/fonts.conf"
+fi
+config_dirs="${XDG_CONFIG_DIRS:-/etc/xdg}"
+[ -d "$MEADOW_DATADIR/xdg" ] && config_dirs="$MEADOW_DATADIR/xdg:$config_dirs"
+if [ -n "${XDG_RUNTIME_DIR:-}" ] && [ -d "$XDG_RUNTIME_DIR" ]; then
+    export MEADOW_RUNTIME_XDG="$XDG_RUNTIME_DIR/meadow/xdg-$$"
+    mkdir -p "$MEADOW_RUNTIME_XDG" && config_dirs="$MEADOW_RUNTIME_XDG:$config_dirs"
+fi
+export XDG_CONFIG_DIRS="$config_dirs"
+
 # Keyboard layout: labwc reads XKB_DEFAULT_*, not the system setting, so take
 # the X11 layout `localectl set-x11-keymap` stored, unless one is already set
 # (e.g. in ~/.config/meadow/labwc/environment).
@@ -56,9 +80,9 @@ fi
 # labwc to reconfigure. Nothing under the user's or the packaged config dir
 # is modified. Without XDG_RUNTIME_DIR the plain config dir is used.
 if [ -n "${XDG_RUNTIME_DIR:-}" ] && [ -d "$XDG_RUNTIME_DIR" ]; then
-    # Named after this PID, which labwc keeps after exec; overlays of
-    # sessions that have ended are removed.
-    for old in "$XDG_RUNTIME_DIR"/meadow/labwc-*; do
+    # Named after this script's PID, which lives as long as the session;
+    # overlays of sessions that have ended are removed.
+    for old in "$XDG_RUNTIME_DIR"/meadow/labwc-* "$XDG_RUNTIME_DIR"/meadow/xdg-*; do
         [ -d "$old" ] || continue
         kill -0 "${old##*-}" 2>/dev/null || rm -rf "$old"
     done
@@ -85,4 +109,28 @@ if [ -n "${XDG_RUNTIME_DIR:-}" ] && [ -d "$XDG_RUNTIME_DIR" ]; then
     fi
 fi
 
-exec labwc --config-dir "$config_dir" "$@"
+# labwc runs as a child (not exec) so the session can be cleaned up after it.
+session_cleanup() {
+    # The user's systemd/D-Bus activation environment outlives this session:
+    # take Meadow's settings out again so a later GNOME or KDE session of the
+    # same user does not inherit them, and stop the GTK portal backend, which
+    # read Meadow's defaults when it started.
+    if command -v systemctl >/dev/null 2>&1; then
+        systemctl --user unset-environment DCONF_PROFILE FONTCONFIG_FILE XDG_CONFIG_DIRS MEADOW_RUNTIME_XDG \
+            GTK_THEME QT_STYLE_OVERRIDE QT_QPA_PLATFORM XCURSOR_THEME XCURSOR_SIZE WAYLAND_DISPLAY DISPLAY \
+            XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP >/dev/null 2>&1
+        systemctl --user stop xdg-desktop-portal-gtk.service >/dev/null 2>&1
+    fi
+    [ -n "${MEADOW_RUNTIME_XDG:-}" ] && rm -rf "$MEADOW_RUNTIME_XDG"
+    [ -n "${MEADOW_LABWC_OVERLAY:-}" ] && rm -rf "$MEADOW_LABWC_OVERLAY"
+}
+labwc --config-dir "$config_dir" "$@" &
+labwc_pid=$!
+trap 'kill -TERM "$labwc_pid" 2>/dev/null' TERM INT HUP
+status=0
+while kill -0 "$labwc_pid" 2>/dev/null; do
+    wait "$labwc_pid"
+    status=$?
+done
+session_cleanup
+exit "$status"

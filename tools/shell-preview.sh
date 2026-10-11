@@ -47,7 +47,10 @@ export MEADOW_THEME_DIR="$src/theme" MEADOW_ASSET_DIR="$src/theme/assets" QML_IM
 # meadow-control-panel and meadow-shellctl from this tree (Start menu tools
 # are shown only when found on PATH).
 export PATH="$src/shell:$PATH"
-export MEADOW_FAKE_TIME="${MEADOW_FAKE_TIME:-2026-03-14T09:41:00}" MEADOW_ICONS_GENERIC=1
+export MEADOW_FAKE_TIME="${MEADOW_FAKE_TIME:-2026-03-14T09:41:00}"
+# Icons from this tree's meadow-icons; anything it lacks falls back to the
+# drawn generic icon (no system icon themes are on the search path).
+export MEADOW_ICON_DIRS="$src/toolkit-themes/icons"
 export XDG_DATA_DIRS="$src/tests/fixtures" XDG_DATA_HOME="$tmp/data" XDG_CONFIG_HOME="$tmp/config"
 export MEADOW_SHELL_DEFAULTS="$src/shell/data/shell.conf" MEADOW_MENU_DIR="$src/session/menus"
 # Start menu items are recorded, not started (set MEADOW_LAUNCH_LOG= to run them).

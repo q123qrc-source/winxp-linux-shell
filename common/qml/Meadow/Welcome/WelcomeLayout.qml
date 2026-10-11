@@ -99,6 +99,17 @@ FocusScope {
 
     SoundPlayer { id: sounds }
 
+    // The startup sound, when the Welcome screen appears shortly after the
+    // computer started (not when it comes back after a log off). The session
+    // plays the logon sound itself; unlocking is silent.
+    Component.onCompleted: {
+        if (lockMode)
+            return
+        const up = sounds.secondsSinceBoot()
+        if (up >= 0 && up < tk.startupSoundUptimeSec)
+            sounds.play("startup")
+    }
+
     FingerprintQuery {
         id: fingerprint
         userName: layout.selectedTile ? layout.selectedTile.userName : ""
@@ -237,7 +248,8 @@ FocusScope {
             layout.fingerprintPending = false
             layout.queuedLogin = null
             layout.loggedIn = true
-            sounds.play("logon")
+            // No sound here: the session plays "logon" once the desktop is up,
+            // and unlocking the lock screen is silent.
         }
         function onInformationMessage(message) {
             // PAM text (never logged): during a reading it is the reader's

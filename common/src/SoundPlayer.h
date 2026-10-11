@@ -14,8 +14,9 @@ class QAudioOutput;
 // event comes from tokens.sounds; the file is looked up in the asset override
 // folders first, then in the installed sound theme.
 //
-// Muted when: muted is set, MEADOW_MUTE=1, or Meadow was built without
-// QtMultimedia (events are then only logged).
+// Muted when: muted is set, all players are muted (setAllMuted: the
+// shell's "[Sounds] enabled=false"), MEADOW_MUTE=1, or Meadow was built
+// without QtMultimedia (events are then only logged).
 class MEADOW_COMMON_EXPORT SoundPlayer : public QObject
 {
     Q_OBJECT
@@ -37,14 +38,30 @@ public:
 
     // File URL that play(event) would use; empty if the event or file is unknown.
     Q_INVOKABLE QString resolve(const QString &event) const;
-    // Returns true if playback was started.
+    // Returns true if playback was started; finished() follows.
     Q_INVOKABLE bool play(const QString &event);
+    // A sound file (absolute path or file URL) outside the theme, e.g. a
+    // notification's sound-file hint.
+    Q_INVOKABLE bool playFile(const QString &pathOrUrl);
+    Q_INVOKABLE void stop();
+
+    // Mutes every SoundPlayer in the process at once, live.
+    static void setAllMuted(bool muted);
+    static bool allMuted();
+
+    // Seconds since the system booted (/proc/uptime), or -1 if unknown. The
+    // greeter plays the startup sound only shortly after boot.
+    Q_INVOKABLE static double secondsSinceBoot();
 
 Q_SIGNALS:
     void mutedChanged();
     void volumeChanged();
+    // Playback that play() started has ended (or failed).
+    void finished();
 
 private:
+    bool startPlayback(const QString &url, const QString &what);
+
     bool m_muted = false;
     qreal m_volume = 1.0;
     // Declared unconditionally: the class layout must not depend on a define

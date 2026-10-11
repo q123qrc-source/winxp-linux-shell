@@ -1025,7 +1025,8 @@
       "minOpacity": 0.45,
       "textColor": "#FFFFFF",
       "maxWidth": 250
-    }
+    },
+    "startupSoundUptimeSec": 300
   },
   "dialogs": {
     "background": "#ECE9D8",
@@ -1781,16 +1782,20 @@
     "easing": "OutCubic"
   },
   "sounds": {
-    "startup": "startup.oga",
-    "logon": "logon.oga",
-    "logoff": "logoff.oga",
-    "shutdown": "shutdown.oga",
-    "criticalStop": "critical-stop.oga",
-    "exclamation": "exclamation.oga",
-    "notify": "notify.oga",
-    "balloon": "balloon.oga",
-    "deviceConnect": "device-connect.oga",
-    "deviceDisconnect": "device-disconnect.oga"
+    "startup": "system-bootup.oga",
+    "logon": "desktop-login.oga",
+    "logoff": "desktop-logout.oga",
+    "shutdown": "system-shutdown.oga",
+    "criticalStop": "dialog-error.oga",
+    "exclamation": "dialog-warning.oga",
+    "notify": "dialog-information.oga",
+    "balloon": "message-new-instant.oga",
+    "deviceConnect": "device-added.oga",
+    "deviceDisconnect": "device-removed.oga",
+    "bell": "bell.oga",
+    "question": "dialog-question.oga",
+    "emptyTrash": "trash-empty.oga",
+    "maxWaitMs": 4500
   },
   "assets": {
     "logo": "meadow-logo.svg",
@@ -1804,7 +1809,10 @@
     "overrideDirs": [
       "$XDG_DATA_HOME/meadow/assets-override",
       "/usr/share/meadow/assets-override"
-    ]
+    ],
+    "iconTheme": "meadow-icons",
+    "cursorTheme": "meadow-cursors",
+    "soundTheme": "meadow"
   },
   "logo": {
     "colors": [
@@ -1855,5 +1863,77 @@
     "maxMinutes": 600,
     "defaultMinutes": 10,
     "graceMs": 500
+  },
+  "toolkit": {
+    "gtkThemeName": "Meadow-Luna-Silver",
+    "kvantumThemeName": "MeadowLunaSilver",
+    "linkColor": "#0000FF",
+    "visitedLinkColor": "#800080",
+    "gtk": {
+      "spacingSmall": 2,
+      "spacingMedium": 4,
+      "spacingLarge": 8,
+      "buttonPaddingV": 2,
+      "entryPaddingV": 2,
+      "headerbarHeight": 30,
+      "headerbarPadding": 4,
+      "frameBorderColor": "#919B9C",
+      "separatorColor": "#ACA899",
+      "listHeaderGradient": [
+        {
+          "pos": 0.0,
+          "color": "#FFFFFF"
+        },
+        {
+          "pos": 0.8,
+          "color": "#F7F6F0"
+        },
+        {
+          "pos": 1.0,
+          "color": "#EBEAE0"
+        }
+      ],
+      "listHeaderBorderColor": "#D6D2C2",
+      "listHeaderHotColor": "#F9B33F",
+      "switchWidth": 36,
+      "switchHeight": 18,
+      "infoBackground": "#FFFFE1",
+      "warningBackground": "#FFF3C4",
+      "errorBackground": "#FFD9D2",
+      "questionBackground": "#E3ECFC",
+      "rowPaddingV": 2,
+      "toolbarPadding": 2,
+      "statusbarPadding": 2,
+      "focusDashWidth": 1,
+      "disabledOpacity": 0.6
+    },
+    "kvantum": {
+      "frameWidth": 3,
+      "menuShadowDepth": 4,
+      "tooltipShadowDepth": 2,
+      "layoutSpacing": 6,
+      "layoutMargin": 9,
+      "smallIconSize": 16,
+      "largeIconSize": 32,
+      "toolbarIconSize": 24,
+      "comboMenuItemHeight": 18
+    },
+    "cursors": {
+      "sizes": [
+        24,
+        32,
+        48
+      ],
+      "frames": 12,
+      "frameMs": 70,
+      "fillColor": "#FFFFFF",
+      "outlineColor": "#000000",
+      "shadowColor": "#50000000",
+      "accentColor": "#6E7B97",
+      "sandColor": "#E8B53A",
+      "glassColor": "#C8DCF8"
+    },
+    "monospaceFamily": "Lucida Console",
+    "monospacePixelSize": 12
   }
 }

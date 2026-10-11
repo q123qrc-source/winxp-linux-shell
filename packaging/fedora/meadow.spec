@@ -46,8 +46,11 @@ BuildRequires:  pam-devel
 # (ext-session-lock-v1), which is private: see the Requires pin below.
 BuildRequires:  qt6-qtbase-private-devel
 BuildRequires:  desktop-file-utils
+# Icon checks, cursor theme (SVG -> XCursor) and the session's dconf
+# defaults database are built from the sources.
 BuildRequires:  librsvg2-tools
 BuildRequires:  xcursorgen
+BuildRequires:  dconf
 BuildRequires:  python3
 # Needed by %%ctest: the QML smoke test renders offscreen.
 BuildRequires:  qt6-qtbase-gui
@@ -148,10 +151,11 @@ Requires:       fontconfig
 
 %description    themes
 Meadow's Luna Blue, Olive Green and Silver scheme definitions, the Meadow
-logo and default user pictures, plus the
-Meadow-Luna GTK and labwc themes, the MeadowLuna Kvantum theme, the
-meadow-icons and meadow-cursors themes, the Meadow sound theme and a
-fontconfig snippet mapping classic UI font names to open fonts.
+logo and default user pictures, plus, for each scheme, GTK 3/4 and labwc
+themes (Meadow-Luna*) and a Kvantum theme (MeadowLuna*), all generated from
+the scheme definitions; the original meadow-icons, meadow-cursors and Meadow
+sound themes; and font aliases mapping classic UI font names to open fonts.
+The font aliases are not enabled system-wide: Meadow sessions load them.
 
 %prep
 %autosetup -p1
@@ -217,6 +221,9 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/meadow-display-proper
 %{_datadir}/%{name}/sddm.conf.d/
 %{_datadir}/%{name}/pam.d/
 %{_datadir}/%{name}/polkit/
+# Session-scoped defaults for applications (DCONF_PROFILE, XDG_CONFIG_DIRS).
+%{_datadir}/%{name}/dconf/
+%{_datadir}/%{name}/xdg/
 
 %files -n sddm-theme-%{name}
 %license LICENSE LICENSES/*
@@ -234,14 +241,20 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/meadow-display-proper
 %{_datadir}/themes/Meadow-Luna-Silver/
 %dir %{_datadir}/Kvantum
 %{_datadir}/Kvantum/MeadowLuna/
+%{_datadir}/Kvantum/MeadowLunaOlive/
+%{_datadir}/Kvantum/MeadowLunaSilver/
 %{_datadir}/icons/meadow-icons/
 %{_datadir}/icons/meadow-cursors/
 %dir %{_datadir}/sounds
 %{_datadir}/sounds/meadow/
 %{_datadir}/fontconfig/conf.avail/50-meadow.conf
+%{_datadir}/%{name}/fontconfig/
 
 %changelog
 * Sun Oct 11 2026 Meadow contributors <q123qrc@gmail.com> - 0.1.0-1
+- Phase 9: GTK 3/4 and Kvantum themes generated from theme.json for every
+  scheme, original icon, cursor and sound themes, font aliases, and
+  session-scoped application defaults (dconf profile, XDG config dirs)
 - Phase 8: desktop (Meadow Hills wallpaper, icons, context menus), lock
   screen (ext-session-lock-v1, meadow-auth-helper, /etc/pam.d/meadow-lock),
   screen saver, Display Properties, Control Panel and applets, Alt+Tab,

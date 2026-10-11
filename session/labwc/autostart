@@ -6,7 +6,8 @@
 # user units see this session's display and theming.
 dbus-update-activation-environment --systemd \
     WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE XDG_SESSION_DESKTOP \
-    XCURSOR_THEME XCURSOR_SIZE QT_QPA_PLATFORM QT_STYLE_OVERRIDE GTK_THEME >/dev/null 2>&1 &
+    XCURSOR_THEME XCURSOR_SIZE QT_QPA_PLATFORM QT_STYLE_OVERRIDE GTK_THEME \
+    DCONF_PROFILE FONTCONFIG_FILE XDG_CONFIG_DIRS MEADOW_RUNTIME_XDG XDG_RUNTIME_DIR >/dev/null 2>&1 &
 
 # MEADOW_NO_SHELL=1 starts a bare compositor (decoration tests, debugging).
 [ "${MEADOW_NO_SHELL:-0}" = 1 ] && exit 0
@@ -21,6 +22,8 @@ dbus-update-activation-environment --systemd \
         meadow-shell
         status=$?
         [ "$status" -eq 0 ] && break
+        # The restarted shell skips the logon sound.
+        export MEADOW_RESTARTED=1
         now=$(date +%s)
         if [ $((now - window_start)) -gt 60 ]; then
             restarts=0

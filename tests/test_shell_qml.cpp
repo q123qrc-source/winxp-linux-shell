@@ -18,6 +18,7 @@
 #include "services/PowerService.h"
 #include "services/RunService.h"
 #include "services/SessionService.h"
+#include "services/ShellSounds.h"
 #include "services/Settings.h"
 #include "services/TrayModel.h"
 #include "services/VolumeService.h"
@@ -100,6 +101,7 @@ class TestShellQml : public QObject
     std::unique_ptr<ScreenGrabber> m_screen;
     std::unique_ptr<SessionLock> m_lock;
     std::unique_ptr<LockAuthenticator> m_lockAuth;
+    std::unique_ptr<ShellSounds> m_sounds;
     std::unique_ptr<DesktopModel> m_desktop;
     std::unique_ptr<LabwcConfig> m_labwc;
     std::unique_ptr<OutputManager> m_outputs;
@@ -173,6 +175,7 @@ class TestShellQml : public QObject
         m_screen = std::make_unique<ScreenGrabber>();
         m_lock = std::make_unique<SessionLock>(true);
         m_lockAuth = std::make_unique<LockAuthenticator>(true);
+        m_sounds = std::make_unique<ShellSounds>(m_session.get(), m_power.get());
         // A desktop folder per test with a couple of files.
         const QString desk = m_dir.filePath(QStringLiteral("desktop-%1").arg(QTest::currentTestFunction()));
         QDir().mkpath(desk + QStringLiteral("/Holiday photos"));
@@ -213,6 +216,7 @@ class TestShellQml : public QObject
         s.polkit = m_polkit.get();
         s.timeDate = m_timeDate.get();
         s.accounts = m_accounts.get();
+        s.sounds = m_sounds.get();
         m_shell = std::make_unique<ShellContext>(s, true);
 
         m_engine = std::make_unique<QQmlApplicationEngine>();
@@ -235,6 +239,8 @@ private Q_SLOTS:
         qputenv("XDG_DATA_HOME", m_dir.filePath(QStringLiteral("data")).toUtf8());
         qputenv("MEADOW_ICONS_GENERIC", "1");
         qputenv("MEADOW_WPCTL", "/bin/false");
+        // Muted: actions after a sound (Log Off, Turn Off) then run at once.
+        qputenv("MEADOW_MUTE", "1");
         qputenv("MEADOW_MENU_DIR", MEADOW_SOURCE_DIR "/session/menus");
         qputenv("MEADOW_LAUNCH_LOG", m_dir.filePath(QStringLiteral("launches.log")).toUtf8());
         qputenv("XDG_CURRENT_DESKTOP", "Meadow");
