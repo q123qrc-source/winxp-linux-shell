@@ -1,8 +1,11 @@
 #%PAM-1.0
-# meadow-lock: managed by meadow-setup
-# PAM service for the Meadow lock screen, generated from /etc/pam.d/sddm
-# by `meadow-setup enable-fingerprint`. Removed by disable-fingerprint.
-auth  [success=done default=ignore]  pam_fprintd.so max-tries=3 timeout=15
+# meadow-lock: shipped by Meadow (password only)
+# PAM service of the Meadow lock screen (meadow-shell, through
+# /usr/libexec/meadow/meadow-auth-helper). Nothing else uses it, so it does
+# not change how anyone logs in.
+# `meadow-setup enable-fingerprint` adds a marked fingerprint block here when
+# fingerprint login is wanted (unless the stack below already reaches
+# pam_fprintd); `meadow-setup disable-fingerprint` removes it again.
 auth        substack      password-auth
 auth        include       postlogin
 account     required      pam_nologin.so

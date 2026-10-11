@@ -293,13 +293,59 @@ class ShippedFilesTests(unittest.TestCase):
     def test_polkit_rule_matches_tool(self):
         self.assertEqual((ROOT / "system/polkit/50-meadow.rules").read_text(), ms.POLKIT_RULE)
 
-    def test_lock_example_matches_fedora_output(self):
-        tmp, root = make_root(FEDORA)
-        with tmp:
-            run(root, "enable-fingerprint")
-            generated = (root / ms.LOCK_PAM).read_text()
-        self.assertEqual((ROOT / "system/pam.d/meadow-lock").read_text(), generated)
+    def test_shipped_lock_service_is_password_only(self):
+        text = (ROOT / "system/pam.d/meadow-lock").read_text()
+        self.assertIn(ms.SHIPPED_LOCK_MARKER, text.splitlines())
+        rules = [l for l in text.splitlines() if l.strip() and not l.startswith("#")]
+        self.assertTrue(rules)
+        self.assertFalse([l for l in rules if "pam_fprintd" in l])
 
+
+class ShippedLockServiceTests(unittest.TestCase):
+    """The packages install the password-only system/pam.d/meadow-lock."""
+
+    def files(self, password_auth_has_fprintd=False):
+        files = dict(FEDORA)
+        files["etc/pam.d/meadow-lock"] = (ROOT / "system/pam.d/meadow-lock").read_text()
+        if password_auth_has_fprintd:
+            files["etc/pam.d/password-auth"] = ("auth sufficient pam_fprintd.so\n" + files["etc/pam.d/password-auth"])
+        return files
+
+    def test_enable_adds_block_and_disable_restores(self):
+        tmp, root = make_root(self.files())
+        with tmp:
+            before = tree_hash(root)
+            code, out = run(root, "enable-fingerprint")
+            self.assertEqual(code, 0, out)
+            lock = (root / ms.LOCK_PAM).read_text()
+            self.assertIn(ms.SHIPPED_LOCK_MARKER, lock)
+            self.assertIn(ms.FPRINT_BEGIN, lock)
+            self.assertEqual(lock.count("pam_fprintd.so"), 1)
+            self.assertTrue(ms.auth_reaches(root / "etc/pam.d", "meadow-lock"))
+            # The block goes before the password stack.
+            self.assertLess(lock.index(ms.FPRINT_LINE), lock.index("substack      password-auth"))
+            after_first = tree_hash(root)
+            self.assertEqual(run(root, "enable-fingerprint")[0], 0)
+            self.assertEqual(tree_hash(root), after_first, "enable is not idempotent")
+            code, out = run(root, "disable-fingerprint")
+            self.assertEqual(code, 0, out)
+            self.assertEqual(tree_hash(root), before)
+
+    def test_left_alone_when_stack_already_reaches_fprintd(self):
+        tmp, root = make_root(self.files(password_auth_has_fprintd=True))
+        with tmp:
+            shipped = (root / ms.LOCK_PAM).read_text()
+            code, out = run(root, "enable-fingerprint")
+            self.assertEqual(code, 0, out)
+            self.assertEqual((root / ms.LOCK_PAM).read_text(), shipped)
+            self.assertIn("already reachable", out)
+
+    def test_status_reports_shipped_file(self):
+        tmp, root = make_root(self.files())
+        with tmp:
+            code, out = run(root, "status")
+            self.assertEqual(code, 0)
+            self.assertIn("shipped by Meadow, password only", out)
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

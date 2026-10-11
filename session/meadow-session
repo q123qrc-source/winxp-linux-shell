@@ -8,7 +8,9 @@
 
 MEADOW_DATADIR="${MEADOW_DATADIR:-/usr/share/meadow}"
 
-export XDG_CURRENT_DESKTOP=Meadow
+# "X-Meadow" for OnlyShowIn= in .desktop files: desktop-file-validate accepts
+# only registered names or X- extensions. "Meadow" stays first (portals.conf).
+export XDG_CURRENT_DESKTOP=Meadow:X-Meadow
 export XDG_SESSION_DESKTOP=meadow
 export XDG_SESSION_TYPE=wayland
 export DESKTOP_SESSION=meadow
@@ -76,6 +78,9 @@ if [ -n "${XDG_RUNTIME_DIR:-}" ] && [ -d "$XDG_RUNTIME_DIR" ]; then
         fi
         export MEADOW_LABWC_ENV_FILE="$overlay/environment.d/90-meadow-keyboard.env"
         rm -f "$MEADOW_LABWC_ENV_FILE"
+        # meadow-shell may replace overlay/rc.xml with an edited copy of the
+        # real one (color scheme, mouse and keyboard settings).
+        export MEADOW_LABWC_OVERLAY="$overlay" MEADOW_LABWC_SOURCE="$config_dir"
         config_dir="$overlay"
     fi
 fi

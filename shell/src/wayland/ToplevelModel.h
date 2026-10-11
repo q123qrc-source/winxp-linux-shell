@@ -66,6 +66,10 @@ public:
     // Win+D: minimize every window; again restores the ones it minimized.
     Q_INVOKABLE void toggleShowDesktop();
 
+    // Rows in most-recently-activated order (the active window first), for
+    // the Alt+Tab switcher. Windows never activated follow, newest first.
+    Q_INVOKABLE QList<int> mruRows() const;
+
 Q_SIGNALS:
     void countChanged();
     void showingDesktopChanged();
@@ -86,7 +90,11 @@ protected:
 private:
     void setShowingDesktop(bool showing);
 
+    void touchMru(quint64 id);
+
     QList<Window> m_windows;
+    // Window ids, most recently activated first.
+    QList<quint64> m_mru;
     bool m_showingDesktop = false;
     // Windows Win+D minimized, in stacking order (last one is activated last).
     QList<quint64> m_desktopRestore;

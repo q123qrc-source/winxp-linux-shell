@@ -21,7 +21,7 @@ public:
 
     // applications/ directories, highest priority first.
     static QStringList applicationDirs();
-    // XDG_CURRENT_DESKTOP as a list (default "Meadow"), for OnlyShowIn/NotShowIn.
+    // XDG_CURRENT_DESKTOP as a list (default "Meadow:X-Meadow"), for OnlyShowIn/NotShowIn.
     static QStringList currentDesktops();
     void reload();
     // Entries that belong in menus: valid applications shown in this desktop.

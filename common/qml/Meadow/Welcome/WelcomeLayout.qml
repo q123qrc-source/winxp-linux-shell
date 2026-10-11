@@ -12,17 +12,35 @@
 // pam_fprintd goes first in the PAM stack and pam_unix follows if it fails.
 // SDDM silently drops a second login() while one is running, so a password
 // typed during a reading is queued and submitted when that run ends.
+//
+// The shell's lock screen uses the same layout with mode "lock": one user
+// (the locked session's), no session switcher, a Switch User button, and the
+// lock wording. Its `greeter` is the shell's LockAuthenticator, which has the
+// same login()/loginFailed()/loginSucceeded() contract as SDDM's proxy.
 import QtQuick
 import Meadow.Controls
 
 FocusScope {
     id: layout
 
+    // "login" (SDDM Welcome screen) or "lock" (the shell's lock screen).
+    property string mode: "login"
+    readonly property bool lockMode: mode === "lock"
+    // Lock mode: show the Switch User button.
+    property bool showSwitchUser: false
+    // Optional on-screen keyboard panel (the greeter's VirtualKeyboardPanel).
+    property url virtualKeyboardSource
+
+    signal switchUserRequested()
+
     // SDDM objects (see Main.qml).
     property var greeter
     property var users
     property var sessions
     property var keyboardModel
+    // Power actions for the Turn Off dialog (canPowerOff, powerOff(), ...).
+    // SDDM's proxy provides them itself; the lock screen passes Shell.power.
+    property var power: greeter
 
     // "welcome" (gradient layout), "solid", or an image path/URL.
     property string background: "welcome"
@@ -132,7 +150,8 @@ FocusScope {
     }
 
     function deselect() {
-        if (busy)
+        // A lock screen has only the locked user; there is nothing to go back to.
+        if (busy || lockMode)
             return
         if (selectedTile)
             selectedTile.passwordPanel.clear()
@@ -328,7 +347,8 @@ FocusScope {
             Text {
                 anchors.right: parent.right
                 width: Math.min(implicitWidth, Theme.px(layout.tk.layout.hintMaxWidth))
-                text: layout.selectedIndex >= 0 ? qsTr("Type your password, then press Enter")
+                text: layout.lockMode ? qsTr("This computer is locked. Type your password to unlock it.")
+                    : layout.selectedIndex >= 0 ? qsTr("Type your password, then press Enter")
                                                 : qsTr("To begin, click your user name")
                 font: Theme.fonts.welcomeHint
                 color: layout.highContrast ? layout.colors.highContrastText : layout.tk.hintColor
@@ -443,7 +463,7 @@ FocusScope {
 
             SessionSwitcher {
                 id: sessionSwitcher
-                visible: layout.showSessionSwitcher && layout.sessions !== undefined && layout.sessions !== null && layout.sessions.count > 0
+                visible: !layout.lockMode && layout.showSessionSwitcher && layout.sessions !== undefined && layout.sessions !== null && layout.sessions.count > 0
                 model: layout.sessions
                 currentIndex: layout.sessions && layout.sessions.lastIndex >= 0 ? layout.sessions.lastIndex : 0
                 highContrast: layout.highContrast
@@ -453,6 +473,16 @@ FocusScope {
                 visible: layout.showKeyboardLayout && implicitWidth > 0 && keyboardModel && keyboardModel.enabled && layouts.length > 0
                 keyboardModel: layout.keyboardModel
                 highContrast: layout.highContrast
+            }
+            PillButton {
+                id: switchUserButton
+                objectName: "switchUserButton"
+                visible: layout.lockMode && layout.showSwitchUser
+                glyph: LunaGlyph.SwitchUser
+                text: qsTr("Switch User")
+                highContrast: layout.highContrast
+                onClicked: layout.switchUserRequested()
+                Accessible.name: text
             }
             PillButton {
                 id: oskButton
@@ -475,7 +505,8 @@ FocusScope {
             anchors.rightMargin: Theme.px(layout.tk.layout.sidePadding)
             anchors.verticalCenter: parent.verticalCenter
             width: Math.min(implicitWidth, Theme.px(layout.tk.layout.infoMaxWidth))
-            text: qsTr("After you log on, you can change your picture and password in Control Panel under User Accounts.")
+            text: layout.lockMode ? qsTr("Only the signed-in user can unlock this computer. Your programs keep running while it is locked.")
+                                  : qsTr("After you log on, you can change your picture and password in Control Panel under User Accounts.")
             font: Theme.fonts.ui
             color: layout.highContrast ? layout.colors.highContrastText : layout.tk.infoColor
             horizontalAlignment: Text.AlignRight
@@ -507,7 +538,7 @@ FocusScope {
     TurnOffDialog {
         id: turnOffDialog
         anchors.fill: parent
-        power: layout.greeter
+        power: layout.power
         showAll: layout.showAllPowerActions
         highContrast: layout.highContrast
         onClosed: turnOffButton.forceActiveFocus()
@@ -518,8 +549,9 @@ FocusScope {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        active: layout.showUi && Theme.moduleAvailable("QtQuick.VirtualKeyboard")
-        source: "VirtualKeyboardPanel.qml"
+        active: layout.showUi && layout.virtualKeyboardSource.toString() !== ""
+                && Theme.moduleAvailable("QtQuick.VirtualKeyboard")
+        source: layout.virtualKeyboardSource
         onLoaded: item.shown = Qt.binding(() => oskButton.checked)
     }
 }

@@ -255,6 +255,54 @@ Window {
         }
 
         Section {
+            title: "LunaRadioButton · LunaSlider · LunaSpinBox"
+            Labeled { label: "radio"; LunaRadioButton { text: "Center" } }
+            Labeled { label: "radio checked"; LunaRadioButton { text: "Stretch"; checked: true } }
+            Labeled { label: "radio hover"; LunaRadioButton { text: "Tile"; previewState: "hover" } }
+            Labeled { label: "radio disabled"; LunaRadioButton { text: "Off"; checked: true; enabled: false } }
+            Labeled { label: "slider"; LunaSlider { from: 0; to: 4; stepSize: 1; value: 2; tickCount: 5 } }
+            Labeled { label: "slider hover"; LunaSlider { value: 0.7; previewState: "hover" } }
+            Labeled { label: "vertical"; LunaSlider { orientation: Qt.Vertical; implicitHeight: Theme.px(80); value: 0.3; tickCount: 3 } }
+            Labeled { label: "spin box"; LunaSpinBox { from: 1; to: 60; value: 10 } }
+        }
+
+        Section {
+            title: "LunaTabView · LunaListView · MonitorPreview"
+            Labeled {
+                label: "tabs (Appearance hovered)"
+                LunaTabView {
+                    width: Theme.px(300)
+                    height: Theme.px(120)
+                    currentIndex: 1
+                    Component.onCompleted: tabBar.previewHover = 3
+                    Item { property string title: "Themes" }
+                    Item {
+                        property string title: "Desktop"
+                        Text { text: "Page content"; font: Theme.fonts.ui }
+                    }
+                    Item { property string title: "Screen Saver" }
+                    Item { property string title: "Appearance" }
+                }
+            }
+            Labeled {
+                label: "list"
+                LunaListView {
+                    width: Theme.px(160)
+                    height: Theme.px(96)
+                    currentIndex: 1
+                    model: [{ label: "(None)", iconName: "" }, { label: "Meadow Hills", iconName: "image-x-generic" },
+                            "Azure", "Coffee Bean", "Red Moon", "Soft Clouds"]
+                }
+            }
+            Labeled {
+                label: "monitor"
+                MonitorPreview {
+                    Rectangle { anchors.fill: parent; color: Theme.tokens.desktop.background }
+                }
+            }
+        }
+
+        Section {
             title: "LunaWindowFrame · LunaDialog"
             Labeled {
                 label: "active (close hover)"

@@ -147,6 +147,8 @@ void ToplevelModel::addWindow(const Window &window)
     beginInsertRows({}, int(m_windows.size()), int(m_windows.size()));
     m_windows.append(window);
     endInsertRows();
+    if (window.active)
+        touchMru(window.id);
     Q_EMIT countChanged();
     if (window.active && !window.minimized)
         setShowingDesktop(false);
@@ -157,7 +159,10 @@ void ToplevelModel::updateWindow(const Window &window)
     const int row = rowForId(window.id);
     if (row < 0)
         return;
+    const bool becameActive = window.active && !m_windows.at(row).active;
     m_windows[row] = window;
+    if (becameActive)
+        touchMru(window.id);
     const QModelIndex idx = index(row);
     Q_EMIT dataChanged(idx, idx);
     // Showing the desktop ends once the user brings any window back.
@@ -177,7 +182,37 @@ void ToplevelModel::removeWindow(quint64 id)
     m_windows.removeAt(row);
     endRemoveRows();
     m_desktopRestore.removeAll(id);
+    m_mru.removeAll(id);
     Q_EMIT countChanged();
+}
+
+void ToplevelModel::touchMru(quint64 id)
+{
+    m_mru.removeAll(id);
+    m_mru.prepend(id);
+}
+
+QList<int> ToplevelModel::mruRows() const
+{
+    QList<int> rows;
+    for (quint64 id : m_mru) {
+        const int row = rowForId(id);
+        if (row >= 0)
+            rows << row;
+    }
+    // Windows never activated (e.g. started minimized), newest first.
+    for (int row = int(m_windows.size()) - 1; row >= 0; --row) {
+        if (!rows.contains(row))
+            rows << row;
+    }
+    // The active window always leads, even if activation came first.
+    for (int i = 0; i < rows.size(); ++i) {
+        if (m_windows.at(rows.at(i)).active) {
+            rows.move(i, 0);
+            break;
+        }
+    }
+    return rows;
 }
 
 // --- Preview ---------------------------------------------------------------

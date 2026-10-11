@@ -75,7 +75,9 @@ FocusScope {
 
     Connections {
         target: Shell.run
-        function onBrowsed(path) {
+        function onBrowsed(path, tag) {
+            if (tag !== "run")
+                return
             field.text = path.indexOf(" ") >= 0 ? "\"" + path + "\"" : path
             field.forceActiveFocus()
         }

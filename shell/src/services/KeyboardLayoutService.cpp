@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "KeyboardLayoutService.h"
 
+#include <algorithm>
+
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -101,6 +103,7 @@ KeyboardLayoutService::KeyboardLayoutService(const QString &layouts, const QStri
 
 void KeyboardLayoutService::load(const QString &layouts, const QString &variants, const QString &rulesXml)
 {
+    m_rulesXml = rulesXml;
     const XkbNames names = readRules(rulesXml);
     const QStringList ls = layouts.split(QLatin1Char(','));
     const QStringList vs = variants.split(QLatin1Char(','));
@@ -177,4 +180,53 @@ void KeyboardLayoutService::apply()
     // labwc reloads its environment files and the keymap on reconfigure.
     QProcess::startDetached(QStringLiteral("labwc"), {QStringLiteral("--reconfigure")});
     qCInfo(lcKeyboard) << "keyboard layout" << currentShortName();
+}
+
+QVariantList KeyboardLayoutService::availableLayouts() const
+{
+    const XkbNames names = readRules(m_rulesXml);
+    QList<QVariantMap> list;
+    for (auto it = names.layouts.cbegin(); it != names.layouts.cend(); ++it) {
+        if (it.key() == QLatin1String("custom"))
+            continue; // xkeyboard-config's placeholder for a user-written layout
+        const QString shortName = (it.value().first.isEmpty() ? it.key() : it.value().first).left(3).toUpper();
+        list << QVariantMap{{QStringLiteral("code"), it.key()},
+                            {QStringLiteral("name"), it.value().second.isEmpty() ? it.key() : it.value().second},
+                            {QStringLiteral("shortName"), shortName}};
+    }
+    std::sort(list.begin(), list.end(), [](const QVariantMap &a, const QVariantMap &b) {
+        return QString::localeAwareCompare(a.value(QStringLiteral("name")).toString(), b.value(QStringLiteral("name")).toString()) < 0;
+    });
+    QVariantList out;
+    for (const QVariantMap &m : std::as_const(list))
+        out << m;
+    return out;
+}
+
+void KeyboardLayoutService::addLayout(const QString &code)
+{
+    for (const Layout &l : std::as_const(m_layouts)) {
+        if (l.layout == code && l.variant.isEmpty())
+            return;
+    }
+    const XkbNames names = readRules(m_rulesXml);
+    if (!names.layouts.contains(code))
+        return;
+    Layout l;
+    l.layout = code;
+    const auto known = names.layouts.value(code);
+    l.shortName = (known.first.isEmpty() ? code : known.first).left(3).toUpper();
+    l.name = known.second.isEmpty() ? code : known.second;
+    m_layouts.append(l);
+    Q_EMIT changed();
+    apply();
+}
+
+void KeyboardLayoutService::removeLayout(int index)
+{
+    if (m_layouts.size() <= 1 || index < 0 || index >= m_layouts.size())
+        return;
+    m_layouts.removeAt(index);
+    Q_EMIT changed();
+    apply();
 }

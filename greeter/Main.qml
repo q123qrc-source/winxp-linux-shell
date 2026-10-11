@@ -8,7 +8,7 @@
 import QtQuick
 import QtQuick.Window
 import Meadow.Controls
-import "components"
+import Meadow.Welcome
 
 Item {
     id: root
@@ -78,5 +78,6 @@ Item {
         highContrast: root.configBool("highContrast", false)
         showAllPowerActions: root.configBool("debugPowerButtons", false)
         fingerprintMode: root.configString("fingerprint", "auto")
+        virtualKeyboardSource: Qt.resolvedUrl("components/VirtualKeyboardPanel.qml")
     }
 }

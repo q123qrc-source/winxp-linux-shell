@@ -62,8 +62,11 @@ set(MEADOW_SDDM_THEME_DIR "${CMAKE_INSTALL_DATADIR}/sddm/themes/meadow" CACHE PA
 add_subdirectory(common)
 if(MEADOW_BUILD_SHELL)
     # The shell needs Wayland and layer-shell (taskbar, popups).
-    find_package(Qt6 ${MEADOW_QT_MIN_VERSION} REQUIRED COMPONENTS WaylandClient Xml)
+    # WaylandClientPrivate: the lock screen's ext-session-lock surfaces.
+    find_package(Qt6 ${MEADOW_QT_MIN_VERSION} REQUIRED COMPONENTS WaylandClient WaylandClientPrivate Xml)
     find_package(LayerShellQt 6.0 REQUIRED)
+    # The session's polkit authentication agent.
+    find_package(PolkitQt6-1 REQUIRED)
     add_subdirectory(shell)
 endif()
 option(MEADOW_BUILD_GALLERY "Build the control gallery and screenshot tools" ON)
@@ -79,7 +82,7 @@ if(MEADOW_BUILD_THEMES)
         install(FILES theme/${scheme}/theme.json DESTINATION ${MEADOW_DATADIR}/themes/${scheme})
     endforeach()
     install(FILES theme/schema.json DESTINATION ${MEADOW_DATADIR}/themes)
-    install(FILES theme/assets/meadow-logo.svg DESTINATION ${MEADOW_DATADIR}/assets)
+    install(FILES theme/assets/meadow-logo.svg theme/assets/meadow-hills.svg DESTINATION ${MEADOW_DATADIR}/assets)
     install(DIRECTORY theme/assets/ DESTINATION ${MEADOW_DATADIR}/assets FILES_MATCHING PATTERN "avatar-*.svg")
     add_subdirectory(toolkit-themes)
     # labwc decorations generated from theme.json (tools/gen-labwc-theme.py).

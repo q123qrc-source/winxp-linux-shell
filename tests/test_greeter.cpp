@@ -16,7 +16,7 @@ class TestGreeter : public QObject
     QObject *create(const QByteArray &qml)
     {
         QQmlComponent component(m_engine);
-        component.setData("import QtQuick\nimport Meadow.Controls\nimport \"file://" MEADOW_SOURCE_DIR "/greeter/components\"\n" + qml,
+        component.setData("import QtQuick\nimport Meadow.Controls\nimport Meadow.Welcome\n" + qml,
                           QUrl(QStringLiteral("file:///test.qml")));
         QObject *obj = component.create();
         if (!obj)

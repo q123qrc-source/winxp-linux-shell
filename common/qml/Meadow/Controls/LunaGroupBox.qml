@@ -9,6 +9,8 @@ Item {
 
     property string title
     default property alias content: body.data
+    // Behind the title; set it to the surface the box sits on (tab panes).
+    property color titleBackground: Theme.tokens.dialogs.background
 
     readonly property var tk: Theme.tokens.controls.groupBox
     readonly property int pad: Theme.px(tk.padding)
@@ -33,7 +35,7 @@ Item {
         x: Theme.px(root.tk.titleInset)
         width: titleText.implicitWidth + Theme.px(2) * 2
         height: titleText.implicitHeight
-        color: Theme.tokens.dialogs.background
+        color: root.titleBackground
         Text {
             id: titleText
             anchors.centerIn: parent

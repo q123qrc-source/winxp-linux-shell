@@ -22,6 +22,15 @@ Q_MOC_INCLUDE("services/PowerService.h")
 Q_MOC_INCLUDE("services/SessionService.h")
 Q_MOC_INCLUDE("services/RunService.h")
 Q_MOC_INCLUDE("ui/ScreenGrabber.h")
+Q_MOC_INCLUDE("services/UserAccountsService.h")
+Q_MOC_INCLUDE("services/TimeDateService.h")
+Q_MOC_INCLUDE("services/PolkitAgent.h")
+Q_MOC_INCLUDE("wayland/IdleMonitor.h")
+Q_MOC_INCLUDE("wayland/OutputManager.h")
+Q_MOC_INCLUDE("services/LabwcConfig.h")
+Q_MOC_INCLUDE("models/DesktopModel.h")
+Q_MOC_INCLUDE("auth/LockAuthenticator.h")
+Q_MOC_INCLUDE("wayland/SessionLock.h")
 
 class AppMenuModel;
 class RecentAppsModel;
@@ -30,6 +39,15 @@ class PowerService;
 class SessionService;
 class RunService;
 class ScreenGrabber;
+class UserAccountsService;
+class TimeDateService;
+class PolkitAgent;
+class IdleMonitor;
+class OutputManager;
+class LabwcConfig;
+class DesktopModel;
+class LockAuthenticator;
+class SessionLock;
 
 class AppRegistry;
 class BatteryService;
@@ -73,6 +91,15 @@ class ShellContext : public QObject
     Q_PROPERTY(SessionService *session READ session CONSTANT)
     Q_PROPERTY(RunService *run READ run CONSTANT)
     Q_PROPERTY(ScreenGrabber *screen READ screen CONSTANT)
+    Q_PROPERTY(UserAccountsService *accounts READ accounts CONSTANT)
+    Q_PROPERTY(TimeDateService *timeDate READ timeDate CONSTANT)
+    Q_PROPERTY(PolkitAgent *polkit READ polkit CONSTANT)
+    Q_PROPERTY(IdleMonitor *idle READ idle CONSTANT)
+    Q_PROPERTY(OutputManager *outputs READ outputs CONSTANT)
+    Q_PROPERTY(LabwcConfig *labwc READ labwc CONSTANT)
+    Q_PROPERTY(DesktopModel *desktop READ desktop CONSTANT)
+    Q_PROPERTY(LockAuthenticator *lockAuth READ lockAuth CONSTANT)
+    Q_PROPERTY(SessionLock *lock READ lock CONSTANT)
     // Login name, for the Start menu header.
     Q_PROPERTY(QString userName READ userName CONSTANT)
     // Wall clock, updated at each minute boundary; fixed when
@@ -100,6 +127,15 @@ public:
         SessionService *session = nullptr;
         RunService *run = nullptr;
         ScreenGrabber *screen = nullptr;
+        UserAccountsService *accounts = nullptr;
+        TimeDateService *timeDate = nullptr;
+        PolkitAgent *polkit = nullptr;
+        IdleMonitor *idle = nullptr;
+        OutputManager *outputs = nullptr;
+        LabwcConfig *labwc = nullptr;
+        DesktopModel *desktop = nullptr;
+        LockAuthenticator *lockAuth = nullptr;
+        SessionLock *lock = nullptr;
     };
 
     ShellContext(const Services &services, bool preview, QObject *parent = nullptr);
@@ -126,7 +162,20 @@ public:
     SessionService *session() const { return m_s.session; }
     RunService *run() const { return m_s.run; }
     ScreenGrabber *screen() const { return m_s.screen; }
+    UserAccountsService *accounts() const { return m_s.accounts; }
+    TimeDateService *timeDate() const { return m_s.timeDate; }
+    PolkitAgent *polkit() const { return m_s.polkit; }
+    IdleMonitor *idle() const { return m_s.idle; }
+    OutputManager *outputs() const { return m_s.outputs; }
+    LabwcConfig *labwc() const { return m_s.labwc; }
+    DesktopModel *desktop() const { return m_s.desktop; }
+    LockAuthenticator *lockAuth() const { return m_s.lockAuth; }
+    SessionLock *lock() const { return m_s.lock; }
     static QString userName();
+
+    // Modifiers held right now (Alt+Tab checks whether Alt is still down
+    // when its surface gets keyboard focus).
+    Q_INVOKABLE int keyboardModifiers() const;
 
     QDateTime now() const { return m_now; }
     bool startMenuOpen() const { return m_startMenuOpen; }

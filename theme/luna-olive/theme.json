@@ -13,7 +13,8 @@
       1.5,
       2.0
     ],
-    "baseDpi": 96
+    "baseDpi": 96,
+    "large": 1.25
   },
   "fonts": {
     "ui": {
@@ -1157,6 +1158,151 @@
       "width": 347,
       "iconSize": 32,
       "spacing": 8
+    },
+    "displayProperties": {
+      "width": 404,
+      "height": 448,
+      "monitorSpacing": 10,
+      "listRows": 7,
+      "fieldSpacing": 6,
+      "colorSwatchSize": 22,
+      "colorColumns": 8,
+      "revertSeconds": 15,
+      "sampleWindowWidth": 158,
+      "sampleWindowHeight": 70,
+      "countdownTickMs": 1000,
+      "basicColors": [
+        "#3A6EA5",
+        "#004E98",
+        "#000080",
+        "#008080",
+        "#008000",
+        "#5A7EDC",
+        "#6B7A49",
+        "#B4B7C6",
+        "#000000",
+        "#808080",
+        "#C0C0C0",
+        "#FFFFFF",
+        "#800000",
+        "#C04000",
+        "#808000",
+        "#800080"
+      ]
+    },
+    "controlPanel": {
+      "width": 720,
+      "height": 520,
+      "taskPaneWidth": 196,
+      "taskPanePadding": 12,
+      "taskPaneGradient": [
+        {
+          "pos": 0.0,
+          "color": "#CCD9AD"
+        },
+        {
+          "pos": 1.0,
+          "color": "#A5BD84"
+        }
+      ],
+      "taskBoxHeaderGradient": [
+        {
+          "pos": 0.0,
+          "color": "#FFFFFF"
+        },
+        {
+          "pos": 1.0,
+          "color": "#E0E7B8"
+        }
+      ],
+      "taskBoxHeaderHeight": 25,
+      "taskBoxRadius": 4,
+      "taskBoxBackground": "#F6F6EC",
+      "taskBoxBorderColor": "#FFFFFF",
+      "taskBoxTitleColor": "#56662D",
+      "linkColor": "#56662D",
+      "linkHoverColor": "#7D924E",
+      "contentBackground": "#FFFFFF",
+      "titleColor": "#56662D",
+      "headerHeight": 52,
+      "headerGradient": [
+        {
+          "pos": 0.0,
+          "color": "#FFFFFF"
+        },
+        {
+          "pos": 1.0,
+          "color": "#F6F6EC"
+        }
+      ],
+      "categoryIconSize": 32,
+      "categoryWidth": 220,
+      "categoryHeight": 48,
+      "categorySpacing": 14,
+      "iconViewCell": 88,
+      "iconViewIconSize": 32,
+      "contentPadding": 20,
+      "linkSpacing": 6,
+      "clockSize": 110,
+      "clockFace": "#FFFFFF",
+      "clockRim": "#7F9DB9",
+      "clockHand": "#000000",
+      "clockSecondHand": "#C00000",
+      "clockTick": "#4D6185",
+      "clockTickInset": 4,
+      "clockMajorTickWidth": 3,
+      "clockMajorTickLength": 8,
+      "clockMinorTickLength": 4,
+      "clockHourHandWidth": 4,
+      "clockMinuteHandWidth": 3,
+      "clockCenterSize": 6
+    },
+    "authenticate": {
+      "width": 380,
+      "iconSize": 32,
+      "spacing": 8
+    },
+    "properties": {
+      "width": 340,
+      "iconSize": 32,
+      "labelWidth": 90,
+      "rowSpacing": 6
+    },
+    "message": {
+      "width": 360,
+      "iconSize": 32
+    },
+    "errorTextColor": "#C00000",
+    "applet": {
+      "width": 430,
+      "height": 430,
+      "testAreaSize": 48,
+      "fieldWidth": 220,
+      "timeFieldWidth": 80
+    },
+    "mouse": {
+      "doubleClickDefaultMs": 500,
+      "doubleClickSlowMs": 900,
+      "doubleClickFastMs": 200,
+      "doubleClickStepMs": 50,
+      "tickCount": 11,
+      "speedStep": 0.1
+    },
+    "keyboard": {
+      "repeatDelayDefaultMs": 600,
+      "repeatDelayLongMs": 1000,
+      "repeatDelayShortMs": 250,
+      "repeatDelayStepMs": 50,
+      "repeatRateDefault": 25,
+      "repeatRateSlow": 5,
+      "repeatRateFast": 50,
+      "tickCount": 11
+    },
+    "dateTime": {
+      "pictureSize": 64,
+      "userTileSize": 48,
+      "firstYear": 1970,
+      "lastYear": 2099
     }
   },
   "controls": {
@@ -1399,6 +1545,199 @@
       "padding": 8,
       "titleColor": "#414E22",
       "titleInset": 6
+    },
+    "tab": {
+      "height": 21,
+      "paddingH": 7,
+      "radius": 3,
+      "selectedRaise": 2,
+      "firstTabInset": 2,
+      "borderColor": "#919B9C",
+      "paneBackground": "#FCFCFE",
+      "gradient": [
+        {
+          "pos": 0.0,
+          "color": "#FFFFFF"
+        },
+        {
+          "pos": 0.8,
+          "color": "#F3F3EF"
+        },
+        {
+          "pos": 1.0,
+          "color": "#E3E2DA"
+        }
+      ],
+      "paneGradient": [
+        {
+          "pos": 0.0,
+          "color": "#FCFCFE"
+        },
+        {
+          "pos": 1.0,
+          "color": "#F4F3EE"
+        }
+      ],
+      "hotLineHeight": 3,
+      "hotLineGradient": [
+        {
+          "pos": 0.0,
+          "color": "#FFC83C"
+        },
+        {
+          "pos": 1.0,
+          "color": "#E68B2C"
+        }
+      ],
+      "panePadding": 11
+    },
+    "slider": {
+      "defaultLength": 150,
+      "trackWidth": 4,
+      "thumbWidth": 11,
+      "thumbLength": 21,
+      "thumbRadius": 2,
+      "tickLength": 4,
+      "tickColor": "#A0A0A0",
+      "trackColor": "#FFFFFF",
+      "trackBorderColor": "#9D9D9D",
+      "thumbGradient": [
+        {
+          "pos": 0.0,
+          "color": "#FFFFFF"
+        },
+        {
+          "pos": 1.0,
+          "color": "#D6D0C5"
+        }
+      ],
+      "thumbBorderColor": "#245EDC",
+      "thumbHoverBorderColor": "#E59700"
+    },
+    "radio": {
+      "size": 13,
+      "dotSize": 5,
+      "spacing": 5,
+      "borderColor": "#515F31",
+      "hoverRingColor": "#F8B636",
+      "gradient": [
+        {
+          "pos": 0.0,
+          "color": "#DCDCD7"
+        },
+        {
+          "pos": 1.0,
+          "color": "#FFFFFF"
+        }
+      ],
+      "pressedGradient": [
+        {
+          "pos": 0.0,
+          "color": "#FFFFFF"
+        },
+        {
+          "pos": 1.0,
+          "color": "#DCDCD7"
+        }
+      ],
+      "dotGradient": [
+        {
+          "pos": 0.0,
+          "color": "#55D551"
+        },
+        {
+          "pos": 1.0,
+          "color": "#129412"
+        }
+      ]
+    },
+    "list": {
+      "background": "#FFFFFF",
+      "borderColor": "#7F9DB9",
+      "itemHeight": 18,
+      "padding": 2,
+      "textPadding": 2,
+      "iconSize": 16,
+      "selectionColor": "#316AC5",
+      "selectionTextColor": "#FFFFFF",
+      "inactiveSelectionColor": "#ECE9D8",
+      "defaultWidth": 200,
+      "defaultRows": 6
+    },
+    "spinBox": {
+      "width": 50,
+      "buttonWidth": 15,
+      "buttonRadius": 2,
+      "buttonGradient": [
+        {
+          "pos": 0.0,
+          "color": "#B2BA9F"
+        },
+        {
+          "pos": 1.0,
+          "color": "#A5B188"
+        }
+      ],
+      "buttonHoverGradient": [
+        {
+          "pos": 0.0,
+          "color": "#B7BCAC"
+        },
+        {
+          "pos": 1.0,
+          "color": "#AEB898"
+        }
+      ],
+      "buttonPressedGradient": [
+        {
+          "pos": 0.0,
+          "color": "#A5B188"
+        },
+        {
+          "pos": 1.0,
+          "color": "#B2BA9F"
+        }
+      ],
+      "arrowColor": "#5B6249"
+    },
+    "monitor": {
+      "width": 184,
+      "height": 166,
+      "radius": 6,
+      "bezel": 10,
+      "bezelBottom": 18,
+      "standHeight": 12,
+      "neckWidth": 46,
+      "footWidth": 104,
+      "footHeight": 9,
+      "borderColor": "#8C8A80",
+      "screenBorderColor": "#3B3B3B",
+      "bezelGradient": [
+        {
+          "pos": 0.0,
+          "color": "#F4F3EE"
+        },
+        {
+          "pos": 1.0,
+          "color": "#C9C6BC"
+        }
+      ],
+      "standGradient": [
+        {
+          "pos": 0.0,
+          "color": "#B9B6AC"
+        },
+        {
+          "pos": 0.5,
+          "color": "#E4E2DA"
+        },
+        {
+          "pos": 1.0,
+          "color": "#B9B6AC"
+        }
+      ],
+      "ledSize": 4,
+      "ledColor": "#2DB52D"
     }
   },
   "desktop": {
@@ -1412,7 +1751,20 @@
     "labelShadowColor": "#C0000000",
     "selectionColor": "#807D924E",
     "rubberBandBorder": "#7D924E",
-    "rubberBandFill": "#407D924E"
+    "rubberBandFill": "#407D924E",
+    "labelSelectedBackground": "#7D924E",
+    "labelSelectedText": "#FFFFFF",
+    "iconSelectedTint": "#807D924E",
+    "labelWidth": 72,
+    "labelMaxLines": 2,
+    "iconTopMargin": 5,
+    "labelSpacing": 3,
+    "labelPadding": 1,
+    "labelShadowOffset": 1,
+    "focusBorderColor": "#FFFFFF",
+    "dragOpacity": 0.6,
+    "gridMargin": 4,
+    "dragThreshold": 4
   },
   "lockScreen": {
     "reuseWelcome": true,
@@ -1472,5 +1824,36 @@
     "itemPaddingY": 4,
     "iconSize": 24,
     "borderWidth": 1
+  },
+  "altTab": {
+    "columns": 7,
+    "cellSize": 43,
+    "iconSize": 32,
+    "padding": 11,
+    "radius": 6,
+    "background": "#ECE9D8",
+    "borderColor": "#4F5B31",
+    "borderWidth": 1,
+    "selectionColor": "#7D924E",
+    "selectionBorderWidth": 2,
+    "selectionRadius": 3,
+    "titleHeight": 22,
+    "titleSpacing": 8,
+    "titleBackground": "#FFFFFF",
+    "titleBorderColor": "#A8B38A",
+    "titleTextColor": "#000000",
+    "titlePadding": 6,
+    "shadowColor": "#50000000",
+    "shadowOffset": 4,
+    "focusTimeoutMs": 600
+  },
+  "screenSaver": {
+    "background": "#000000",
+    "logoSize": 120,
+    "driftPxPerSecond": 40,
+    "previewLogoSize": 28,
+    "maxMinutes": 600,
+    "defaultMinutes": 10,
+    "graceMs": 500
   }
 }

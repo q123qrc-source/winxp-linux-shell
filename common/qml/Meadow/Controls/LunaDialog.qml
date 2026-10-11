@@ -76,6 +76,7 @@ LunaWindowFrame {
                 LunaButton {
                     required property string modelData
                     required property int index
+                    objectName: "dialogButton:" + modelData
                     text: modelData
                     isDefault: index === dialog.defaultButton
                     previewState: index === dialog.defaultButton ? dialog.previewState : ""

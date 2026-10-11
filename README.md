@@ -4,14 +4,15 @@ Meadow is a Wayland desktop for Linux that recreates the look and feel of the
 classic early-2000s "Luna" desktop with entirely original artwork. It includes:
 
 - **meadow-shell**: taskbar, green **start** button, two-column Start menu,
-  notification area, desktop icons, Run/Log Off/Turn Off dialogs and a lock
-  screen. Built with Qt 6, QML and LayerShellQt on the **labwc** compositor.
+  notification area, desktop with icons, Run/Log Off/Turn Off dialogs, a lock
+  screen and screen saver, Alt+Tab, Display Properties and a Control Panel.
+  Built with Qt 6, QML and LayerShellQt on the **labwc** compositor.
 - **sddm-theme-meadow**: a Welcome screen for SDDM with user tiles, session and
   keyboard-layout switchers, fingerprint login and a Turn Off Computer dialog.
 - **meadow-themes**: the Luna Blue, Olive Green and Silver color schemes, plus
   matching GTK 3/4, Kvantum, labwc, icon, cursor and sound themes.
 
-Fedora is the primary target. Status: **phase 5 of 12 (session and window decorations)**. See
+Fedora is the primary target. Status: **phase 8 of 12 (desktop, lock screen, Display Properties, Control Panel, Alt+Tab)**. See
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design and the roadmap.
 
 ## Building
@@ -61,7 +62,9 @@ RPM builds, COPR and mock: [packaging/fedora/README-fedora.md](packaging/fedora/
 ## Safe by default
 
 Installing Meadow never changes how your computer logs in. The display manager,
-PAM and authselect change only when you run `sudo meadow-setup …`. Every change
+PAM and authselect change only when you run `sudo meadow-setup …`. The package
+adds one PAM file, `/etc/pam.d/meadow-lock`: a password-only service that only
+Meadow's lock screen reads. Every change
 is backed up and can be undone with the matching `disable-*` command. See
 [docs/PAM_FINGERPRINT.md](docs/PAM_FINGERPRINT.md) for recovery steps.
 

@@ -6,7 +6,7 @@ set -u
 
 usage() {
     cat <<'USAGE'
-Usage: meadow-shellctl COMMAND
+Usage: meadow-shellctl COMMAND [ARG]
 
 Commands:
   toggle-start-menu   Open or close the Start menu        (Windows key)
@@ -16,10 +16,21 @@ Commands:
   log-off             Show the Log Off dialog              (Ctrl+Alt+Delete)
   turn-off            Show the Turn Off Computer dialog
   next-layout         Switch to the next keyboard layout   (Alt+Shift)
+  switch-window next|prev
+                      Window switcher                      (Alt+Tab, Alt+Shift+Tab)
+  control-panel [PAGE]
+                      Open Control Panel (pages: display, sounds, mouse,
+                      keyboard, datetime, users, network)
+  display-properties [TAB]
+                      Open Display Properties (tabs: themes, desktop,
+                      screensaver, appearance, settings)
+  is-locked           Print "yes" if the session is locked, else "no"
   version             Print the running shell's version
 USAGE
 }
 
+sig=""
+arg=""
 case "${1:-}" in
     toggle-start-menu) method=ToggleStartMenu ;;
     run)               method=ShowRunDialog ;;
@@ -29,13 +40,34 @@ case "${1:-}" in
     turn-off)          method=ShowTurnOffDialog ;;
     next-layout)       method=NextKeyboardLayout ;;
     version)           method=Version ;;
+    is-locked)         method=IsLocked ;;
+    switch-window)
+        method=SwitchWindow; sig=i
+        case "${2:-next}" in
+            next) arg=1 ;;
+            prev|previous) arg=-1 ;;
+            *) usage >&2; exit 2 ;;
+        esac ;;
+    control-panel)      method=ShowControlPanel; sig=s; arg="${2:-}" ;;
+    display-properties) method=ShowDisplayProperties; sig=s; arg="${2:-}" ;;
     -h|--help|help)    usage; exit 0 ;;
     *)                 usage >&2; exit 2 ;;
 esac
 
-if out=$(busctl --user call org.meadow.Shell /org/meadow/Shell org.meadow.Shell "$method" 2>&1); then
-    # busctl prints e.g. 's "0.1.0"' for a string result.
-    [ "$method" = Version ] && printf '%s\n' "$out" | sed -n 's/^s "\(.*\)"$/\1/p'
+call() {
+    if [ -n "$sig" ]; then
+        busctl --user call org.meadow.Shell /org/meadow/Shell org.meadow.Shell "$method" "$sig" -- "$arg"
+    else
+        busctl --user call org.meadow.Shell /org/meadow/Shell org.meadow.Shell "$method"
+    fi
+}
+
+if out=$(call 2>&1); then
+    # busctl prints e.g. 's "0.1.0"' for a string result and 'b true' for a boolean.
+    case "$method" in
+        Version)  printf '%s\n' "$out" | sed -n 's/^s "\(.*\)"$/\1/p' ;;
+        IsLocked) [ "$out" = "b true" ] && echo yes || echo no ;;
+    esac
     exit 0
 fi
 

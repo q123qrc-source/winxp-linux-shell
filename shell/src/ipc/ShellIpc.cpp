@@ -77,6 +77,32 @@ void ShellIpc::NextKeyboardLayout()
     Q_EMIT nextKeyboardLayoutRequested();
 }
 
+void ShellIpc::SwitchWindow(int direction)
+{
+    qCInfo(lcIpc) << "SwitchWindow" << direction;
+    Q_EMIT switchWindowRequested(direction < 0 ? -1 : 1);
+}
+
+void ShellIpc::ShowControlPanel(const QString &page)
+{
+    qCInfo(lcIpc) << "ShowControlPanel" << page;
+    Q_EMIT controlPanelRequested(page);
+}
+
+void ShellIpc::ShowDisplayProperties(const QString &tab)
+{
+    qCInfo(lcIpc) << "ShowDisplayProperties" << tab;
+    Q_EMIT displayPropertiesRequested(tab);
+}
+
+void ShellIpc::setLocked(bool locked)
+{
+    if (m_locked == locked)
+        return;
+    m_locked = locked;
+    Q_EMIT LockedChanged(locked);
+}
+
 QString ShellIpc::Version() const
 {
     return QStringLiteral(MEADOW_VERSION);

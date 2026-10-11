@@ -79,7 +79,32 @@ void Settings::setValue(const char *key, const QVariant &v)
         return;
     m_user->setValue(k, v);
     m_user->sync();
+    ++m_revision;
     Q_EMIT changed();
+}
+
+bool Settings::boolSetting(const QString &key, bool fallback) const
+{
+    return boolValue(key.toLatin1().constData(), fallback);
+}
+
+int Settings::intSetting(const QString &key, int fallback) const
+{
+    bool ok = false;
+    const int v = value(key.toLatin1().constData(), fallback).toInt(&ok);
+    return ok ? v : fallback;
+}
+
+double Settings::realSetting(const QString &key, double fallback) const
+{
+    bool ok = false;
+    const double v = value(key.toLatin1().constData(), fallback).toDouble(&ok);
+    return ok ? v : fallback;
+}
+
+void Settings::set(const QString &key, const QVariant &v)
+{
+    setValue(key.toLatin1().constData(), v);
 }
 
 void Settings::reset(const QString &key)
@@ -88,5 +113,6 @@ void Settings::reset(const QString &key)
         return;
     m_user->remove(key);
     m_user->sync();
+    ++m_revision;
     Q_EMIT changed();
 }

@@ -29,7 +29,14 @@ public:
     void ShowLogOffDialog();
     void ShowTurnOffDialog();
     void NextKeyboardLayout();
+    void SwitchWindow(int direction);
+    void ShowControlPanel(const QString &page);
+    void ShowDisplayProperties(const QString &tab);
+    bool IsLocked() const { return m_locked; }
     QString Version() const;
+
+    // Set by the shell when the lock state changes; emits LockedChanged.
+    void setLocked(bool locked);
 
 Q_SIGNALS:
     void toggleStartMenuRequested();
@@ -39,4 +46,12 @@ Q_SIGNALS:
     void logOffDialogRequested();
     void turnOffDialogRequested();
     void nextKeyboardLayoutRequested();
+    void switchWindowRequested(int direction);
+    void controlPanelRequested(const QString &page);
+    void displayPropertiesRequested(const QString &tab);
+    // D-Bus signal (relayed by the adaptor).
+    void LockedChanged(bool locked);
+
+private:
+    bool m_locked = false;
 };

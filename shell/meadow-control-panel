@@ -1,0 +1,11 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+# meadow-control-panel: open Meadow's Control Panel (inside meadow-shell).
+#   meadow-control-panel              the categories
+#   meadow-control-panel classic      every Control Panel icon
+#   meadow-control-panel APPLET       display, sounds, mouse, keyboard,
+#                                     datetime, users or network
+case "${1:-}" in
+    -h|--help) sed -n '3,7s/^# \{0,1\}//p' "$0"; exit 0 ;;
+esac
+exec meadow-shellctl control-panel "${1:-}"

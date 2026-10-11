@@ -18,6 +18,15 @@ Window {
     title: qsTr("Meadow Shell Preview")
     color: Theme.tokens.desktop.background
 
+    Desktop {
+        id: desktop
+        objectName: "desktop"
+        anchors.fill: parent
+        bottomInset: taskbar.visibleHeight
+        popups: popupHost
+        focus: true
+    }
+
     Taskbar {
         id: taskbar
         objectName: "taskbar"
@@ -104,6 +113,50 @@ Window {
         visible: active
     }
 
+    AltTabSwitcher {
+        id: altTab
+        objectName: "altTab"
+        anchors.centerIn: parent
+        width: implicitWidth
+        height: implicitHeight
+        focus: active
+    }
+
+    // Display Properties, Control Panel, applets: drawn frames in here.
+    Item {
+        id: windowLayer
+        anchors.fill: parent
+        anchors.bottomMargin: taskbar.visibleHeight
+    }
+    ShellWindows {
+        id: shellWindows
+        previewHost: windowLayer
+    }
+
+    ScreenSaverController { id: saverController }
+    ScreenSaver {
+        objectName: "screenSaver"
+        anchors.fill: parent
+        visible: saverController.active
+        focus: visible
+        mode: saverController.mode
+        onDismissed: saverController.stop()
+    }
+
+    AuthenticateDialog {
+        anchors.fill: parent
+        focus: visible
+    }
+
+    // Simulated lock (SessionLock in preview): covers the preview window.
+    LockScreen {
+        id: lockScreen
+        objectName: "lockScreen"
+        anchors.fill: parent
+        visible: Shell.lock.active
+        focus: visible
+    }
+
     Connections {
         target: ShellActions
         function onRunRequested() { runFrame.show() }
@@ -115,12 +168,16 @@ Window {
         function onRunDialogRequested() { ShellActions.runRequested() }
         function onLogOffDialogRequested() { ShellActions.logOffRequested() }
         function onTurnOffDialogRequested() { ShellActions.turnOffRequested() }
+        function onSwitchWindowRequested(direction) { altTab.open(direction) }
     }
 
     // Give the first layout pass (and D-Bus replies) a moment before opening.
     Timer {
         running: root.openAtStart.length > 0
         interval: Theme.tokens.animation.slow
-        onTriggered: taskbar.openPreviewPopup(root.openAtStart)
+        onTriggered: {
+            if (!ShellPreview.open(root.openAtStart, desktop))
+                taskbar.openPreviewPopup(root.openAtStart)
+        }
     }
 }

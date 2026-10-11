@@ -43,7 +43,10 @@ trap cleanup EXIT
 
 export LC_ALL=C.UTF-8
 export QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software QT_FORCE_STDERR_LOGGING=1
-export MEADOW_THEME_DIR="$src/theme" MEADOW_ASSET_DIR="$src/theme/assets"
+export MEADOW_THEME_DIR="$src/theme" MEADOW_ASSET_DIR="$src/theme/assets" QML_IMPORT_PATH="$build/qml"
+# meadow-control-panel and meadow-shellctl from this tree (Start menu tools
+# are shown only when found on PATH).
+export PATH="$src/shell:$PATH"
 export MEADOW_FAKE_TIME="${MEADOW_FAKE_TIME:-2026-03-14T09:41:00}" MEADOW_ICONS_GENERIC=1
 export XDG_DATA_DIRS="$src/tests/fixtures" XDG_DATA_HOME="$tmp/data" XDG_CONFIG_HOME="$tmp/config"
 export MEADOW_SHELL_DEFAULTS="$src/shell/data/shell.conf" MEADOW_MENU_DIR="$src/session/menus"
@@ -53,6 +56,11 @@ export USER=meadow
 export XKB_DEFAULT_LAYOUT="${XKB_DEFAULT_LAYOUT:-us}"
 export MEADOW_WPCTL=/bin/false
 unset MEADOW_LABWC_ENV_FILE
+
+# A sandbox desktop folder (never the real ~/Desktop) with a few items.
+mkdir -p "$tmp/config" "$tmp/Desktop/Holiday photos" "$tmp/Documents"
+printf 'XDG_DESKTOP_DIR="%s"\nXDG_DOCUMENTS_DIR="%s"\n' "$tmp/Desktop" "$tmp/Documents" > "$tmp/config/user-dirs.dirs"
+: > "$tmp/Desktop/Shopping list.txt"; : > "$tmp/Desktop/Budget 2026.ods"
 
 wait_ready() { # file
     i=0; while [ $i -lt 50 ] && ! grep -q ready "$1" 2>/dev/null; do sleep 0.1; i=$((i + 1)); done

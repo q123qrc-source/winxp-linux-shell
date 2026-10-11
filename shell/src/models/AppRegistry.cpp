@@ -32,7 +32,7 @@ AppRegistry::AppRegistry(QObject *parent)
 QStringList AppRegistry::currentDesktops()
 {
     const QStringList desktops = qEnvironmentVariable("XDG_CURRENT_DESKTOP").split(QLatin1Char(':'), Qt::SkipEmptyParts);
-    return desktops.isEmpty() ? QStringList{QStringLiteral("Meadow")} : desktops;
+    return desktops.isEmpty() ? QStringList{QStringLiteral("Meadow"), QStringLiteral("X-Meadow")} : desktops;
 }
 
 bool AppRegistry::isShown(const QString &desktopId) const

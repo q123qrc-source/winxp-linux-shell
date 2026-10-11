@@ -13,4 +13,5 @@ public:
     QPixmap requestPixmap(const QString &id, QSize *size, const QSize &requestedSize) override;
 
     static QPixmap genericIcon(int size);
+    static QPixmap iconPixmap(const QString &name, int size);
 };

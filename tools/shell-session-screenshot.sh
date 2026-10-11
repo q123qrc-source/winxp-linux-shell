@@ -39,6 +39,9 @@ cleanup() { kill "${pids[@]}" 2>/dev/null; wait 2>/dev/null; rm -rf "$tmp"; }
 trap cleanup EXIT
 export LC_ALL=C.UTF-8 QT_FORCE_STDERR_LOGGING=1 QT_QUICK_BACKEND=software
 export MEADOW_THEME_DIR="$src/theme" MEADOW_ASSET_DIR="$src/theme/assets" QML_IMPORT_PATH="$build/qml"
+# meadow-control-panel and meadow-shellctl from this tree (Start menu tools
+# are shown only when found on PATH).
+export PATH="$src/shell:$PATH"
 export MEADOW_FAKE_TIME=2026-03-14T09:41:00 MEADOW_ICONS_GENERIC=1
 export XDG_DATA_DIRS="$src/tests/fixtures" XDG_DATA_HOME="$tmp/data" XDG_CONFIG_HOME="$tmp/config"
 export MEADOW_SHELL_DEFAULTS="$src/shell/data/shell.conf" MEADOW_WPCTL=/bin/false

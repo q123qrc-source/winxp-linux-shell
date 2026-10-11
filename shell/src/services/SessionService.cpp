@@ -10,10 +10,16 @@
 #include <QDBusPendingReply>
 #include <QLoggingCategory>
 
+#include <unistd.h>
+
 Q_LOGGING_CATEGORY(lcSession, "meadow.shell.session")
 
 namespace {
 const QString kDisplayManager = QStringLiteral("org.freedesktop.DisplayManager");
+const QString kLogin1 = QStringLiteral("org.freedesktop.login1");
+const QString kLogin1Path = QStringLiteral("/org/freedesktop/login1");
+const QString kManager = QStringLiteral("org.freedesktop.login1.Manager");
+const QString kSessionIface = QStringLiteral("org.freedesktop.login1.Session");
 }
 
 SessionService::SessionService(bool simulate, QObject *parent)
@@ -27,7 +33,10 @@ SessionService::SessionService(const QDBusConnection &bus, bool simulate, QObjec
     , m_simulate(simulate)
     , m_seatPath(qEnvironmentVariable("XDG_SEAT_PATH"))
 {
-    if (m_simulate || m_seatPath.isEmpty() || !m_bus.isConnected())
+    if (m_simulate || !m_bus.isConnected())
+        return;
+    watchLogind();
+    if (m_seatPath.isEmpty())
         return;
     // Switch User needs a display manager that implements the seat API.
     const QDBusMessage msg = QDBusMessage::createMethodCall(QStringLiteral("org.freedesktop.DBus"), QStringLiteral("/org/freedesktop/DBus"),
@@ -86,4 +95,87 @@ void SessionService::switchUser()
             Q_EMIT failed(QStringLiteral("SwitchToGreeter"), w->error().message());
         }
     });
+}
+
+void SessionService::watchLogind()
+{
+    m_bus.connect(kLogin1, kLogin1Path, kManager, QStringLiteral("PrepareForSleep"), this, SLOT(onPrepareForSleep(bool)));
+    // Our session's object: by id when the session exported it, else by PID.
+    const QString id = qEnvironmentVariable("XDG_SESSION_ID");
+    QDBusMessage msg = id.isEmpty()
+        ? QDBusMessage::createMethodCall(kLogin1, kLogin1Path, kManager, QStringLiteral("GetSessionByPID")) << quint32(getpid())
+        : QDBusMessage::createMethodCall(kLogin1, kLogin1Path, kManager, QStringLiteral("GetSession")) << id;
+    auto *w = new QDBusPendingCallWatcher(m_bus.asyncCall(msg), this);
+    connect(w, &QDBusPendingCallWatcher::finished, this, [this](QDBusPendingCallWatcher *w) {
+        w->deleteLater();
+        QDBusPendingReply<QDBusObjectPath> reply = *w;
+        if (reply.isError()) {
+            qCInfo(lcSession) << "no logind session for this shell; loginctl lock-session will not reach it";
+            return;
+        }
+        m_sessionPath = reply.value().path();
+        m_bus.connect(kLogin1, m_sessionPath, kSessionIface, QStringLiteral("Lock"), this, SLOT(onLock()));
+        m_bus.connect(kLogin1, m_sessionPath, kSessionIface, QStringLiteral("Unlock"), this, SLOT(onUnlock()));
+        qCDebug(lcSession) << "following logind session" << m_sessionPath;
+    });
+}
+
+void SessionService::setLockBeforeSleep(bool enabled)
+{
+    if (m_lockBeforeSleep == enabled)
+        return;
+    m_lockBeforeSleep = enabled;
+    if (enabled)
+        takeSleepInhibitor();
+    else
+        sleepReady();
+}
+
+void SessionService::takeSleepInhibitor()
+{
+    if (m_simulate || !m_bus.isConnected() || m_sleepInhibitor.isValid())
+        return;
+    QDBusMessage msg = QDBusMessage::createMethodCall(kLogin1, kLogin1Path, kManager, QStringLiteral("Inhibit"));
+    msg << QStringLiteral("sleep") << QStringLiteral("Meadow") << tr("Locking the screen before sleeping") << QStringLiteral("delay");
+    auto *w = new QDBusPendingCallWatcher(m_bus.asyncCall(msg), this);
+    connect(w, &QDBusPendingCallWatcher::finished, this, [this](QDBusPendingCallWatcher *w) {
+        w->deleteLater();
+        QDBusPendingReply<QDBusUnixFileDescriptor> reply = *w;
+        if (reply.isError()) {
+            qCInfo(lcSession) << "cannot delay sleep for locking:" << reply.error().name();
+            return;
+        }
+        if (m_lockBeforeSleep)
+            m_sleepInhibitor = reply.value();
+    });
+}
+
+void SessionService::sleepReady()
+{
+    // Dropping the descriptor releases the delay lock.
+    m_sleepInhibitor = QDBusUnixFileDescriptor();
+}
+
+void SessionService::onPrepareForSleep(bool start)
+{
+    if (start) {
+        qCInfo(lcSession) << "system is about to sleep";
+        Q_EMIT aboutToSleep();
+        if (!m_lockBeforeSleep)
+            sleepReady();
+    } else {
+        qCInfo(lcSession) << "system resumed";
+        Q_EMIT resumed();
+        if (m_lockBeforeSleep)
+            takeSleepInhibitor();
+    }
+}
+
+void SessionService::setLockedHint(bool locked)
+{
+    if (m_simulate || m_sessionPath.isEmpty())
+        return;
+    QDBusMessage msg = QDBusMessage::createMethodCall(kLogin1, m_sessionPath, kSessionIface, QStringLiteral("SetLockedHint"));
+    msg << locked;
+    m_bus.asyncCall(msg);
 }

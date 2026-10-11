@@ -1,14 +1,20 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "ThemeLoader.h"
+#include "auth/LockAuthenticator.h"
 #include "ipc/ShellIpc.h"
 #include "models/AppRegistry.h"
 #include "models/AppMenuModel.h"
+#include "models/DesktopModel.h"
 #include "models/IconProvider.h"
 #include "models/PlacesModel.h"
 #include "models/RecentAppsModel.h"
 #include "models/UsageStore.h"
 #include "services/BatteryService.h"
 #include "services/KeyboardLayoutService.h"
+#include "services/LabwcConfig.h"
+#include "services/PolkitAgent.h"
+#include "services/TimeDateService.h"
+#include "services/UserAccountsService.h"
 #include "services/NetworkService.h"
 #include "services/NotificationServer.h"
 #include "services/PowerService.h"
@@ -20,6 +26,9 @@
 #include "ui/ScreenGrabber.h"
 #include "ui/ShellContext.h"
 #include "wayland/ForeignToplevelModel.h"
+#include "wayland/IdleMonitor.h"
+#include "wayland/OutputManager.h"
+#include "wayland/SessionLock.h"
 #include "wayland/ToplevelModel.h"
 
 #include <QCommandLineParser>
@@ -125,6 +134,30 @@ int main(int argc, char *argv[])
     }
 
     Settings settings;
+
+    // Appearance: the saved color scheme and font size, unless a scheme was
+    // forced (--theme, or MEADOW_THEME as the tests do).
+    if (!parser.isSet(themeOpt) && qEnvironmentVariableIsEmpty("MEADOW_THEME")) {
+        const QString scheme = settings.stringValue(QStringLiteral("Appearance/scheme"), QStringLiteral("luna-blue"));
+        if (scheme != theme->schemeId() && !theme->loadScheme(scheme))
+            qCWarning(lcShell) << "unknown color scheme" << scheme;
+    }
+    auto applyFontSize = [&] {
+        const bool large = settings.stringValue(QStringLiteral("Appearance/fontSize")) == QLatin1String("large");
+        theme->setScale(large ? theme->token(QStringLiteral("scale.large")).toReal() : 1.0);
+    };
+    if (!parser.isSet(grabOpt))
+        applyFontSize();
+    // Sounds: the lock screen's sound players read MEADOW_MUTE when created.
+    auto applySounds = [&] {
+        if (settings.boolSetting(QStringLiteral("Sounds/enabled"), true))
+            qunsetenv("MEADOW_MUTE");
+        else
+            qputenv("MEADOW_MUTE", "1");
+    };
+    if (!parser.isSet(grabOpt))
+        applySounds();
+
     AppRegistry apps;
     TrayModel tray;
     NotificationServer notifications;
@@ -150,10 +183,66 @@ int main(int argc, char *argv[])
     RecentAppsModel startApps(&apps, &usage, &settings);
     startApps.setFrequentCount(theme->token(QStringLiteral("startMenu.left.mfuCount")).toInt());
     PlacesModel places(&settings);
+    DesktopModel desktop(&settings, &places, &apps);
     PowerService power(systemServices, preview);
     SessionService session(systemServices, preview);
     RunService run(&apps);
     ScreenGrabber screen;
+
+    // Compositor-side settings (decoration theme, mouse, keyboard) through
+    // the session's labwc overlay; written once at startup so the saved
+    // color scheme's decorations come back.
+    LabwcConfig labwc(&settings);
+    if (!preview)
+        labwc.apply();
+    QObject::connect(&settings, &Settings::changed, &app, [&] {
+        if (!parser.isSet(grabOpt)) {
+            applyFontSize();
+            applySounds();
+        }
+    });
+    OutputManager outputs(preview);
+    IdleMonitor idle(preview);
+    PolkitAgent polkit(preview);
+    TimeDateService timeDate(systemServices, preview);
+    UserAccountsService accounts(systemServices, preview);
+    if (!preview)
+        polkit.registerForSession();
+
+    // Lock screen. Locking is simulated in --preview (the lock screen then
+    // shows inside the preview window and accepts the password "meadow").
+    SessionLock lock(preview);
+    LockAuthenticator lockAuth(preview);
+    QObject::connect(&ipc, &ShellIpc::lockRequested, &lock, &SessionLock::lock);
+    QObject::connect(&session, &SessionService::lockRequested, &lock, &SessionLock::lock);
+    // `loginctl unlock-session`: logind accepts it only from the session's own
+    // user or an administrator (polkit), so it is the recovery path from a
+    // text console when the lock screen cannot unlock (as GNOME and KDE do).
+    QObject::connect(&session, &SessionService::unlockRequested, &lock, [&lock] {
+        if (!lock.isActive())
+            return;
+        qCInfo(lcShell) << "logind Unlock: unlocking";
+        lock.unlock();
+    });
+    session.setLockBeforeSleep(settings.boolSetting(QStringLiteral("ScreenSaver/lockOnSuspend"), true));
+    QObject::connect(&settings, &Settings::changed, &session, [&] {
+        session.setLockBeforeSleep(settings.boolSetting(QStringLiteral("ScreenSaver/lockOnSuspend"), true));
+    });
+    QObject::connect(&session, &SessionService::aboutToSleep, &lock, [&] {
+        if (settings.boolSetting(QStringLiteral("ScreenSaver/lockOnSuspend"), true) && !lock.lock())
+            session.sleepReady();
+        else if (lock.isLocked())
+            session.sleepReady();
+    });
+    QObject::connect(&lock, &SessionLock::lockFailed, &session, &SessionService::sleepReady);
+    QObject::connect(&lock, &SessionLock::stateChanged, &app, [&] {
+        ipc.setLocked(lock.isLocked());
+        session.setLockedHint(lock.isLocked());
+        if (lock.isLocked())
+            session.sleepReady();
+        if (!lock.isActive())
+            lockAuth.cancel();
+    });
 
     ShellContext::Services services;
     services.windows = windows.get();
@@ -173,6 +262,15 @@ int main(int argc, char *argv[])
     services.session = &session;
     services.run = &run;
     services.screen = &screen;
+    services.lock = &lock;
+    services.labwc = &labwc;
+    services.outputs = &outputs;
+    services.idle = &idle;
+    services.polkit = &polkit;
+    services.timeDate = &timeDate;
+    services.accounts = &accounts;
+    services.desktop = &desktop;
+    services.lockAuth = &lockAuth;
     ShellContext shell(services, preview);
     QObject::connect(&ipc, &ShellIpc::toggleStartMenuRequested, &shell,
                      [&shell] { shell.setStartMenuOpen(!shell.startMenuOpen()); });
@@ -196,6 +294,10 @@ int main(int argc, char *argv[])
     }
     if (engine.rootObjects().isEmpty())
         return 1;
+    // The lock windows exist now; lock again if a crashed shell left the
+    // session locked.
+    if (!preview)
+        lock.relockIfNeeded();
 
     if (parser.isSet(grabOpt)) {
         auto *window = qobject_cast<QQuickWindow *>(engine.rootObjects().constFirst());

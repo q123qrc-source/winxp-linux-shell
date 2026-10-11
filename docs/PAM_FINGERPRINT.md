@@ -5,8 +5,10 @@ screen. It uses fprintd, libfprint and `pam_fprintd`.
 
 ## Ground rules
 
-- Installing or removing Meadow packages **never** changes PAM, authselect or
-  the display manager.
+- Installing or removing Meadow packages **never** changes how anyone logs
+  in: no PAM file of an existing service, no authselect profile and no display
+  manager setting is touched. The one PAM file the package ships is
+  `/etc/pam.d/meadow-lock` (see below). Only the Meadow lock screen reads it.
 - Only `sudo meadow-setup enable-fingerprint` changes PAM, and
   `sudo meadow-setup disable-fingerprint` reverts exactly what it did.
 - On Fedora, `system-auth` and `password-auth` belong to **authselect**, so
@@ -47,20 +49,27 @@ screen. It uses fprintd, libfprint and `pam_fprintd`.
    `[success=done default=ignore]` means a recognized finger logs in, and
    anything else (no reader, no enrolled finger, three misses, 15 s timeout)
    falls through to the password.
-3. **`/etc/pam.d/meadow-lock`** (the lock screen service). It is generated from
-   the sddm service: the same auth and account stack (on Fedora,
-   `substack password-auth`) without greeter-only modules (SELinux permit,
-   keyrings), with the fingerprint line first unless that stack already
-   reaches `pam_fprintd`. A `meadow-lock` file that isn't Meadow's is backed up
-   and restored on disable. The Fedora result is in
-   `/usr/share/meadow/pam.d/meadow-lock`.
+3. **`/etc/pam.d/meadow-lock`** (the lock screen service).
+   - **The packaged file** (marker `# meadow-lock: shipped by Meadow (password
+     only)`) gets the same marked fingerprint block at the top of its auth
+     stack, after a `.meadow-bak` backup. If its stack already reaches
+     `pam_fprintd` (for example through authselect's `with-fingerprint`),
+     it is left alone.
+   - **No file, or a file that isn't Meadow's** (another distribution, or the
+     package was not installed): a service is generated from the sddm
+     service. It has the same auth and account stack (on Fedora,
+     `substack password-auth`) without greeter-only modules (SELinux permit,
+     keyrings), with the fingerprint line first unless that stack already
+     reaches `pam_fprintd`. A foreign file is backed up and restored on
+     disable.
 4. **Optional: `--allow-greeter-query`.** This installs
    `/etc/polkit-1/rules.d/50-meadow.rules` (see below).
 5. Relabels the changed files for SELinux (`restorecon`), offers a
    `pamtester` check, and prints the recovery steps.
 
-`disable-fingerprint` removes the marked block, which keeps any edits made to
-the file since, and deletes `meadow-lock` (or restores the backup). It removes
+`disable-fingerprint` removes the marked blocks, which keeps any edits made to
+the files since. The packaged `meadow-lock` goes back to password-only; a
+generated one is deleted (or the foreign file it replaced is restored). It removes
 the polkit rule and turns the authselect / pam-auth-update profile off only if
 Meadow turned it on. `meadow-setup status` shows the current state.
 
@@ -131,6 +140,63 @@ does not start readings on its own. You have two choices:
 - The reader times out after 15 s per reading (`timeout=15`), and three
   unrecognized touches end it (`max-tries=3`).
 
+## The lock screen and `/etc/pam.d/meadow-lock`
+
+The package installs this file as `%config(noreplace)`, so an edited copy
+survives updates:
+
+```
+#%PAM-1.0
+# meadow-lock: shipped by Meadow (password only)
+auth        substack      password-auth
+auth        include       postlogin
+account     required      pam_nologin.so
+account     include       password-auth
+```
+
+It is a **new service name**. `login`, `sddm`, `gdm-password`, `sudo` and
+every other service are unchanged, so installing it cannot lock anyone out of
+logging in. A broken `meadow-lock` can at worst keep the lock screen from
+unlocking; see the recovery steps below. A copy of the pristine file is kept
+in `/usr/share/meadow/pam.d/meadow-lock`.
+
+**How PAM runs.** meadow-shell never loads PAM itself. Each unlock attempt
+starts `/usr/libexec/meadow/meadow-auth-helper`, a small process that is
+**not setuid** and runs as the locked user. pam_unix checks the user's own
+password through `unix_chkpwd`, as every screen locker does. The helper:
+
+- authenticates only the user who started it (`getuid()`); the shell cannot
+  ask for another account;
+- runs `pam_authenticate`, `pam_acct_mgmt` and `pam_setcred(PAM_REFRESH_CRED)`;
+- forwards prompts and messages to the shell over stdin/stdout, as
+  length-framed messages: `PROMPT_ECHO_OFF`, `PROMPT_ECHO_ON`, `INFO`,
+  `ERROR`, `RESULT` from the helper; `RESPONSE` and `CANCEL` from the shell;
+- wipes the password (`explicit_bzero`), disables core dumps
+  (`PR_SET_DUMPABLE 0`) and logs nothing it was told or typed. The shell logs
+  only "password unlock attempt" and "authentication succeeded/failed" under
+  `meadow.shell.auth` / `meadow.shell.lock`.
+
+A PAM module that crashes or hangs takes down the helper, not the shell, so
+the session stays locked either way.
+
+**Fingerprint on the lock screen.** This works exactly like the Welcome
+screen, using the same QML (`Meadow.Welcome`). With fingers enrolled, a
+reading starts as soon as the lock screen appears (an empty-password attempt
+reaches `pam_fprintd` first). A password typed during a reading is queued.
+When the reading ends without a match, the helper reaches pam_unix's prompt;
+a fingerprint attempt then cancels instead of answering, and the queued
+password is checked next. A second prompt in one conversation (for example
+"your password has expired") cannot be answered from a lock screen and
+fails the attempt.
+
+**What locks the session:** Win+L (`meadow-shellctl lock`), `loginctl
+lock-session` (logind's `Lock` signal), suspend when `[ScreenSaver]
+lockOnSuspend=true` (a logind delay inhibitor locks before the system
+sleeps), and the end of a password-protected screen saver. Locking uses the
+compositor's `ext-session-lock-v1`. If meadow-shell dies while locked, labwc
+keeps the screen locked and blank. The restarted shell finds
+`$XDG_RUNTIME_DIR/meadow/locked` and locks again.
+
 ## Testing with pamtester
 
 ```sh
@@ -165,7 +231,9 @@ You will not need this if you only installed packages. It applies only after
    ```sh
    # put the SDDM PAM file back the way it was before Meadow
    sudo cp -a /etc/pam.d/sddm.meadow-bak /etc/pam.d/sddm
-   sudo rm -f /etc/pam.d/meadow-lock /etc/polkit-1/rules.d/50-meadow.rules
+   sudo rm -f /etc/polkit-1/rules.d/50-meadow.rules
+   # the lock screen service back to the packaged password-only file
+   sudo cp /usr/share/meadow/pam.d/meadow-lock /etc/pam.d/meadow-lock
    # Fedora: turn off authselect's fingerprint feature
    sudo authselect disable-feature with-fingerprint
    sudo authselect check
@@ -181,6 +249,29 @@ You will not need this if you only installed packages. It applies only after
 6. **SELinux:** if a restored file gives AVC denials, run
    `sudo restorecon -Rv /etc/pam.d /etc/sddm.conf.d /etc/polkit-1/rules.d`.
 7. Reboot: `sudo systemctl reboot`.
+
+### The lock screen won't unlock
+
+1. Press `Ctrl+Alt+F3` and log in on the text console as the same user.
+2. Unlock the graphical session from there. Your open windows are kept.
+   meadow-shell honours logind's Unlock, which logind accepts only from the
+   session's own user or an administrator:
+   ```sh
+   loginctl list-sessions         # find the graphical session's id
+   loginctl unlock-session <id>
+   ```
+   If meadow-shell is hung and doesn't react, `pkill -x meadow-shell`; the
+   session restarts it and it locks again. As a last resort, end the graphical
+   session with `loginctl terminate-session <id>`.
+3. Put the lock service back:
+   ```sh
+   sudo cp -a /etc/pam.d/meadow-lock.meadow-bak /etc/pam.d/meadow-lock   # Meadow's backup, if any
+   # or the pristine packaged copy:
+   sudo cp /usr/share/meadow/pam.d/meadow-lock /etc/pam.d/meadow-lock
+   sudo restorecon -v /etc/pam.d/meadow-lock
+   pamtester meadow-lock "$USER" authenticate
+   ```
+4. `Ctrl+Alt+F1` (or F2) returns to the graphical session.
 
 If you can't log in on a console either (very unlikely, since Meadow never
 touches `login`), boot a Fedora live USB, mount the root filesystem, and

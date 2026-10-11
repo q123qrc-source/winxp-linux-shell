@@ -41,6 +41,15 @@ public:
     Q_INVOKABLE void select(int index);
     Q_INVOKABLE void next();
 
+    // Control Panel > Keyboard > Input Languages.
+    // Every base layout xkeyboard-config knows: {code, name, shortName},
+    // sorted by name.
+    Q_INVOKABLE QVariantList availableLayouts() const;
+    // Adds a layout (at the end; not if already present).
+    Q_INVOKABLE void addLayout(const QString &code);
+    // Removes a layout; the last one cannot be removed.
+    Q_INVOKABLE void removeLayout(int index);
+
     // The environment file content for the current order (tests).
     QString environmentFileContent() const;
 
@@ -51,6 +60,7 @@ private:
     void load(const QString &layouts, const QString &variants, const QString &rulesXml);
     void apply();
 
+    QString m_rulesXml;
     QList<Layout> m_layouts;
     QStringList m_options; // XKB_DEFAULT_OPTIONS without grp:* switches
 };

@@ -4,6 +4,9 @@
 # Policy: installing or removing these packages never changes how the system
 # logs in. No scriptlet touches /etc, PAM, authselect or the display manager;
 # that is done only on request by `meadow-setup` (see README-fedora.md).
+# The one file under /etc is /etc/pam.d/meadow-lock, a password-only PAM
+# service read only by the Meadow lock screen's helper. It is not part of the
+# login stack, so it cannot change how anyone logs in.
 
 Name:           meadow
 Version:        0.1.0
@@ -37,6 +40,11 @@ BuildRequires:  pkgconfig(wayland-protocols)
 # wlr-foreign-toplevel-management (taskbar window list)
 BuildRequires:  pkgconfig(wlr-protocols)
 BuildRequires:  polkit-qt6-1-devel
+# meadow-auth-helper (lock screen)
+BuildRequires:  pam-devel
+# Lock-screen surfaces use QtWaylandClient's shell-integration API
+# (ext-session-lock-v1), which is private: see the Requires pin below.
+BuildRequires:  qt6-qtbase-private-devel
 BuildRequires:  desktop-file-utils
 BuildRequires:  librsvg2-tools
 BuildRequires:  xcursorgen
@@ -46,6 +54,9 @@ BuildRequires:  qt6-qtbase-gui
 BuildRequires:  qt6-qtsvg
 # %%ctest runs D-Bus tests on a private session bus (skipped without it).
 BuildRequires:  dbus-daemon
+# %%ctest checks the auth helper with pam_wrapper/pam_matrix (a private PAM
+# service directory; no system PAM file is read).
+BuildRequires:  pam_wrapper
 
 Requires:       %{name}-shell%{?_isa} = %{version}-%{release}
 Requires:       sddm-theme-%{name} = %{version}-%{release}
@@ -75,6 +86,11 @@ License:        GPL-3.0-or-later
 Requires:       %{name}-common%{?_isa} = %{version}-%{release}
 Requires:       %{name}-themes = %{version}-%{release}
 Requires:       labwc >= 0.9
+# Private QtWaylandClient API (lock surfaces): rebuild on every Qt update.
+%{?_qt6_version:Requires: qt6-qtbase%{?_isa} = %{_qt6_version}}
+# Lock screen (meadow-auth-helper) and the authentication agent.
+Requires:       pam
+Requires:       polkit
 # busctl (meadow-shellctl)
 Requires:       systemd
 Requires:       xorg-x11-server-Xwayland
@@ -154,6 +170,8 @@ fontconfig snippet mapping classic UI font names to open fonts.
 # Session entries carry DesktopNames=, which desktop-file-validate rejects;
 # the script checks it and validates the rest.
 tools/validate-session-desktop.sh %{buildroot}%{_datadir}/wayland-sessions/meadow.desktop
+desktop-file-validate %{buildroot}%{_datadir}/applications/meadow-control-panel.desktop
+desktop-file-validate %{buildroot}%{_datadir}/applications/meadow-display-properties.desktop
 # Screenshot comparisons depend on the exact fonts installed; they run in CI only.
 %ctest --label-exclude screenshot
 
@@ -169,6 +187,7 @@ tools/validate-session-desktop.sh %{buildroot}%{_datadir}/wayland-sessions/meado
 %{_libdir}/libmeadow-common.so.%{version}
 %dir %{_qt6_qmldir}/Meadow
 %{_qt6_qmldir}/Meadow/Controls/
+%{_qt6_qmldir}/Meadow/Welcome/
 
 %files shell
 %license LICENSE LICENSES/*
@@ -178,6 +197,13 @@ tools/validate-session-desktop.sh %{buildroot}%{_datadir}/wayland-sessions/meado
 %{_bindir}/meadow-shellctl
 %{_bindir}/meadow-session
 %{_bindir}/meadow-setup
+%{_bindir}/meadow-control-panel
+%dir %{_libexecdir}/meadow
+%{_libexecdir}/meadow/meadow-auth-helper
+# Password-only; meadow-setup enable-fingerprint adds a marked block.
+%config(noreplace) %{_sysconfdir}/pam.d/meadow-lock
+%{_datadir}/applications/meadow-control-panel.desktop
+%{_datadir}/applications/meadow-display-properties.desktop
 %dir %{_datadir}/wayland-sessions
 %{_datadir}/wayland-sessions/meadow.desktop
 %{_datadir}/xdg-desktop-portal/meadow-portals.conf
@@ -215,7 +241,11 @@ tools/validate-session-desktop.sh %{buildroot}%{_datadir}/wayland-sessions/meado
 %{_datadir}/fontconfig/conf.avail/50-meadow.conf
 
 %changelog
-* Sat Oct 10 2026 Meadow contributors <q123qrc@gmail.com> - 0.1.0-1
+* Sun Oct 11 2026 Meadow contributors <q123qrc@gmail.com> - 0.1.0-1
+- Phase 8: desktop (Meadow Hills wallpaper, icons, context menus), lock
+  screen (ext-session-lock-v1, meadow-auth-helper, /etc/pam.d/meadow-lock),
+  screen saver, Display Properties, Control Panel and applets, Alt+Tab,
+  polkit authentication agent
 - Phase 7: Start menu (XDG menus, pinned and frequent programs, places,
   recent documents), Run, Log Off and Turn Off Computer dialogs
 - Phase 6: taskbar, window list, notification area, notifications, clock,

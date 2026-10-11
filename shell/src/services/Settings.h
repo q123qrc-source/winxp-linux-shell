@@ -19,6 +19,10 @@ class Settings : public QObject
     Q_PROPERTY(bool showClock READ showClock WRITE setShowClock NOTIFY changed)
     Q_PROPERTY(bool hideInactiveIcons READ hideInactiveIcons WRITE setHideInactiveIcons NOTIFY changed)
     Q_PROPERTY(QStringList quickLaunch READ quickLaunch WRITE setQuickLaunch NOTIFY changed)
+    // Increases on every change. QML bindings that read generic keys
+    // (stringValue(), boolSetting(), ...) mention it so they re-evaluate:
+    //   wallpaper: { Shell.settings.revision; return Shell.settings.stringValue("Desktop/wallpaper") }
+    Q_PROPERTY(int revision READ revision NOTIFY changed)
 
 public:
     explicit Settings(QObject *parent = nullptr);
@@ -43,11 +47,21 @@ public:
     bool hideInactiveIcons() const { return boolValue("Taskbar/hideInactiveIcons", true); }
     void setHideInactiveIcons(bool v) { setValue("Taskbar/hideInactiveIcons", v); }
     QStringList quickLaunch() const;
+    int revision() const { return m_revision; }
     void setQuickLaunch(const QStringList &ids) { setValue("Taskbar/quickLaunch", ids); }
 
     // Any key, e.g. "StartMenu/fileManager" (strings and comma lists).
     Q_INVOKABLE QString stringValue(const QString &key, const QString &fallback = {}) const;
     Q_INVOKABLE QStringList listValue(const QString &key) const;
+
+    // Generic typed access for the Phase 8 sections ([Desktop], [Appearance],
+    // [ScreenSaver], [Mouse], [Keyboard], [Sounds]); INI values are strings,
+    // these convert them.
+    Q_INVOKABLE bool boolSetting(const QString &key, bool fallback = false) const;
+    Q_INVOKABLE int intSetting(const QString &key, int fallback = 0) const;
+    Q_INVOKABLE double realSetting(const QString &key, double fallback = 0) const;
+    // Writes the user's value for any key (no-op if unchanged).
+    Q_INVOKABLE void set(const QString &key, const QVariant &value);
 
     // Forget the user's value for a key (the packaged default applies again).
     Q_INVOKABLE void reset(const QString &key);
@@ -60,6 +74,7 @@ private:
     bool boolValue(const char *key, bool fallback) const;
     void setValue(const char *key, const QVariant &value);
 
+    int m_revision = 0;
     std::unique_ptr<QSettings> m_user;
     std::unique_ptr<QSettings> m_defaults;
 };

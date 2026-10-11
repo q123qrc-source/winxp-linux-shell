@@ -11,8 +11,16 @@
 #include "services/RunService.h"
 #include "services/SessionService.h"
 #include "services/VolumeService.h"
+#include "services/PolkitAgent.h"
+#include "services/Settings.h"
+#include "services/TimeDateService.h"
+#include "services/UserAccountsService.h"
+#include "wayland/IdleMonitor.h"
+#include "wayland/OutputManager.h"
+#include "wayland/ToplevelModel.h"
 
 #include <QDBusConnection>
+#include <algorithm>
 #include <QDBusInterface>
 #include <QDBusPendingCallWatcher>
 #include <QDBusReply>
@@ -408,6 +416,178 @@ private Q_SLOTS:
             server.post(QStringLiteral("a"), QStringLiteral("n%1").arg(i), QString(), QString(), 0);
         QCOMPARE(server.rowCount(), NotificationServer::kMaxQueued);
         QCOMPARE(server.current().value(QStringLiteral("summary")).toString(), QStringLiteral("n5"));
+    }
+
+    // --- Phase 8 ----------------------------------------------------------
+
+    void logindLockAndSleep()
+    {
+        const QString log = m_dir.filePath(QStringLiteral("logind-lock.log"));
+        auto mock = startMock({QStringLiteral("--no-battery"), QStringLiteral("--network"), QStringLiteral("none"), QStringLiteral("--logind"),
+                               QStringLiteral("--log"), log});
+        QVERIFY(mock);
+        qputenv("XDG_SESSION_ID", "31");
+        SessionService session(QDBusConnection::sessionBus(), false);
+        QSignalSpy lock(&session, &SessionService::lockRequested);
+        QSignalSpy unlock(&session, &SessionService::unlockRequested);
+        QSignalSpy sleep(&session, &SessionService::aboutToSleep);
+        session.setLockBeforeSleep(true);
+        QTRY_VERIFY(readLines(log).contains(QStringLiteral("Inhibit sleep delay")));
+        QDBusInterface test(QStringLiteral("org.freedesktop.login1"), QStringLiteral("/org/freedesktop/login1"),
+                            QStringLiteral("org.meadow.Test"));
+        // Wait until the session object is known (GetSession answered).
+        QTest::qWait(300);
+        call(test, QStringLiteral("Emit"), {QStringLiteral("Lock")});
+        QTRY_COMPARE(lock.size(), 1);
+        call(test, QStringLiteral("Emit"), {QStringLiteral("Unlock")});
+        QTRY_COMPARE(unlock.size(), 1);
+        call(test, QStringLiteral("Emit"), {QStringLiteral("PrepareForSleep")});
+        QTRY_COMPARE(sleep.size(), 1);
+        session.setLockedHint(true);
+        QTRY_VERIFY(readLines(log).contains(QStringLiteral("SetLockedHint True")));
+        qunsetenv("XDG_SESSION_ID");
+    }
+
+    void timeDate()
+    {
+        const QString log = m_dir.filePath(QStringLiteral("timedate.log"));
+        auto mock = startMock({QStringLiteral("--no-battery"), QStringLiteral("--network"), QStringLiteral("none"), QStringLiteral("--timedate"),
+                               QStringLiteral("--log"), log});
+        QVERIFY(mock);
+        TimeDateService td(QDBusConnection::sessionBus(), false);
+        QTRY_VERIFY(td.available());
+        QCOMPARE(td.timezone(), QStringLiteral("Europe/London"));
+        QVERIFY(td.ntp());
+        QVERIFY(td.timezones().contains(QStringLiteral("Europe/Paris")));
+        td.setTimezone(QStringLiteral("Not/AZone")); // ignored
+        td.setTimezone(QStringLiteral("Europe/Paris"));
+        QTRY_COMPARE(td.timezone(), QStringLiteral("Europe/Paris"));
+        td.setTime(QDateTime::currentDateTime()); // ignored while NTP is on
+        td.setNtp(false);
+        QTRY_VERIFY(!td.ntp());
+        td.setTime(QDateTime::fromSecsSinceEpoch(1700000000));
+        QTRY_COMPARE(readLines(log), (QStringList{QStringLiteral("SetTimezone Europe/Paris True"), QStringLiteral("SetNTP False True"),
+                                                  QStringLiteral("SetTime 1700000000000000 False True")}));
+    }
+
+    void accounts()
+    {
+        const QString log = m_dir.filePath(QStringLiteral("accounts.log"));
+        auto mock = startMock({QStringLiteral("--no-battery"), QStringLiteral("--network"), QStringLiteral("none"), QStringLiteral("--accounts"),
+                               QStringLiteral("--log"), log});
+        QVERIFY(mock);
+        UserAccountsService accounts(QDBusConnection::sessionBus(), false);
+        QTRY_COMPARE(accounts.users().size(), 2);
+        QVariantMap self;
+        for (const QVariant &u : accounts.users()) {
+            if (u.toMap().value(QStringLiteral("self")).toBool())
+                self = u.toMap();
+        }
+        QVERIFY(!self.isEmpty());
+        QVERIFY(self.value(QStringLiteral("admin")).toBool());
+        accounts.setRealName(self.value(QStringLiteral("path")).toString(), QStringLiteral("  New Name "));
+        QTRY_VERIFY(readLines(log).size() == 1 && readLines(log).first().endsWith(QStringLiteral("New Name")));
+        QTRY_VERIFY(std::any_of(accounts.users().cbegin(), accounts.users().cend(), [](const QVariant &u) {
+            return u.toMap().value(QStringLiteral("realName")).toString() == QStringLiteral("New Name");
+        }));
+    }
+
+    void toplevelMru()
+    {
+        PreviewToplevelModel m;
+        m.addPreviewWindow(QStringLiteral("A"), QStringLiteral("a")); // row 0
+        m.addPreviewWindow(QStringLiteral("B"), QStringLiteral("b")); // row 1
+        m.addPreviewWindow(QStringLiteral("C"), QStringLiteral("c")); // row 2, active
+        QCOMPARE(m.mruRows(), (QList<int>{2, 1, 0}));
+        m.activate(0);
+        QCOMPARE(m.mruRows(), (QList<int>{0, 2, 1}));
+        m.close(2);
+        QCOMPARE(m.mruRows().first(), 0);
+        QCOMPARE(m.mruRows().size(), 2);
+    }
+
+    void outputsSimulated()
+    {
+        OutputManager out(true);
+        QVERIFY(out.isAvailable());
+        QCOMPARE(out.outputs().size(), 1);
+        const QVariantMap o = out.outputs().first().toMap();
+        QCOMPARE(o.value(QStringLiteral("width")).toInt(), 1024);
+        QSignalSpy applied(&out, &OutputManager::applied);
+        out.apply(o.value(QStringLiteral("name")).toString(), 800, 600, 0, 1.25);
+        QCOMPARE(applied.size(), 1);
+        QVERIFY(applied.at(0).at(0).toBool());
+        QCOMPARE(out.outputs().first().toMap().value(QStringLiteral("width")).toInt(), 800);
+        QCOMPARE(out.outputs().first().toMap().value(QStringLiteral("scale")).toDouble(), 1.25);
+        QVERIFY(out.canRevert());
+        out.revert();
+        QCOMPARE(out.outputs().first().toMap().value(QStringLiteral("width")).toInt(), 1024);
+        QVERIFY(!out.canRevert());
+        out.apply(QStringLiteral("nope"), 800, 600, 0, 1);
+        QVERIFY(!applied.last().at(0).toBool());
+    }
+
+    void idleSimulated()
+    {
+        IdleMonitor idle(true);
+        QSignalSpy spy(&idle, &IdleMonitor::idleChanged);
+        idle.setTimeoutMs(600000);
+        QVERIFY(!idle.isIdle());
+        idle.setIdle(true);
+        QVERIFY(idle.isIdle());
+        idle.setIdle(true);
+        QCOMPARE(spy.size(), 1);
+    }
+
+    void polkitSimulated()
+    {
+        PolkitAgent agent(true);
+        QVERIFY(!agent.registerForSession()); // never registers in preview
+        QSignalSpy finished(&agent, &PolkitAgent::finished);
+        agent.requestPreview();
+        QVERIFY(agent.isActive());
+        QCOMPARE(agent.identities().size(), 1);
+        agent.submit(QStringLiteral("wrong"));
+        QVERIFY(agent.isActive());
+        QVERIFY(!agent.feedback().isEmpty());
+        agent.submit(QStringLiteral("meadow"));
+        QCOMPARE(finished.size(), 1);
+        QVERIFY(finished.at(0).at(0).toBool());
+        QVERIFY(!agent.isActive());
+        agent.requestPreview();
+        agent.cancel();
+        QCOMPARE(finished.size(), 2);
+        QVERIFY(!finished.at(1).at(0).toBool());
+    }
+
+    void keyboardAddRemove()
+    {
+        KeyboardLayoutService k(QStringLiteral("us"), QString(), QStringLiteral(MEADOW_SOURCE_DIR "/tests/fixtures/evdev.xml"));
+        const QVariantList available = k.availableLayouts();
+        QVERIFY(available.size() >= 3);
+        k.addLayout(QStringLiteral("de"));
+        QCOMPARE(k.count(), 2);
+        k.addLayout(QStringLiteral("de")); // already there
+        k.addLayout(QStringLiteral("xx")); // unknown
+        QCOMPARE(k.count(), 2);
+        k.removeLayout(1);
+        QCOMPARE(k.count(), 1);
+        k.removeLayout(0); // the last one stays
+        QCOMPARE(k.count(), 1);
+    }
+
+    void settingsRevision()
+    {
+        Settings s(m_dir.filePath(QStringLiteral("rev.conf")), QStringLiteral(MEADOW_SOURCE_DIR "/shell/data/shell.conf"));
+        const int before = s.revision();
+        QCOMPARE(s.stringValue(QStringLiteral("Desktop/wallpaper")), QStringLiteral("meadow-hills.svg"));
+        QCOMPARE(s.intSetting(QStringLiteral("ScreenSaver/timeoutMin"), 1), 10);
+        QVERIFY(s.boolSetting(QStringLiteral("ScreenSaver/passwordProtect")));
+        s.set(QStringLiteral("Desktop/wallpaper"), QString());
+        QCOMPARE(s.revision(), before + 1);
+        s.set(QStringLiteral("Desktop/wallpaper"), QString()); // unchanged
+        QCOMPARE(s.revision(), before + 1);
+        QCOMPARE(s.realSetting(QStringLiteral("Mouse/pointerSpeed"), 9), 0.0);
     }
 };
 

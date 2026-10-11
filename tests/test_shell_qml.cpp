@@ -21,11 +21,21 @@
 #include "services/Settings.h"
 #include "services/TrayModel.h"
 #include "services/VolumeService.h"
+#include "auth/LockAuthenticator.h"
+#include "models/DesktopModel.h"
+#include "services/LabwcConfig.h"
+#include "services/PolkitAgent.h"
+#include "services/TimeDateService.h"
+#include "services/UserAccountsService.h"
 #include "ui/ScreenGrabber.h"
+#include "wayland/IdleMonitor.h"
+#include "wayland/OutputManager.h"
+#include "wayland/SessionLock.h"
 #include "ui/ShellContext.h"
 #include "wayland/ToplevelModel.h"
 
 #include <QDBusConnection>
+#include <QDir>
 #include <QFile>
 #include <QSettings>
 #include <QQmlApplicationEngine>
@@ -88,6 +98,15 @@ class TestShellQml : public QObject
     std::unique_ptr<SessionService> m_session;
     std::unique_ptr<RunService> m_run;
     std::unique_ptr<ScreenGrabber> m_screen;
+    std::unique_ptr<SessionLock> m_lock;
+    std::unique_ptr<LockAuthenticator> m_lockAuth;
+    std::unique_ptr<DesktopModel> m_desktop;
+    std::unique_ptr<LabwcConfig> m_labwc;
+    std::unique_ptr<OutputManager> m_outputs;
+    std::unique_ptr<IdleMonitor> m_idle;
+    std::unique_ptr<PolkitAgent> m_polkit;
+    std::unique_ptr<TimeDateService> m_timeDate;
+    std::unique_ptr<UserAccountsService> m_accounts;
     std::unique_ptr<ShellContext> m_shell;
     std::unique_ptr<QQmlApplicationEngine> m_engine;
     QQuickWindow *m_window = nullptr;
@@ -152,6 +171,21 @@ class TestShellQml : public QObject
         m_session = std::make_unique<SessionService>(QDBusConnection::sessionBus(), true);
         m_run = std::make_unique<RunService>(m_apps.get(), m_dir.filePath(QStringLiteral("run-%1").arg(QTest::currentTestFunction())));
         m_screen = std::make_unique<ScreenGrabber>();
+        m_lock = std::make_unique<SessionLock>(true);
+        m_lockAuth = std::make_unique<LockAuthenticator>(true);
+        // A desktop folder per test with a couple of files.
+        const QString desk = m_dir.filePath(QStringLiteral("desktop-%1").arg(QTest::currentTestFunction()));
+        QDir().mkpath(desk + QStringLiteral("/Holiday photos"));
+        QFile(desk + QStringLiteral("/Shopping list.txt")).open(QIODevice::WriteOnly);
+        m_desktop = std::make_unique<DesktopModel>(m_settings.get(), m_places.get(), m_apps.get(), desk,
+                                                   m_dir.filePath(QStringLiteral("trash-%1/files").arg(QTest::currentTestFunction())),
+                                                   m_dir.filePath(QStringLiteral("layout-%1.json").arg(QTest::currentTestFunction())));
+        m_labwc = std::make_unique<LabwcConfig>(m_settings.get(), QString(), QString(), false);
+        m_outputs = std::make_unique<OutputManager>(true);
+        m_idle = std::make_unique<IdleMonitor>(true);
+        m_polkit = std::make_unique<PolkitAgent>(true);
+        m_timeDate = std::make_unique<TimeDateService>(QDBusConnection::sessionBus(), true);
+        m_accounts = std::make_unique<UserAccountsService>(QDBusConnection::sessionBus(), true);
         ShellContext::Services s;
         s.windows = m_windows.get();
         s.settings = m_settings.get();
@@ -170,6 +204,15 @@ class TestShellQml : public QObject
         s.session = m_session.get();
         s.run = m_run.get();
         s.screen = m_screen.get();
+        s.lock = m_lock.get();
+        s.lockAuth = m_lockAuth.get();
+        s.desktop = m_desktop.get();
+        s.labwc = m_labwc.get();
+        s.outputs = m_outputs.get();
+        s.idle = m_idle.get();
+        s.polkit = m_polkit.get();
+        s.timeDate = m_timeDate.get();
+        s.accounts = m_accounts.get();
         m_shell = std::make_unique<ShellContext>(s, true);
 
         m_engine = std::make_unique<QQmlApplicationEngine>();
@@ -687,6 +730,260 @@ private Q_SLOTS:
         click(item(QStringLiteral("runCancel")));
         QTRY_VERIFY(!item(QStringLiteral("runDialog")));
     }
+    // --- Phase 8 ----------------------------------------------------------
+
+    void desktopSelectionAndMenus()
+    {
+        start(1, 1024, 640);
+        // Placed once the desktop knows its grid size (which resets the model).
+        QQuickItem *computer = nullptr;
+        QTRY_VERIFY((computer = item(QStringLiteral("desktopIcon:meadow:computer"))) && computer->x() >= 0);
+        QQuickItem *list = item(QStringLiteral("desktopIcon:file:Shopping list.txt"));
+        QVERIFY(list);
+        click(computer);
+        QVERIFY(computer->property("selected").toBool());
+        // Ctrl+click adds to the selection.
+        QTest::mouseClick(m_window, Qt::LeftButton, Qt::ControlModifier, list->mapToScene(QPointF(list->width() / 2, list->height() / 2)).toPoint());
+        QTRY_VERIFY(list->property("selected").toBool());
+        QVERIFY(computer->property("selected").toBool());
+        // Empty space clears it.
+        QTest::mouseClick(m_window, Qt::LeftButton, {}, QPoint(600, 300));
+        QTRY_VERIFY(!computer->property("selected").toBool());
+        QVERIFY(!list->property("selected").toBool());
+
+        // Rubber band over the first column selects its icons.
+        const QPoint from(2, 2);
+        const QPoint to = computer->mapToScene(QPointF(computer->width() - 4, computer->height() - 10)).toPoint();
+        QTest::mousePress(m_window, Qt::LeftButton, {}, QPoint(300, 2));
+        QTest::mouseMove(m_window, QPoint(200, 40));
+        QTest::mouseMove(m_window, to);
+        QTRY_VERIFY(item(QStringLiteral("rubberBand")));
+        QTest::mouseRelease(m_window, Qt::LeftButton, {}, to);
+        Q_UNUSED(from);
+        QVERIFY(computer->property("selected").toBool());
+        QVERIFY(item(QStringLiteral("desktopIcon:meadow:documents"))->property("selected").toBool());
+
+        // Desktop menu > New > Folder creates one and starts renaming it.
+        QTest::mouseClick(m_window, Qt::RightButton, {}, QPoint(600, 300));
+        QQuickItem *newEntry = nullptr;
+        QTRY_VERIFY((newEntry = item(QStringLiteral("menuItem:New"))));
+        click(newEntry);
+        QQuickItem *folder = nullptr;
+        QTRY_VERIFY((folder = item(QStringLiteral("menuItem:Folder"))));
+        click(folder);
+        QQuickItem *newIcon = nullptr;
+        QTRY_VERIFY((newIcon = item(QStringLiteral("desktopIcon:file:New Folder"))));
+        QTRY_VERIFY(newIcon->property("renaming").toBool());
+        typeText(QStringLiteral("Taxes"));
+        QTest::keyClick(m_window, Qt::Key_Return);
+        QTRY_VERIFY(item(QStringLiteral("desktopIcon:file:Taxes")));
+
+        // Arrange Icons By > Name.
+        QTest::mouseClick(m_window, Qt::RightButton, {}, QPoint(600, 300));
+        QTRY_VERIFY(item(QStringLiteral("menuItem:Arrange Icons By")));
+        click(item(QStringLiteral("menuItem:Arrange Icons By")));
+        QTRY_VERIFY(item(QStringLiteral("menuItem:Name")));
+        click(item(QStringLiteral("menuItem:Name")));
+        QTRY_COMPARE(m_settings->stringValue(QStringLiteral("Desktop/sortBy")), QStringLiteral("name"));
+
+        // Properties opens Display Properties on the Desktop tab.
+        QTest::mouseClick(m_window, Qt::RightButton, {}, QPoint(600, 300));
+        QTRY_VERIFY(item(QStringLiteral("menuItem:Properties")));
+        click(item(QStringLiteral("menuItem:Properties")));
+        QTRY_VERIFY(item(QStringLiteral("window:display")));
+        QTRY_VERIFY(item(QStringLiteral("page:desktop")));
+    }
+
+    void desktopKeyboardAndDrag()
+    {
+        start(1, 1024, 640);
+        QQuickItem *docs = nullptr;
+        QTRY_VERIFY((docs = item(QStringLiteral("desktopIcon:meadow:documents"))) && docs->x() >= 0);
+        click(docs);
+        QTest::keyClick(m_window, Qt::Key_Down);
+        QTRY_VERIFY(item(QStringLiteral("desktopIcon:meadow:computer"))->property("selected").toBool());
+        QTest::keyClick(m_window, Qt::Key_Return); // opens My Computer
+        QTRY_VERIFY(launches().join(QLatin1Char('\n')).contains(QStringLiteral("--files")));
+        // Type-ahead.
+        QTest::keyClick(m_window, Qt::Key_S);
+        QTRY_VERIFY(item(QStringLiteral("desktopIcon:file:Shopping list.txt"))->property("selected").toBool());
+
+        // Drag My Documents three cells to the right.
+        const QPointF before(docs->x(), docs->y());
+        const QPoint p0 = docs->mapToScene(QPointF(docs->width() / 2, docs->height() / 2)).toPoint();
+        const int cell = int(docs->width());
+        QTest::mousePress(m_window, Qt::LeftButton, {}, p0);
+        QTest::mouseMove(m_window, p0 + QPoint(10, 0));
+        QTest::mouseMove(m_window, p0 + QPoint(cell * 3, 0));
+        QTest::mouseRelease(m_window, Qt::LeftButton, {}, p0 + QPoint(cell * 3, 0));
+        QTRY_COMPARE(item(QStringLiteral("desktopIcon:meadow:documents"))->x(), before.x() + cell * 3);
+        QCOMPARE(item(QStringLiteral("desktopIcon:meadow:documents"))->y(), before.y());
+    }
+
+    void altTabKeys()
+    {
+        start(4, 1024, 640);
+        QQuickItem *altTab = nullptr;
+        m_ipc->SwitchWindow(1);
+        QTRY_VERIFY((altTab = item(QStringLiteral("altTab"))));
+        QCOMPARE(altTab->property("selected").toInt(), 1);
+        QTest::keyClick(m_window, Qt::Key_Tab, Qt::AltModifier);
+        QCOMPARE(altTab->property("selected").toInt(), 2);
+        QTest::keyClick(m_window, Qt::Key_Backtab, Qt::AltModifier | Qt::ShiftModifier);
+        QCOMPARE(altTab->property("selected").toInt(), 1);
+        m_ipc->SwitchWindow(1); // the keybind again while open: next
+        QCOMPARE(altTab->property("selected").toInt(), 2);
+        QTest::keyClick(m_window, Qt::Key_Escape);
+        QTRY_VERIFY(!item(QStringLiteral("altTab")));
+        QVERIFY(!m_windows->log().join(QLatin1Char(' ')).contains(QStringLiteral("activate")));
+        // Enter switches (preview stands in for releasing Alt).
+        m_ipc->SwitchWindow(-1); // previous: the least recently used
+        QTRY_VERIFY((altTab = item(QStringLiteral("altTab"))));
+        QCOMPARE(altTab->property("selected").toInt(), 3);
+        QTest::keyClick(m_window, Qt::Key_Return);
+        QTRY_VERIFY(!item(QStringLiteral("altTab")));
+        QVERIFY(m_windows->log().last().startsWith(QStringLiteral("activate")));
+    }
+
+    void displayPropertiesApplies()
+    {
+        start(1, 1024, 700);
+        m_ipc->ShowDisplayProperties(QStringLiteral("appearance"));
+        QTRY_VERIFY(item(QStringLiteral("page:appearance")));
+        QQuickItem *apply = item(QStringLiteral("dialogButton:Apply"));
+        QVERIFY(apply);
+        QVERIFY(!apply->isEnabled());
+        // Pick Silver in the color scheme combo.
+        QQuickItem *combo = item(QStringLiteral("schemeCombo"));
+        QVERIFY(combo);
+        QMetaObject::invokeMethod(combo, "activated", Q_ARG(int, 2));
+        QTRY_VERIFY(apply->isEnabled());
+        click(apply);
+        QTRY_COMPARE(ThemeLoader::instance()->schemeId(), QStringLiteral("luna-silver"));
+        QCOMPARE(m_settings->stringValue(QStringLiteral("Appearance/scheme")), QStringLiteral("luna-silver"));
+        QVERIFY(!apply->isEnabled());
+
+        // Desktop tab: choose (None), then OK closes.
+        click(item(QStringLiteral("tab:Desktop")));
+        QQuickItem *list = nullptr;
+        QTRY_VERIFY((list = item(QStringLiteral("wallpaperList"))));
+        QTRY_COMPARE(list->property("currentIndex").toInt(), 1); // Meadow Hills
+        list->forceActiveFocus();
+        QTest::keyClick(m_window, Qt::Key_Up);
+        QTRY_VERIFY(apply->isEnabled());
+        click(item(QStringLiteral("dialogButton:OK")));
+        QTRY_VERIFY(!item(QStringLiteral("window:display")));
+        QCOMPARE(m_settings->stringValue(QStringLiteral("Desktop/wallpaper"), QStringLiteral("x")), QString());
+        QVERIFY(!item(QStringLiteral("wallpaper"))); // the desktop shows the plain color
+
+        // Settings tab: a new resolution asks to keep it; No reverts.
+        m_ipc->ShowDisplayProperties(QStringLiteral("settings"));
+        QQuickItem *slider = nullptr;
+        QTRY_VERIFY((slider = item(QStringLiteral("resolutionSlider"))));
+        slider->setProperty("value", 0);
+        QMetaObject::invokeMethod(slider, "moved");
+        QTRY_VERIFY(item(QStringLiteral("dialogButton:Apply"))->isEnabled());
+        click(item(QStringLiteral("dialogButton:Apply")));
+        QTRY_VERIFY(item(QStringLiteral("keepSettings")));
+        QCOMPARE(m_outputs->outputs().first().toMap().value(QStringLiteral("width")).toInt(), 800);
+        click(item(QStringLiteral("dialogButton:No")));
+        QTRY_VERIFY(!item(QStringLiteral("keepSettings")));
+        QCOMPARE(m_outputs->outputs().first().toMap().value(QStringLiteral("width")).toInt(), 1024);
+        ThemeLoader::instance()->loadScheme(QStringLiteral("luna-blue"));
+    }
+
+    void controlPanelOpensApplets()
+    {
+        start(1, 1100, 720);
+        m_ipc->ShowControlPanel(QString());
+        QQuickItem *category = nullptr;
+        QTRY_VERIFY((category = item(QStringLiteral("category:hardware"))));
+        click(category);
+        QQuickItem *mouse = nullptr;
+        QTRY_VERIFY((mouse = item(QStringLiteral("applet:mouse"))));
+        click(mouse);
+        QQuickItem *swap = nullptr;
+        QTRY_VERIFY((swap = item(QStringLiteral("option:swapButtons"))));
+        click(swap);
+        click(findItem(item(QStringLiteral("window:mouse")), QStringLiteral("dialogButton:OK")));
+        QTRY_VERIFY(!item(QStringLiteral("window:mouse")));
+        QVERIFY(m_settings->boolSetting(QStringLiteral("Mouse/swapButtons")));
+
+        // Classic view lists every applet.
+        click(item(QStringLiteral("switchView")));
+        QTRY_VERIFY(item(QStringLiteral("classicView")));
+        QCOMPARE(countVisible(m_window->contentItem(), QStringLiteral("applet:")), 7);
+
+        // meadow-control-panel datetime: straight to the applet.
+        m_ipc->ShowControlPanel(QStringLiteral("datetime"));
+        QTRY_VERIFY(item(QStringLiteral("analogClock")));
+    }
+
+    void lockAndUnlockSimulated()
+    {
+        start(1, 1024, 640);
+        m_lock->lock(); // main.cpp connects Win+L (ShellIpc::Lock) to this
+        QQuickItem *lock = nullptr;
+        QTRY_VERIFY((lock = item(QStringLiteral("lockScreen"))));
+        QVERIFY(m_lock->isLocked());
+        // The password field has the focus; a wrong password keeps it locked.
+        QTest::qWait(100);
+        typeText(QStringLiteral("nope"));
+        QTest::keyClick(m_window, Qt::Key_Return);
+        QTest::qWait(600);
+        QVERIFY(m_lock->isLocked());
+        typeText(QStringLiteral("meadow"));
+        QTest::keyClick(m_window, Qt::Key_Return);
+        QTRY_VERIFY(!m_lock->isLocked());
+        QTRY_VERIFY(!item(QStringLiteral("lockScreen")));
+    }
+
+    void screenSaverPreviewAndIdle()
+    {
+        start(1, 1024, 640);
+        m_settings->set(QStringLiteral("ScreenSaver/passwordProtect"), true);
+        // Idle starts it; input ends it and, password-protected, locks.
+        m_idle->setIdle(true);
+        QTRY_VERIFY(item(QStringLiteral("screenSaver")));
+        QTest::keyClick(m_window, Qt::Key_Space); // too soon: ignored
+        QVERIFY(item(QStringLiteral("screenSaver")));
+        QTest::qWait(ThemeLoader::instance()->token(QStringLiteral("screenSaver.graceMs")).toInt() + 100);
+        QTest::keyClick(m_window, Qt::Key_Space);
+        QTRY_VERIFY(!item(QStringLiteral("screenSaver")));
+        QVERIFY(m_lock->isLocked());
+        m_lock->unlock();
+        m_idle->setIdle(false);
+        // The Display Properties preview never locks.
+        m_ipc->ShowDisplayProperties(QStringLiteral("screensaver"));
+        QQuickItem *preview = nullptr;
+        QTRY_VERIFY((preview = item(QStringLiteral("saverPreview"))));
+        click(preview);
+        QTRY_VERIFY(item(QStringLiteral("screenSaver")));
+        QTest::qWait(ThemeLoader::instance()->token(QStringLiteral("screenSaver.graceMs")).toInt() + 100);
+        QTest::keyClick(m_window, Qt::Key_Space);
+        QTRY_VERIFY(!item(QStringLiteral("screenSaver")));
+        QVERIFY(!m_lock->isLocked());
+    }
+
+    void authenticateDialog()
+    {
+        start(1, 1024, 640);
+        m_polkit->requestPreview();
+        QQuickItem *field = nullptr;
+        QTRY_VERIFY((field = item(QStringLiteral("authPassword"))));
+        QTRY_VERIFY(field->hasActiveFocus());
+        typeText(QStringLiteral("bad"));
+        QTest::keyClick(m_window, Qt::Key_Return);
+        QTRY_VERIFY(item(QStringLiteral("authFeedback")));
+        QCOMPARE(field->property("text").toString(), QString()); // cleared at once
+        typeText(QStringLiteral("meadow"));
+        QSignalSpy finished(m_polkit.get(), &PolkitAgent::finished);
+        QTest::keyClick(m_window, Qt::Key_Return);
+        QTRY_COMPARE(finished.size(), 1);
+        QVERIFY(finished.at(0).at(0).toBool());
+        QTRY_VERIFY(!item(QStringLiteral("authenticateDialog")));
+    }
+
 };
 
 QTEST_MAIN(TestShellQml)

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "ShellContext.h"
 
+#include <QFileInfo>
+#include <QGuiApplication>
+
 #include "ipc/ShellIpc.h"
 #include "models/AppRegistry.h"
 #include "services/BatteryService.h"
@@ -79,4 +82,17 @@ QString ShellContext::userName()
 {
     const QString user = qEnvironmentVariable("USER");
     return user.isEmpty() ? qEnvironmentVariable("LOGNAME") : user;
+}
+
+int ShellContext::keyboardModifiers() const
+{
+    Qt::KeyboardModifiers mods = QGuiApplication::queryKeyboardModifiers();
+    // Test hook: labwc reports only its physical keyboards' modifiers when
+    // focus moves, so a virtual keyboard's (wtype's) held Alt is invisible
+    // there. While the file named by MEADOW_TEST_ALT_HELD_FILE exists, Alt
+    // counts as held (tools/alttab-session-test.sh, held-Alt steps).
+    static const QString altFile = qEnvironmentVariable("MEADOW_TEST_ALT_HELD_FILE");
+    if (!altFile.isEmpty() && QFileInfo::exists(altFile))
+        mods |= Qt::AltModifier;
+    return int(mods);
 }

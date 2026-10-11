@@ -63,8 +63,12 @@
     <keybind key="W-l"><action name="Execute" command="meadow-shellctl lock" /></keybind>
     <keybind key="W-m"><action name="ForEach"><then><action name="Iconify" /></then></action></keybind>
 
-    <keybind key="A-Tab"><action name="NextWindow" /></keybind>
-    <keybind key="A-S-Tab"><action name="PreviousWindow" /></keybind>
+    <!-- Alt+Tab: the shell's XP switcher. Win+Tab keeps labwc's own switcher
+         as a fallback for when the shell is not running. -->
+    <keybind key="A-Tab"><action name="Execute" command="meadow-shellctl switch-window next" /></keybind>
+    <keybind key="A-S-Tab"><action name="Execute" command="meadow-shellctl switch-window prev" /></keybind>
+    <keybind key="W-Tab"><action name="NextWindow" /></keybind>
+    <keybind key="W-S-Tab"><action name="PreviousWindow" /></keybind>
     <keybind key="A-F4"><action name="Close" /></keybind>
     <keybind key="A-space"><action name="ShowMenu" menu="client-menu" atCursor="no" /></keybind>
     <keybind key="C-A-Delete"><action name="Execute" command="meadow-shellctl log-off" /></keybind>

@@ -23,6 +23,13 @@ if(MEADOW_BUILD_SHELL)
     target_compile_definitions(test_settings PRIVATE MEADOW_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
     meadow_add_test(test_apps meadow-shell-core)
     target_compile_definitions(test_apps PRIVATE MEADOW_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+    meadow_add_test(test_desktop meadow-shell-core)
+    target_compile_definitions(test_desktop PRIVATE MEADOW_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+    meadow_add_test(test_labwcconfig meadow-shell-core Qt6::Xml)
+    meadow_add_test(test_lockauth meadow-shell-core)
+    target_compile_definitions(test_lockauth PRIVATE MEADOW_AUTH_HELPER="$<TARGET_FILE:meadow-auth-helper>")
+    add_dependencies(test_lockauth meadow-auth-helper)
+    target_compile_definitions(test_labwcconfig PRIVATE MEADOW_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 
     # org.meadow.Shell + meadow-shellctl on a private session bus.
     find_program(DBUS_RUN_SESSION dbus-run-session)
@@ -44,6 +51,12 @@ if(MEADOW_BUILD_SHELL)
         add_test(NAME test_toplevel_labwc
                  COMMAND ${PROJECT_SOURCE_DIR}/tools/with-headless-labwc.sh -- $<TARGET_FILE:test_toplevel_labwc>)
         set_tests_properties(test_toplevel_labwc PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 120)
+        # Display settings (wlr-output-management) and idle (ext-idle-notify).
+        qt_add_executable(test_outputs_labwc test_outputs_labwc.cpp)
+        target_link_libraries(test_outputs_labwc PRIVATE Qt6::Test meadow-shell-core)
+        add_test(NAME test_outputs_labwc
+                 COMMAND ${PROJECT_SOURCE_DIR}/tools/with-headless-labwc.sh -- $<TARGET_FILE:test_outputs_labwc>)
+        set_tests_properties(test_outputs_labwc PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 120)
     endif()
 
     # Start menu, Run and power dialogs in a real labwc, driven by keyboard.
@@ -51,7 +64,21 @@ if(MEADOW_BUILD_SHELL)
         add_test(NAME start_menu_session
                  COMMAND ${PROJECT_SOURCE_DIR}/tools/start-menu-session-test.sh ${CMAKE_BINARY_DIR})
         set_tests_properties(start_menu_session PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 180)
+        # Lock screen: ext-session-lock, PAM through meadow-auth-helper
+        # (pam_wrapper), crash and relock.
+        add_test(NAME lock_session
+                 COMMAND ${PROJECT_SOURCE_DIR}/tools/lock-session-test.sh ${CMAKE_BINARY_DIR})
+        set_tests_properties(lock_session PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 180)
+        # Alt+Tab switcher: quick switch, held Alt with Tab, Escape.
+        add_test(NAME alttab_session
+                 COMMAND ${PROJECT_SOURCE_DIR}/tools/alttab-session-test.sh ${CMAKE_BINARY_DIR})
+        set_tests_properties(alttab_session PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 120)
     endif()
+
+    # The PAM helper over its protocol (pam_wrapper; skips without it).
+    add_test(NAME test_auth_helper COMMAND Python3::Interpreter ${CMAKE_CURRENT_SOURCE_DIR}/test_auth_helper.py
+                                           $<TARGET_FILE:meadow-auth-helper>)
+    set_tests_properties(test_auth_helper PROPERTIES SKIP_RETURN_CODE 77)
 
     # Taskbar QML in preview mode, driven by mouse clicks.
     qt_add_executable(test_shell_qml test_shell_qml.cpp)
@@ -96,6 +123,10 @@ endif()
 add_test(NAME greeter_sddm_smoke
          COMMAND ${PROJECT_SOURCE_DIR}/tools/greeter-sddm-smoke.sh ${PROJECT_SOURCE_DIR} ${CMAKE_BINARY_DIR})
 set_tests_properties(greeter_sddm_smoke PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 60)
+
+# The committed "Meadow Hills" wallpaper matches its generator.
+add_test(NAME wallpaper_sync COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/tools/gen-wallpaper.py
+                                     --check ${PROJECT_SOURCE_DIR}/theme/assets/meadow-hills.svg)
 
 # meadow-setup against sandbox PAM trees (never the real /etc).
 add_test(NAME meadow_setup COMMAND Python3::Interpreter ${CMAKE_CURRENT_SOURCE_DIR}/test_meadow_setup.py)

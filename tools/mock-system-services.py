@@ -1,20 +1,29 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Mock UPower, NetworkManager, systemd-logind and the display manager's
-seat API on the *session* bus, for screenshots and tests. meadow-shell talks
-to them when MEADOW_SYSTEM_SERVICES_ON_SESSION_BUS=1.
+"""Mock UPower, NetworkManager, systemd-logind, the display manager's seat
+API, systemd-timedated and AccountsService on the *session* bus, for
+screenshots and tests. meadow-shell talks to them when
+MEADOW_SYSTEM_SERVICES_ON_SESSION_BUS=1.
 
   mock-system-services.py [--battery PERCENT] [--charging] [--no-battery]
                           [--network wired|wireless|limited|offline|none]
                           [--logind] [--can yes|no|challenge|na] [--no-hibernate]
-                          [--display-manager] [--log FILE]
+                          [--display-manager] [--timedate] [--accounts]
+                          [--log FILE]
 
-logind and display manager calls are appended to --log (e.g. "PowerOff true",
-"SwitchToGreeter"); nothing is powered off.
+logind, display manager, timedated and accounts calls are appended to --log
+(e.g. "PowerOff true", "SwitchToGreeter", "SetTimezone Europe/Paris true");
+nothing is powered off or changed.
+
+The logind mock has one session (/org/freedesktop/login1/session/_31,
+returned by GetSession and GetSessionByPID). Tests make it emit signals with
+  busctl --user call org.freedesktop.login1 /org/freedesktop/login1 \
+      org.meadow.Test Emit s Lock|Unlock|PrepareForSleep|Resume
 
 Runs until SIGTERM. Prints "ready" once the names are owned.
 """
 import argparse
+import os
 import signal
 import dbus
 import dbus.service
@@ -55,6 +64,8 @@ class Logind(dbus.service.Object):
     def __init__(self, bus, args):
         super().__init__(bus, "/org/freedesktop/login1")
         self.args = args
+        self.inhibitors = []
+        self.session = LogindSession(bus, args)
 
     def _can(self, what):
         return "na" if what == "Hibernate" and self.args.no_hibernate else self.args.can
@@ -95,6 +106,123 @@ class Logind(dbus.service.Object):
     def TerminateSession(self, session_id):
         record(self.args, f"TerminateSession {session_id}")
 
+    @dbus.service.method(IFACE, in_signature="s", out_signature="o")
+    def GetSession(self, session_id):
+        return dbus.ObjectPath(LogindSession.PATH)
+
+    @dbus.service.method(IFACE, in_signature="u", out_signature="o")
+    def GetSessionByPID(self, pid):
+        return dbus.ObjectPath(LogindSession.PATH)
+
+    @dbus.service.method(IFACE, in_signature="ssss", out_signature="h")
+    def Inhibit(self, what, who, why, mode):
+        record(self.args, f"Inhibit {what} {mode}")
+        r, w = os.pipe()
+        self.inhibitors.append(r)  # held until released by the client
+        return dbus.types.UnixFd(w)
+
+    @dbus.service.signal(IFACE, signature="b")
+    def PrepareForSleep(self, start):
+        pass
+
+    # Test hook: make the mock emit logind's signals.
+    @dbus.service.method("org.meadow.Test", in_signature="s")
+    def Emit(self, what):
+        if what == "Lock":
+            self.session.Lock()
+        elif what == "Unlock":
+            self.session.Unlock()
+        elif what == "PrepareForSleep":
+            self.PrepareForSleep(True)
+        elif what == "Resume":
+            self.PrepareForSleep(False)
+
+
+class LogindSession(dbus.service.Object):
+    PATH = "/org/freedesktop/login1/session/_31"
+    IFACE = "org.freedesktop.login1.Session"
+
+    def __init__(self, bus, args):
+        super().__init__(bus, self.PATH)
+        self.args = args
+
+    @dbus.service.method(IFACE, in_signature="b")
+    def SetLockedHint(self, locked):
+        record(self.args, f"SetLockedHint {bool(locked)}")
+
+    @dbus.service.signal(IFACE)
+    def Lock(self):
+        pass
+
+    @dbus.service.signal(IFACE)
+    def Unlock(self):
+        pass
+
+
+class TimeDate(PropObject):
+    IFACE = "org.freedesktop.timedate1"
+
+    def __init__(self, bus, args):
+        super().__init__(bus, "/org/freedesktop/timedate1", self.IFACE, {
+            "Timezone": "Europe/London", "NTP": dbus.Boolean(True), "CanNTP": dbus.Boolean(True)})
+        self.args = args
+
+    def _set(self, name, value):
+        self.props[name] = value
+        self.PropertiesChanged(self.IFACE, {name: value}, [])
+
+    @dbus.service.method(IFACE, in_signature="sb")
+    def SetTimezone(self, zone, interactive):
+        record(self.args, f"SetTimezone {zone} {bool(interactive)}")
+        self._set("Timezone", zone)
+
+    @dbus.service.method(IFACE, in_signature="bb")
+    def SetNTP(self, on, interactive):
+        record(self.args, f"SetNTP {bool(on)} {bool(interactive)}")
+        self._set("NTP", dbus.Boolean(on))
+
+    @dbus.service.method(IFACE, in_signature="xbb")
+    def SetTime(self, usec, relative, interactive):
+        record(self.args, f"SetTime {int(usec)} {bool(relative)} {bool(interactive)}")
+
+
+class AccountsUser(PropObject):
+    IFACE = "org.freedesktop.Accounts.User"
+
+    def __init__(self, bus, args, path, props):
+        super().__init__(bus, path, self.IFACE, props)
+        self.args = args
+
+    @dbus.service.method(IFACE, in_signature="s")
+    def SetIconFile(self, path):
+        record(self.args, f"SetIconFile {self.props['UserName']} {path}")
+        self.props["IconFile"] = path
+
+    @dbus.service.method(IFACE, in_signature="s")
+    def SetRealName(self, name):
+        record(self.args, f"SetRealName {self.props['UserName']} {name}")
+        self.props["RealName"] = name
+
+
+class Accounts(dbus.service.Object):
+    IFACE = "org.freedesktop.Accounts"
+
+    def __init__(self, bus, args):
+        super().__init__(bus, "/org/freedesktop/Accounts")
+        uid = os.getuid()
+        self.users = [
+            AccountsUser(bus, args, "/org/freedesktop/Accounts/User1000", {
+                "UserName": os.environ.get("USER", "meadow"), "RealName": "Meadow User", "IconFile": "",
+                "AccountType": dbus.Int32(1), "Uid": dbus.UInt64(uid), "SystemAccount": dbus.Boolean(False)}),
+            AccountsUser(bus, args, "/org/freedesktop/Accounts/User1001", {
+                "UserName": "guest", "RealName": "Guest", "IconFile": "",
+                "AccountType": dbus.Int32(0), "Uid": dbus.UInt64(uid + 1), "SystemAccount": dbus.Boolean(False)}),
+        ]
+
+    @dbus.service.method(IFACE, out_signature="ao")
+    def ListCachedUsers(self):
+        return [dbus.ObjectPath(u._object_path) for u in self.users]
+
 
 class Seat(dbus.service.Object):
     def __init__(self, bus, args):
@@ -117,6 +245,8 @@ def main():
     ap.add_argument("--can", default="yes")
     ap.add_argument("--no-hibernate", action="store_true")
     ap.add_argument("--display-manager", action="store_true")
+    ap.add_argument("--timedate", action="store_true")
+    ap.add_argument("--accounts", action="store_true")
     ap.add_argument("--log")
     args = ap.parse_args()
 
@@ -161,6 +291,12 @@ def main():
     if args.display_manager:
         keep.append(dbus.service.BusName("org.freedesktop.DisplayManager", bus))
         keep.append(Seat(bus, args))
+    if args.timedate:
+        keep.append(dbus.service.BusName("org.freedesktop.timedate1", bus))
+        keep.append(TimeDate(bus, args))
+    if args.accounts:
+        keep.append(dbus.service.BusName("org.freedesktop.Accounts", bus))
+        keep.append(Accounts(bus, args))
 
     loop = GLib.MainLoop()
     signal.signal(signal.SIGTERM, lambda *a: loop.quit())

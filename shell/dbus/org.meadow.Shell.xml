@@ -20,6 +20,28 @@
     <method name="ShowTurnOffDialog"/>
     <!-- Switch to the next keyboard layout in the language bar (Alt+Shift). -->
     <method name="NextKeyboardLayout"/>
+    <!-- Alt+Tab switcher: direction 1 = next window, -1 = previous. -->
+    <method name="SwitchWindow">
+      <arg name="direction" type="i" direction="in"/>
+    </method>
+    <!-- Control Panel; page is "" (categories) or an applet name
+         (display, sounds, mouse, keyboard, datetime, users, network). -->
+    <method name="ShowControlPanel">
+      <arg name="page" type="s" direction="in"/>
+    </method>
+    <!-- Display Properties at a tab (themes, desktop, screensaver,
+         appearance, settings; "" for the first). -->
+    <method name="ShowDisplayProperties">
+      <arg name="tab" type="s" direction="in"/>
+    </method>
+    <!-- Whether the session is locked (tests, scripts). -->
+    <method name="IsLocked">
+      <arg name="locked" type="b" direction="out"/>
+    </method>
+    <!-- Emitted when the session is locked or unlocked. -->
+    <signal name="LockedChanged">
+      <arg name="locked" type="b"/>
+    </signal>
     <!-- meadow-shell version; also a cheap liveness check. -->
     <method name="Version">
       <arg name="version" type="s" direction="out"/>

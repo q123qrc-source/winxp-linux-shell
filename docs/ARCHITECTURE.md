@@ -29,7 +29,7 @@ This document is the high-level design. Exact metrics and colors live in
             └─ FingerprintQuery ──system bus──▶ net.reactivated.Fprint (GetDefaultDevice, ListEnrolledFingers)
 
  user session "Meadow"  (/usr/share/wayland-sessions/meadow.desktop)
-  └─ meadow-session  (exports XDG_CURRENT_DESKTOP=Meadow, toolkit theme vars)
+  └─ meadow-session  (exports XDG_CURRENT_DESKTOP=Meadow:X-Meadow, toolkit theme vars)
        └─ labwc --config-dir ~/.config/meadow/labwc | /usr/share/meadow/labwc
             ├─ XWayland (on demand)
             ├─ autostart
@@ -53,7 +53,8 @@ This document is the high-level design. Exact metrics and colors live in
 ```
 
 The greeter and the shell never share a process. They share code only through
-`libmeadow-common` and the `Meadow.Controls` QML module. The greeter only
+`libmeadow-common` and the `Meadow.Controls` and `Meadow.Welcome` QML modules
+(the lock screen reuses the Welcome screen's layout). The greeter only
 **reads** data: it never writes into user home directories, and the only system
 bus call it makes is the read-only fprintd query.
 
@@ -65,25 +66,27 @@ bus call it makes is the read-only fprintd query.
 |---|---|---|
 | `zwlr_layer_shell_v1` | taskbar, desktop, popups | LayerShellQt |
 | `zwlr_foreign_toplevel_manager_v1` | task buttons, activate, minimize, maximize, close | `ForeignToplevelModel` (qtwaylandscanner) |
-| `ext_session_lock_manager_v1` | lock screen | `SessionLock` |
-| `zwlr_output_manager_v1` | Display Properties → Settings tab | phase 8 |
+| `ext_session_lock_manager_v1` | lock screen | `SessionLock` (own `QWaylandShellIntegration`, Qt private API) |
+| `zwlr_output_manager_v1` (v4) | Display Properties → Settings tab | `OutputManager` |
+| `ext_idle_notifier_v1` | screen saver | `IdleMonitor` (honours idle inhibitors) |
 | `xdg_decoration` | server-side Luna decorations from labwc | labwc |
 
 ### D-Bus
 
 | Bus | Name / interface | Used by | Purpose |
 |---|---|---|---|
-| system | `org.freedesktop.login1` | PowerService, SessionService | PowerOff/Reboot/Suspend/Hibernate (interactive, so polkit can ask) shown when CanXxx is "yes" or "challenge"; TerminateSession when not under labwc |
+| system | `org.freedesktop.login1` | PowerService, SessionService | PowerOff/Reboot/Suspend/Hibernate (interactive, so polkit can ask) shown when CanXxx is "yes" or "challenge"; TerminateSession when not under labwc; Session `Lock`/`Unlock` signals, `SetLockedHint`; `PrepareForSleep` with a delay inhibitor (lock before suspend) |
+| system | `org.freedesktop.timedate1` | TimeDateService | Date and Time applet: time zone list and change, NTP, set time (interactive authorization) |
 | system | `org.freedesktop.DisplayManager` | SessionService | Seat (`$XDG_SEAT_PATH`) SwitchToGreeter for Switch User, hidden without it |
 | session | `org.freedesktop.portal.FileChooser` | RunService | Run dialog Browse… |
 | system | `org.freedesktop.UPower` | BatteryService | battery icon/percentage |
 | system | `org.freedesktop.NetworkManager` | NetworkService | network icon/menu |
-| system | `org.freedesktop.Accounts` | Start menu header, Control Panel | real name, avatar |
-| system | `org.freedesktop.PolicyKit1` | PolkitAgent (polkit-qt6) | authentication dialogs |
+| system | `org.freedesktop.Accounts` | Start menu header, UserAccountsService | real name, avatar; User Accounts applet (own name and picture) |
+| system | `org.freedesktop.PolicyKit1` | PolkitAgent (polkit-qt6) | the session's authentication agent; Luna "Authenticate" dialog |
 | system | `net.reactivated.Fprint` | FingerprintQuery (greeter), LockScreen | reader and enrolled-finger check (read-only) |
 | session | `org.kde.StatusNotifierWatcher` (provided by the shell unless another component does), `…Item`, `com.canonical.dbusmenu` | StatusNotifierWatcher, TrayModel | tray icons and menus |
 | session | `org.freedesktop.Notifications` (spec 1.2; skipped if another daemon owns the name) | NotificationServer | balloon tips |
-| session | `org.meadow.Shell` (ours, `shell/dbus/org.meadow.Shell.xml`) | ShellIpc | ToggleStartMenu, ShowRunDialog, ShowDesktop, Lock, ShowLogOffDialog, ShowTurnOffDialog, NextKeyboardLayout, Version |
+| session | `org.meadow.Shell` (ours, `shell/dbus/org.meadow.Shell.xml`) | ShellIpc | ToggleStartMenu, ShowRunDialog, ShowDesktop, Lock, ShowLogOffDialog, ShowTurnOffDialog, NextKeyboardLayout, SwitchWindow, ShowControlPanel, ShowDisplayProperties, IsLocked + LockedChanged, Version |
 
 Audio uses PipeWire/WirePlumber through `wpctl` (`VolumeService` polls
 `wpctl get-volume @DEFAULT_AUDIO_SINK@` every 3 s and runs `set-volume` /
@@ -120,7 +123,7 @@ switch also reloads rc.xml and the theme.
 
 | Piece | Where | Notes |
 |---|---|---|
-| All Programs | `MenuParser`, `AppMenuModel` | XDG Desktop Menu Specification: Include/Exclude with Filename, Category, All, And, Or, Not; OnlyUnallocated, Deleted, MergeFile, MergeDir/DefaultMergeDirs, same-name merging, `.directory` names and icons. Meadow ships `meadow-applications.menu` (Accessories with System Tools and Accessibility, Education, Games, Graphics, Internet, Multimedia, Office, Programming, then unplaced programs); `~/.config/menus/meadow-applications.menu` or shell.conf `menuFile` replace it. NoDisplay, Hidden, OnlyShowIn/NotShowIn (`XDG_CURRENT_DESKTOP`, default Meadow) and TryExec are honored. Rebuilt live (application dirs and the menu file are watched, debounced 500 ms) |
+| All Programs | `MenuParser`, `AppMenuModel` | XDG Desktop Menu Specification: Include/Exclude with Filename, Category, All, And, Or, Not; OnlyUnallocated, Deleted, MergeFile, MergeDir/DefaultMergeDirs, same-name merging, `.directory` names and icons. Meadow ships `meadow-applications.menu` (Accessories with System Tools and Accessibility, Education, Games, Graphics, Internet, Multimedia, Office, Programming, then unplaced programs); `~/.config/menus/meadow-applications.menu` or shell.conf `menuFile` replace it. NoDisplay, Hidden, OnlyShowIn/NotShowIn (`XDG_CURRENT_DESKTOP`, default Meadow:X-Meadow; Meadow's own entries use `OnlyShowIn=X-Meadow`) and TryExec are honored. Rebuilt live (application dirs and the menu file are watched, debounced 500 ms) |
 | Pinned / frequent | `RecentAppsModel`, `UsageStore` | `~/.local/share/meadow/start-menu.json`: launch scores with a 7-day half-life, pins, removed entries, first-seen times. `meadow:internet` / `meadow:email` resolve through mimeapps.list (`x-scheme-handler/http`, `mailto`). Pin by right-click or by dragging from All Programs; reorder by dragging |
 | New programs | `UsageStore::isNew` | first seen within `newProgramDays` and never launched; nothing is "new" on the first run |
 | Places | `PlacesModel` | XDG user dirs; My Computer = `computer:///` in pcmanfm-qt; tools from shell.conf `[StartMenu]` (hidden when not installed); Recent Documents from `recently-used.xbel` (15 newest existing local files, watched) |
@@ -138,6 +141,20 @@ inside a full-screen overlay surface that maps only while a popup is open.
 This gives XP's "click anywhere else closes the menu" without compositor grabs.
 The cost is that the closing click is consumed rather than passed on (XP passes
 it through).
+
+### Desktop, lock screen and settings (phase 8)
+
+| Piece | Where | Notes |
+|---|---|---|
+| Desktop | `DesktopModel`, `Desktop.qml` on a background layer surface per screen | Wallpaper: the original "Meadow Hills" SVG (`tools/gen-wallpaper.py`, checked by the `wallpaper_sync` test), any picked image, or a solid colour; Center / Tile / Stretch (Stretch fills and crops, it never distorts). Icons on the primary screen only: My Computer, My Documents, Recycle Bin and the XDG Desktop folder (watched). Positions snap to the icon grid and persist in `~/.local/share/meadow/desktop-layout.json`. `.desktop` launchers run only when trusted (executable, or the user's own), as file managers do. New Folder / Text Document / Shortcut, rename, move to trash (`QFile::moveToTrash`), Empty Recycle Bin |
+| Lock | `SessionLock`, `LockAuthenticator`, `AuthSession`, `meadow-auth-helper`, `LockScreen.qml` | States Unlocked → Locking → Locked. One lock surface per screen; the primary screen shows `Meadow.Welcome`'s WelcomeLayout in lock mode (the same QML as the greeter), the others the welcome background. `$XDG_RUNTIME_DIR/meadow/locked` exists while locked; a restarted shell that finds it locks at once (labwc keeps an abandoned lock in place). Triggers: Win+L / `meadow-shellctl lock`, logind Lock, before suspend, password-protected screen saver. logind Unlock unlocks (console recovery). PAM: see `PAM_FINGERPRINT.md` |
+| Auth helper protocol | `shell/auth-helper/` | Frames `<TYPE> <len>\n<payload>`; helper → shell `PROMPT_ECHO_OFF`, `PROMPT_ECHO_ON`, `INFO`, `ERROR`, `RESULT ok\|fail`; shell → helper `RESPONSE`, `CANCEL`. Exit 0/1/2. Not setuid; authenticates `getuid()` only |
+| Screen saver | `IdleMonitor`, `ScreenSaverController.qml`, `ScreenSaver.qml` | `[ScreenSaver] mode` (none, blank, logo), `timeoutMin`, `passwordProtect`, `lockOnSuspend`. An overlay surface per screen; input after a short grace period ends it, and a protected saver locks first |
+| Alt+Tab | `ToplevelModel::mruRows`, `AltTabSwitcher.qml` | labwc binds A-Tab / A-S-Tab to `meadow-shellctl switch-window next\|prev`. The switcher is an overlay surface with exclusive keyboard focus: Tab/Shift+Tab/arrows move, releasing Alt activates, Esc cancels. A quick tap (Alt already up) switches to the previous window without showing anything. W-Tab stays bound to labwc's own switcher as a fallback when the shell isn't running |
+| Display Properties | `DisplayProperties.qml`, `OutputManager` | Themes, Desktop, Screen Saver, Appearance, Settings tabs. Resolution and scale: wlr-output-management test, then apply, then "Keep these settings?" with a 15 s automatic revert |
+| Control Panel | `ControlPanel.qml`, applets | Category and classic views; Mouse, Keyboard, Sounds and Audio Devices, Date and Time, User Accounts, Network Connections. Runs inside meadow-shell (`meadow-control-panel [page]` → `meadow-shellctl control-panel`) so it shares the shell's services |
+| Runtime labwc config | `LabwcConfig` | `meadow-session` exports `MEADOW_LABWC_OVERLAY` and `MEADOW_LABWC_SOURCE`. The shell writes `overlay/rc.xml` (a copy of the real rc.xml with the decoration theme for the colour scheme, keyboard repeat, double-click time, pointer speed and left-handed overridden) through a temporary file and `rename()`, replacing the overlay symlink, then runs `labwc --reconfigure`. The user's and the packaged config are never written |
+| Polkit agent | `PolkitAgent`, `AuthenticateDialog.qml` | polkit-qt6 Listener registered for the session's subject (skipped outside a logind session, or when another agent owns it). Wrong passwords ask again; the password is never logged |
 
 ### SDDM QML API (greeter)
 
@@ -257,7 +274,7 @@ Main.qml                     SDDM context → scheme + scale from theme.conf; pr
 
 ```
 /usr/share/wayland-sessions/meadow.desktop   Exec=meadow-session, DesktopNames=Meadow
-meadow-session        exports XDG_CURRENT_DESKTOP=Meadow and the toolkit theme variables; keyboard layout from
+meadow-session        exports XDG_CURRENT_DESKTOP=Meadow:X-Meadow and the toolkit theme variables; keyboard layout from
                       localectl's X11 keymap; builds the runtime overlay of ~/.config/meadow/labwc |
                       /usr/share/meadow/labwc (see "Keyboard layouts") and execs labwc --config-dir <overlay>
   rc.xml              generated from rc.xml.in (fonts and corner radius from tokens): server-side decorations,
@@ -315,13 +332,21 @@ first uses them. The Fedora spec already BuildRequires all of them.
 | labwc config (user copy) | `~/.config/meadow/labwc/` | user |
 | MFU / pinned apps | `~/.local/share/meadow/` | shell |
 | SDDM drop-in | `/etc/sddm.conf.d/10-meadow.conf` | `meadow-setup` only |
-| PAM | `/etc/pam.d/sddm` (marked block), `/etc/pam.d/meadow-lock` | `meadow-setup` only |
+| Desktop icon positions | `~/.local/share/meadow/desktop-layout.json` | shell |
+| Lock flag | `$XDG_RUNTIME_DIR/meadow/locked` | shell |
+| labwc runtime rc.xml | `$XDG_RUNTIME_DIR/meadow/labwc-<pid>/rc.xml` | shell (overlay only) |
+| PAM | `/etc/pam.d/sddm` (marked block) | `meadow-setup` only |
+| PAM, lock screen | `/etc/pam.d/meadow-lock` | package (password-only, `%config(noreplace)`); `meadow-setup` adds or removes the marked fingerprint block |
 
 ## 7. Security model
 
 - The greeter runs as `sddm` with no extra privileges. The fprintd helper only
   calls `ListEnrolledFingers`.
 - There are no setuid binaries. Power actions go through logind and polkit.
+- The lock screen runs PAM in `meadow-auth-helper`, a separate unprivileged
+  process that can only authenticate the user running it. The lock itself is
+  the compositor's (`ext-session-lock-v1`): if the shell dies, the screen
+  stays locked.
 - Passwords and PAM messages are never logged. Log categories follow the
   pattern `meadow.<component>.<area>`.
 - Everything targets SELinux enforcing on Fedora. Files go to standard FHS
@@ -335,7 +360,7 @@ first uses them. The Fedora spec already BuildRequires all of them.
 
 | Risk | Mitigation |
 |---|---|
-| A broken PAM stack locks users out | The package never touches PAM. `meadow-setup` uses markers, `.meadow-bak` backups and `pamtester`, and documents TTY recovery. PAM is tested only in the VM. |
+| A broken PAM stack locks users out | The package never touches existing PAM services; it adds only the lock screen's own `meadow-lock`, which no login path uses. `meadow-setup` uses markers, `.meadow-bak` backups and `pamtester`, and documents TTY recovery. PAM is tested only in the VM. |
 | SDDM creates one QML engine per screen | `Theme` is a per-engine object over one shared loader; a test covers two engines. |
 | SDDM starts PAM only on `login()` | Auto-start the fingerprint conversation with `login(user, "")` when fingers are enrolled; empty Enter is the fallback (phase 4). |
 | The labwc / LayerShellQt API changes | Wrap it in a small helper and pin minimum versions in the spec. |
@@ -354,7 +379,7 @@ first uses them. The Fedora spec already BuildRequires all of them.
 | 5 | Session script, labwc config, decorations, shell IPC (done) |
 | 6 | Taskbar, tray, notifications, clock, volume/network/battery (done) |
 | 7 | Start menu, All Programs, Run, Log Off / Turn Off dialogs (done) |
-| 8 | Desktop, lock screen, Display Properties, Control Panel, Alt+Tab |
+| 8 | Desktop, lock screen, Display Properties, Control Panel, Alt+Tab (done) |
 | 9 | GTK/Kvantum themes, icons, cursors, sounds, fontconfig |
 | 10 | Generic installer, Arch/Debian packaging, performance, crash resilience |
 | 11 | Fedora RPM, `meadow-setup`, SELinux, COPR/Packit, test VM |

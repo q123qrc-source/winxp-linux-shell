@@ -80,6 +80,9 @@ FocusScope {
         ]
         if (isFrequent)
             items.push({ label: qsTr("Remove from This List"), action: () => Shell.startApps.removeFromFrequent(entry.id) })
+        if (entry.id.endsWith(".desktop"))
+            items.push({ separator: true },
+                       { label: qsTr("Send To Desktop (create shortcut)"), action: () => Shell.desktop.createShortcut(entry.id) })
         host.openChild(contextComponent, { entries: items }, 0, false, function(popup) {
             popup.x = Math.min(x, host.width - popup.width)
             popup.y = Math.min(y, host.height - host.bottomInset - popup.height)

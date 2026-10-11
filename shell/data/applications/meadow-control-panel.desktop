@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Control Panel
+Comment=Change Meadow's appearance, sounds, mouse, keyboard, date and time, and user accounts
+Exec=meadow-control-panel
+Icon=preferences-system
+Categories=Settings;
+OnlyShowIn=X-Meadow;

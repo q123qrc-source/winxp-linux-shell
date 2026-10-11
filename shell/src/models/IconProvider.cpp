@@ -37,7 +37,27 @@ QPixmap IconProvider::requestPixmap(const QString &id, QSize *size, const QSize 
     const int s = requestedSize.isValid() && requestedSize.width() > 0 ? requestedSize.width() : 32;
     if (size)
         *size = QSize(s, s);
-    const QString name = QUrl::fromPercentEncoding(id.toUtf8());
+    // "name?tint=AARRGGBB": the icon blended with a color over its opaque
+    // pixels (selected desktop icons). Done here rather than with a shader so
+    // it also works with the software renderer.
+    QString name = QUrl::fromPercentEncoding(id.toUtf8());
+    QColor tint;
+    const qsizetype query = name.indexOf(QLatin1String("?tint="));
+    if (query >= 0) {
+        tint = QColor(QLatin1Char('#') + name.mid(query + 6));
+        name.truncate(query);
+    }
+    QPixmap pm = iconPixmap(name, s);
+    if (tint.isValid() && tint.alpha() > 0) {
+        QPainter p(&pm);
+        p.setCompositionMode(QPainter::CompositionMode_SourceAtop);
+        p.fillRect(pm.rect(), tint);
+    }
+    return pm;
+}
+
+QPixmap IconProvider::iconPixmap(const QString &name, int s)
+{
     // Screenshot tests: the same drawn icon everywhere, whatever is installed.
     static const bool genericOnly = qEnvironmentVariableIntValue("MEADOW_ICONS_GENERIC") == 1;
     if (genericOnly)

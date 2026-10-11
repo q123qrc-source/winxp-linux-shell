@@ -93,6 +93,8 @@ Item {
         case "run": ShellActions.runRequested(); break
         case "logoff": ShellActions.logOffRequested(); break
         case "turnoff": ShellActions.turnOffRequested(); break
+        case "lock": Shell.lock.lock(); break
+        case "alttab": Shell.ipc.switchWindowRequested(1); break
         case "balloon":
             Shell.notifications.post(qsTr("Updates are ready"),
                                      qsTr("Updates are ready to install"),

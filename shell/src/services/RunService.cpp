@@ -225,8 +225,9 @@ QStringList RunService::complete(const QString &prefix) const
     return out;
 }
 
-void RunService::browse(const QString &title)
+void RunService::browse(const QString &title, const QString &tag)
 {
+    m_browseTag = tag;
     // org.freedesktop.portal.FileChooser: subscribe to the Response signal on
     // the predictable request path before calling, so it cannot be missed.
     QDBusConnection bus = QDBusConnection::sessionBus();
@@ -253,5 +254,5 @@ void RunService::onPortalResponse(uint response, const QVariantMap &results)
         return; // cancelled
     const QStringList uris = results.value(QStringLiteral("uris")).toStringList();
     if (!uris.isEmpty())
-        Q_EMIT browsed(QUrl(uris.first()).toLocalFile());
+        Q_EMIT browsed(QUrl(uris.first()).toLocalFile(), m_browseTag);
 }

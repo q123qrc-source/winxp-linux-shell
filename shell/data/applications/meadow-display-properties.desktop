@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Display Properties
+Comment=Change the desktop background, screen saver, color scheme and screen resolution
+Exec=meadow-shellctl display-properties
+Icon=preferences-desktop-display
+Categories=Settings;DesktopSettings;
+OnlyShowIn=X-Meadow;

@@ -38,12 +38,13 @@ public:
     // Completions for `prefix`: history first, then folders/files for paths,
     // else PATH programs.
     Q_INVOKABLE QStringList complete(const QString &prefix) const;
-    // Opens the desktop portal's file chooser; answers with browsed(path).
-    Q_INVOKABLE void browse(const QString &title);
+    // Opens the desktop portal's file chooser; answers with browsed(path,
+    // tag) so several dialogs can share it (tag: "run", "wallpaper", ...).
+    Q_INVOKABLE void browse(const QString &title, const QString &tag = QStringLiteral("run"));
 
 Q_SIGNALS:
     void historyChanged();
-    void browsed(const QString &path);
+    void browsed(const QString &path, const QString &tag);
 
 private Q_SLOTS:
     void onPortalResponse(uint response, const QVariantMap &results);
@@ -57,4 +58,5 @@ private:
     QString m_historyFile;
     QStringList m_history;
     QString m_requestPath;
+    QString m_browseTag;
 };
