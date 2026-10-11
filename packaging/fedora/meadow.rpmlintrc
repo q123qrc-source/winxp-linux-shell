@@ -15,3 +15,7 @@ addFilter(r"invalid-url Source0: meadow-")
 # Man pages for meadow-shell, meadow-session and meadow-setup are written in
 # phase 11 together with meadow-setup's real implementation. TODO: remove then.
 addFilter(r"no-manual-page-for-binary meadow-")
+
+# "Pre-alpha" in %description: the spell checker splits it at the hyphen and
+# does not know "Pre".
+addFilter(r"spelling-error \('Pre',")
