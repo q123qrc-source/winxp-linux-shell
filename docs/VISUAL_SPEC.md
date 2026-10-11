@@ -270,9 +270,11 @@ Same frame, with Switch User / Log Off buttons plus Cancel.
   Properties (Display Properties, Desktop tab).
 
 ### Lock screen (`lockScreen.*`)
-The Welcome screen's layout (`welcome.*`) with only the locked user's tile, the
-wording "This computer is in use and has been locked." / "To unlock it, type
-your password." on the left, Switch User when available and Turn Off. A
+The Welcome screen's layout (`welcome.*`) with only the locked user's tile,
+"This computer is locked. Type your password to unlock it." under the logo,
+"Only the signed-in user can unlock this computer. Your programs keep running
+while it is locked." in the bottom band, Switch User when available and Turn
+Off. A
 successful unlock fades out over `unlockFadeMs` (instant under reduced motion).
 Secondary screens show the welcome background with the logo.
 
